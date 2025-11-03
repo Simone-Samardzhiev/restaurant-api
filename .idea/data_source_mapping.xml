@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000001_create_dishes_table.up.sql" value="8867cd28-c027-4915-bbd0-d529137b05fa" />
+  </component>
+</project>
