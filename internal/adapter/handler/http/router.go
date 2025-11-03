@@ -2,6 +2,8 @@ package http
 
 import (
 	"restaurant/internal/adapter/config"
+	"restaurant/internal/adapter/handler/http/middleware"
+	"restaurant/internal/adapter/handler/http/response"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -14,7 +16,11 @@ type Router struct {
 
 // NewRouter creates a new Router instance.
 func NewRouter(config *config.AppConfig) *Router {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: response.ErrorHandler,
+	})
+
+	app.Use(middleware.ZapLogger())
 
 	return &Router{
 		app:    app,
