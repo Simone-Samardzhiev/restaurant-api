@@ -39,7 +39,7 @@ type (
 	// Container holds all environment variables.
 	Container struct {
 		AppConfig  AppConfig
-		DbConfig   DBConfig
+		DbConfig   StorageConfig
 		AuthConfig AuthConfig
 	}
 
@@ -49,11 +49,12 @@ type (
 		Port        string
 	}
 
-	// DBConfig holds all environment variable for the database.
-	DBConfig struct {
-		URL                string
-		MaxIdleConnections int
-		MaxOpenConnections int
+	// StorageConfig holds all environment variable for the database.
+	StorageConfig struct {
+		DbUrl                string
+		DbMaxIdleConnections int
+		DbMaxOpenConnections int
+		LocalFilesPath       string
 	}
 
 	// AuthConfig holds all environment variable for the authentication.
@@ -81,25 +82,31 @@ func newAppConfig() (AppConfig, error) {
 	}, nil
 }
 
-func newDBConfig() (DBConfig, error) {
-	url := os.Getenv("DB_URL")
-	if url == "" {
-		return DBConfig{}, fmt.Errorf("DB_URL environment variable not set")
+func newStorageConfig() (StorageConfig, error) {
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		return StorageConfig{}, fmt.Errorf("DB_URL environment variable not set")
 	}
 
-	maxIdleConnections := getEnvInt("MAX_IDLE_CONNECTIONS", 10)
+	maxIdleConnections := getEnvInt("DB_MAX_IDLE_CONNECTIONS", 10)
 	if maxIdleConnections <= 0 {
-		return DBConfig{}, fmt.Errorf("max idle connections must be greater than zero: %d", maxIdleConnections)
+		return StorageConfig{}, fmt.Errorf("max idle connections must be greater than zero: %d", maxIdleConnections)
 	}
-	maxOpenConnections := getEnvInt("MAX_OPEN_CONNECTIONS", 10)
+	maxOpenConnections := getEnvInt("DB_MAX_OPEN_CONNECTIONS", 10)
 	if maxOpenConnections <= 0 {
-		return DBConfig{}, fmt.Errorf("max open connections must be greater than zero: %d", maxOpenConnections)
+		return StorageConfig{}, fmt.Errorf("max open connections must be greater than zero: %d", maxOpenConnections)
 	}
 
-	return DBConfig{
-		URL:                url,
-		MaxIdleConnections: maxIdleConnections,
-		MaxOpenConnections: maxOpenConnections,
+	localFilesPath := os.Getenv("LOCAL_FILES_PATH")
+	if localFilesPath == "" {
+		return StorageConfig{}, fmt.Errorf("local files path environment variable not set")
+	}
+
+	return StorageConfig{
+		DbUrl:                dbURL,
+		DbMaxIdleConnections: maxIdleConnections,
+		DbMaxOpenConnections: maxOpenConnections,
+		LocalFilesPath:       localFilesPath,
 	}, nil
 }
 
@@ -129,7 +136,7 @@ func New() (*Container, error) {
 		return nil, err
 	}
 
-	dbConfig, err := newDBConfig()
+	storageConfig, err := newStorageConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +148,7 @@ func New() (*Container, error) {
 
 	return &Container{
 		AppConfig:  appConfig,
-		DbConfig:   dbConfig,
+		DbConfig:   storageConfig,
 		AuthConfig: authConfig,
 	}, nil
 }

@@ -8,7 +8,7 @@ var Module = fx.Module(
 	fx.Provide(func(container *Container) *AppConfig {
 		return &container.AppConfig
 	}),
-	fx.Provide(func(container *Container) *DBConfig {
+	fx.Provide(func(container *Container) *StorageConfig {
 		return &container.DbConfig
 	}),
 	fx.Provide(func(container *Container) *AuthConfig {
