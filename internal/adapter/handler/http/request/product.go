@@ -17,3 +17,8 @@ type AddProductRequest struct {
 type AddProductCategoryRequest struct {
 	Name string `json:"name" validate:"required,min=4,max=100"`
 }
+
+// UpdateCategoryRequest represents update category request body.
+type UpdateCategoryRequest struct {
+	NewName *string `json:"newName" validate:"omitempty,min=4,max=100"`
+}

@@ -35,6 +35,8 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 		{
 			products.Post("/product", productHandler.AddProduct)
 			products.Post("/category", productHandler.AddProductCategory)
+			products.Patch("/category/:id", productHandler.UpdateCategory)
+			products.Delete("/category/:id", productHandler.DeleteCategory)
 		}
 	}
 	app.Use(middleware.NotFoundHandler())

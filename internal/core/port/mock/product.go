@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	domain "restaurant/internal/core/domain"
 
+	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,17 +43,17 @@ func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 }
 
 // AddCategory mocks base method.
-func (m *MockProductRepository) AddCategory(ctx context.Context, product *domain.ProductCategory) error {
+func (m *MockProductRepository) AddCategory(ctx context.Context, category *domain.ProductCategory) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCategory", ctx, product)
+	ret := m.ctrl.Call(m, "AddCategory", ctx, category)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCategory indicates an expected call of AddCategory.
-func (mr *MockProductRepositoryMockRecorder) AddCategory(ctx, product any) *MockProductRepositoryAddCategoryCall {
+func (mr *MockProductRepositoryMockRecorder) AddCategory(ctx, category any) *MockProductRepositoryAddCategoryCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCategory", reflect.TypeOf((*MockProductRepository)(nil).AddCategory), ctx, product)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCategory", reflect.TypeOf((*MockProductRepository)(nil).AddCategory), ctx, category)
 	return &MockProductRepositoryAddCategoryCall{Call: call}
 }
 
@@ -113,6 +114,82 @@ func (c *MockProductRepositoryAddProductCall) Do(f func(context.Context, *domain
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockProductRepositoryAddProductCall) DoAndReturn(f func(context.Context, *domain.Product) error) *MockProductRepositoryAddProductCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// DeleteCategory mocks base method.
+func (m *MockProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCategory", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCategory indicates an expected call of DeleteCategory.
+func (mr *MockProductRepositoryMockRecorder) DeleteCategory(ctx, id any) *MockProductRepositoryDeleteCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategory", reflect.TypeOf((*MockProductRepository)(nil).DeleteCategory), ctx, id)
+	return &MockProductRepositoryDeleteCategoryCall{Call: call}
+}
+
+// MockProductRepositoryDeleteCategoryCall wrap *gomock.Call
+type MockProductRepositoryDeleteCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductRepositoryDeleteCategoryCall) Return(arg0 error) *MockProductRepositoryDeleteCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductRepositoryDeleteCategoryCall) Do(f func(context.Context, uuid.UUID) error) *MockProductRepositoryDeleteCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductRepositoryDeleteCategoryCall) DoAndReturn(f func(context.Context, uuid.UUID) error) *MockProductRepositoryDeleteCategoryCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// UpdateCategory mocks base method.
+func (m *MockProductRepository) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCategory", ctx, dto)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCategory indicates an expected call of UpdateCategory.
+func (mr *MockProductRepositoryMockRecorder) UpdateCategory(ctx, dto any) *MockProductRepositoryUpdateCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCategory", reflect.TypeOf((*MockProductRepository)(nil).UpdateCategory), ctx, dto)
+	return &MockProductRepositoryUpdateCategoryCall{Call: call}
+}
+
+// MockProductRepositoryUpdateCategoryCall wrap *gomock.Call
+type MockProductRepositoryUpdateCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductRepositoryUpdateCategoryCall) Return(arg0 error) *MockProductRepositoryUpdateCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductRepositoryUpdateCategoryCall) Do(f func(context.Context, *domain.UpdateCategoryProductDTO) error) *MockProductRepositoryUpdateCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductRepositoryUpdateCategoryCall) DoAndReturn(f func(context.Context, *domain.UpdateCategoryProductDTO) error) *MockProductRepositoryUpdateCategoryCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -213,6 +290,82 @@ func (c *MockProductServiceAddProductCall) Do(f func(context.Context, *domain.Ad
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockProductServiceAddProductCall) DoAndReturn(f func(context.Context, *domain.AddProductDTO) error) *MockProductServiceAddProductCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// DeleteCategory mocks base method.
+func (m *MockProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCategory", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCategory indicates an expected call of DeleteCategory.
+func (mr *MockProductServiceMockRecorder) DeleteCategory(ctx, id any) *MockProductServiceDeleteCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategory", reflect.TypeOf((*MockProductService)(nil).DeleteCategory), ctx, id)
+	return &MockProductServiceDeleteCategoryCall{Call: call}
+}
+
+// MockProductServiceDeleteCategoryCall wrap *gomock.Call
+type MockProductServiceDeleteCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductServiceDeleteCategoryCall) Return(arg0 error) *MockProductServiceDeleteCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductServiceDeleteCategoryCall) Do(f func(context.Context, uuid.UUID) error) *MockProductServiceDeleteCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductServiceDeleteCategoryCall) DoAndReturn(f func(context.Context, uuid.UUID) error) *MockProductServiceDeleteCategoryCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// UpdateCategory mocks base method.
+func (m *MockProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCategory", ctx, dto)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCategory indicates an expected call of UpdateCategory.
+func (mr *MockProductServiceMockRecorder) UpdateCategory(ctx, dto any) *MockProductServiceUpdateCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCategory", reflect.TypeOf((*MockProductService)(nil).UpdateCategory), ctx, dto)
+	return &MockProductServiceUpdateCategoryCall{Call: call}
+}
+
+// MockProductServiceUpdateCategoryCall wrap *gomock.Call
+type MockProductServiceUpdateCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductServiceUpdateCategoryCall) Return(arg0 error) *MockProductServiceUpdateCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductServiceUpdateCategoryCall) Do(f func(context.Context, *domain.UpdateCategoryProductDTO) error) *MockProductServiceUpdateCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductServiceUpdateCategoryCall) DoAndReturn(f func(context.Context, *domain.UpdateCategoryProductDTO) error) *MockProductServiceUpdateCategoryCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

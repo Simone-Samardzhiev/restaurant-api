@@ -6,6 +6,7 @@ import (
 	"errors"
 	"restaurant/internal/core/domain"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -89,5 +90,58 @@ func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.Pr
 		return domain.ErrInternal
 	}
 
+	return nil
+}
+
+func (r *ProductRepository) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE products_categories
+		SET name = COALESCE($1, name)
+		WHERE id = $2`,
+		dto.Name,
+		dto.Id,
+	)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		return domain.ErrProductCategoryNameAlreadyInUse
+	} else if err != nil {
+		zap.L().Error("error updating category", zap.Error(pqErr))
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrProductCategoryNotFound
+	}
+	return nil
+}
+
+func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.ExecContext(ctx, "DELETE FROM products_categories WHERE id = $1", id)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+		return domain.ErrCategoryHasLinkedProducts
+	} else if err != nil {
+		zap.L().Error("error deleting category", zap.Error(pqErr))
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrProductCategoryNotFound
+	}
 	return nil
 }

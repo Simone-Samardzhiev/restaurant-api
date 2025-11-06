@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -130,4 +131,38 @@ func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
 		return err
 	}
 	return c.SendStatus(fiber.StatusCreated)
+}
+
+func (h *ProductHandler) UpdateCategory(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	var req request.UpdateCategoryRequest
+	if err = c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if err = h.validator.Struct(req); err != nil {
+		return err
+	}
+
+	if err = h.productService.UpdateCategory(c.Context(), domain.NewUpdateCategoryProductDTO(id, req.NewName)); err != nil {
+		return err
+	}
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	if err = h.productService.DeleteCategory(c.Context(), id); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }

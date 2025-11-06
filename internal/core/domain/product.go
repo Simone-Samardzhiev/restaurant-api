@@ -62,3 +62,17 @@ func NewAddProductDTO(name, description string, category uuid.UUID, price decima
 		Image:       imageFile,
 	}
 }
+
+// UpdateCategoryProductDTO is a DTO for updating product category
+type UpdateCategoryProductDTO struct {
+	Id   uuid.UUID
+	Name *string
+}
+
+// NewUpdateCategoryProductDTO creates a new UpdateCategoryProductDTO instance.
+func NewUpdateCategoryProductDTO(id uuid.UUID, name *string) *UpdateCategoryProductDTO {
+	return &UpdateCategoryProductDTO{
+		Id:   id,
+		Name: name,
+	}
+}

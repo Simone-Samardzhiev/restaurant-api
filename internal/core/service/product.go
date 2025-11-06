@@ -50,3 +50,14 @@ func (s *ProductService) AddCategory(ctx context.Context, name string) error {
 	id := uuid.New()
 	return s.productRepository.AddCategory(ctx, domain.NewProductCategory(id, name))
 }
+
+func (s *ProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
+	if dto.Name == nil {
+		return domain.ErrNothingToUpdate
+	}
+	return s.productRepository.UpdateCategory(ctx, dto)
+}
+
+func (s *ProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	return s.productRepository.DeleteCategory(ctx, id)
+}

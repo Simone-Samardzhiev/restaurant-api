@@ -106,6 +106,28 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Product category not found",
 		},
 	},
+	domain.ErrNothingToUpdate: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "nothing_to_update",
+		Messages: []string{
+			"Update request won't change any data.",
+		},
+	},
+	domain.ErrInvalidUUID: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "invalid_uuid",
+		Messages: []string{
+			"Invalid uuid",
+		},
+	},
+	domain.ErrCategoryHasLinkedProducts: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "category_has_linked_products",
+		Messages: []string{
+			"Product category has linked products",
+			"Delete the products first",
+		},
+	},
 }
 
 // mapDomainError maps domain errors into ErrorResponse.

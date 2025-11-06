@@ -217,3 +217,149 @@ func TestProductService_AddCategory(t *testing.T) {
 		})
 	}
 }
+
+func TestProductService_UpdateCategory(t *testing.T) {
+	newName := "New Name"
+
+	tests := []struct {
+		name          string
+		dto           *domain.UpdateCategoryProductDTO
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name: "success",
+			dto: &domain.UpdateCategoryProductDTO{
+				Id:   uuid.UUID{},
+				Name: &newName,
+			},
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateCategoryProductDTO{}),
+					).Return(nil)
+			},
+		}, {
+			name: "error category name already exists",
+			dto: &domain.UpdateCategoryProductDTO{
+				Id:   uuid.UUID{},
+				Name: &newName,
+			},
+			expectedError: domain.ErrProductCategoryNameAlreadyInUse,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateCategoryProductDTO{}),
+					).Return(domain.ErrProductCategoryNameAlreadyInUse)
+			},
+		}, {
+			name: "error category not found",
+			dto: &domain.UpdateCategoryProductDTO{
+				Id:   uuid.UUID{},
+				Name: &newName,
+			},
+			expectedError: domain.ErrProductCategoryNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateCategoryProductDTO{}),
+					).Return(domain.ErrProductCategoryNotFound)
+			},
+		}, {
+			name:          "error nothing to update",
+			dto:           &domain.UpdateCategoryProductDTO{},
+			expectedError: domain.ErrNothingToUpdate,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				UpdateCategory(context.Background(), tt.dto)
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}
+
+func TestProductService_DeleteCategory(t *testing.T) {
+	tests := []struct {
+		name          string
+		categoryID    uuid.UUID
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name:       "success",
+			categoryID: uuid.New(),
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					DeleteCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return(nil)
+			},
+		},
+		{
+			name:          "error category has linked products",
+			categoryID:    uuid.New(),
+			expectedError: domain.ErrCategoryHasLinkedProducts,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					DeleteCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return(domain.ErrCategoryHasLinkedProducts)
+			},
+		},
+		{
+			name:          "error category not found",
+			categoryID:    uuid.New(),
+			expectedError: domain.ErrProductCategoryNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					DeleteCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return(domain.ErrProductCategoryNotFound)
+			},
+		},
+		{
+			name:          "error deleting category",
+			categoryID:    uuid.New(),
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					DeleteCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return(domain.ErrInternal)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				DeleteCategory(context.Background(), tt.categoryID)
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}
