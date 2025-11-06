@@ -22,6 +22,22 @@ func NewProductService(productRepository port.ProductRepository, imageRepository
 	}
 }
 
+func (s *ProductService) AddCategory(ctx context.Context, name string) error {
+	id := uuid.New()
+	return s.productRepository.AddCategory(ctx, domain.NewProductCategory(id, name))
+}
+
+func (s *ProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
+	if dto.Name == nil {
+		return domain.ErrNothingToUpdate
+	}
+	return s.productRepository.UpdateCategory(ctx, dto)
+}
+
+func (s *ProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	return s.productRepository.DeleteCategory(ctx, id)
+}
+
 func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductDTO) error {
 	id := uuid.New()
 	imagePath, err := s.imageRepository.Save(ctx, dto.Image, id)
@@ -46,18 +62,23 @@ func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductD
 	return nil
 }
 
-func (s *ProductService) AddCategory(ctx context.Context, name string) error {
-	id := uuid.New()
-	return s.productRepository.AddCategory(ctx, domain.NewProductCategory(id, name))
-}
+func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdateProductDTO) error {
+	hasFieldToUpdate := false
+	if dto.Name != nil {
+		hasFieldToUpdate = true
+	}
+	if dto.Description != nil {
+		hasFieldToUpdate = true
+	}
+	if dto.Category != nil {
+		hasFieldToUpdate = true
+	}
+	if dto.Price != nil {
+		hasFieldToUpdate = true
+	}
 
-func (s *ProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
-	if dto.Name == nil {
+	if !hasFieldToUpdate {
 		return domain.ErrNothingToUpdate
 	}
-	return s.productRepository.UpdateCategory(ctx, dto)
-}
-
-func (s *ProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
-	return s.productRepository.DeleteCategory(ctx, id)
+	return s.productRepository.UpdateProduct(ctx, dto)
 }

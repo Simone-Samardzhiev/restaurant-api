@@ -13,153 +13,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestProductService_AddProduct(t *testing.T) {
-	tests := []struct {
-		name          string
-		dto           *domain.AddProductDTO
-		expectedError error
-		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
-	}{
-		{
-			name: "success",
-			dto: &domain.AddProductDTO{
-				Name:        "New Product",
-				Description: "New Description",
-				Category:    uuid.UUID{},
-				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
-			},
-			expectedError: nil,
-			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
-				gomock.InOrder(
-					imageRepository.EXPECT().
-						Save(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.Any(),
-							gomock.AssignableToTypeOf(uuid.UUID{}),
-						).
-						Return("", nil),
-					productRepository.EXPECT().
-						AddProduct(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.AssignableToTypeOf(&domain.Product{}),
-						).Return(nil),
-				)
-			},
-		}, {
-			name: "error saving image",
-			dto: &domain.AddProductDTO{
-				Name:        "New Product",
-				Description: "New Description",
-				Category:    uuid.UUID{},
-				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
-			},
-			expectedError: domain.ErrInternal,
-			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
-				imageRepository.EXPECT().
-					Save(
-						gomock.AssignableToTypeOf(context.Background()),
-						gomock.Any(),
-						gomock.AssignableToTypeOf(uuid.UUID{}),
-					).Return("", domain.ErrInternal)
-			},
-		}, {
-			name: "error product already exists",
-			dto: &domain.AddProductDTO{
-				Name:        "Duplicate name",
-				Description: "New Description",
-				Category:    uuid.UUID{},
-				Price:       decimal.NewFromFloat(1.33),
-			},
-			expectedError: domain.ErrProductNameAlreadyInUse,
-			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
-				gomock.InOrder(
-					imageRepository.EXPECT().
-						Save(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.Any(),
-							gomock.AssignableToTypeOf(uuid.UUID{}),
-						).
-						Return("", nil),
-					productRepository.EXPECT().
-						AddProduct(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.AssignableToTypeOf(&domain.Product{}),
-						).Return(domain.ErrProductNameAlreadyInUse),
-				)
-			},
-		}, {
-			name: "error product already exists",
-			dto: &domain.AddProductDTO{
-				Name:        "Product Name",
-				Description: "New Description",
-				Category:    uuid.Nil,
-				Price:       decimal.NewFromFloat(1.33),
-			},
-			expectedError: domain.ErrProductCategoryNotFound,
-			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
-				gomock.InOrder(
-					imageRepository.EXPECT().
-						Save(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.Any(),
-							gomock.AssignableToTypeOf(uuid.UUID{}),
-						).
-						Return("", nil),
-					productRepository.EXPECT().
-						AddProduct(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.AssignableToTypeOf(&domain.Product{}),
-						).Return(domain.ErrProductCategoryNotFound),
-				)
-			},
-		}, {
-			name: "error adding product",
-			dto: &domain.AddProductDTO{
-				Name:        "New Product",
-				Description: "New Description",
-				Category:    uuid.UUID{},
-				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
-			},
-			expectedError: domain.ErrInternal,
-			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
-				gomock.InOrder(
-					imageRepository.EXPECT().
-						Save(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.Any(),
-							gomock.AssignableToTypeOf(uuid.UUID{}),
-						).
-						Return("", nil),
-					productRepository.EXPECT().
-						AddProduct(
-							gomock.AssignableToTypeOf(context.Background()),
-							gomock.AssignableToTypeOf(&domain.Product{}),
-						).Return(domain.ErrInternal),
-				)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			productRepository := mock.NewMockProductRepository(ctrl)
-			imageRepository := mock.NewMockImageRepository(ctrl)
-			if tt.mockSetup != nil {
-				tt.mockSetup(productRepository, imageRepository)
-			}
-
-			err := service.NewProductService(productRepository, imageRepository).
-				AddProduct(context.Background(), tt.dto)
-
-			require.ErrorIs(t, err, tt.expectedError)
-		})
-	}
-}
-
 func TestProductService_AddCategory(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -359,6 +212,258 @@ func TestProductService_DeleteCategory(t *testing.T) {
 
 			err := service.NewProductService(productRepository, imageRepository).
 				DeleteCategory(context.Background(), tt.categoryID)
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}
+
+func TestProductService_AddProduct(t *testing.T) {
+	tests := []struct {
+		name          string
+		dto           *domain.AddProductDTO
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name: "success",
+			dto: &domain.AddProductDTO{
+				Name:        "New Product",
+				Description: "New Description",
+				Category:    uuid.UUID{},
+				Price:       decimal.NewFromFloat(1.33),
+				Image:       nil,
+			},
+			expectedError: nil,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("", nil),
+					productRepository.EXPECT().
+						AddProduct(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(&domain.Product{}),
+						).Return(nil),
+				)
+			},
+		}, {
+			name: "error saving image",
+			dto: &domain.AddProductDTO{
+				Name:        "New Product",
+				Description: "New Description",
+				Category:    uuid.UUID{},
+				Price:       decimal.NewFromFloat(1.33),
+				Image:       nil,
+			},
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				imageRepository.EXPECT().
+					Save(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.Any(),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return("", domain.ErrInternal)
+			},
+		}, {
+			name: "error product already exists",
+			dto: &domain.AddProductDTO{
+				Name:        "Duplicate name",
+				Description: "New Description",
+				Category:    uuid.UUID{},
+				Price:       decimal.NewFromFloat(1.33),
+			},
+			expectedError: domain.ErrProductNameAlreadyInUse,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("", nil),
+					productRepository.EXPECT().
+						AddProduct(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(&domain.Product{}),
+						).Return(domain.ErrProductNameAlreadyInUse),
+				)
+			},
+		}, {
+			name: "error product already exists",
+			dto: &domain.AddProductDTO{
+				Name:        "Product Name",
+				Description: "New Description",
+				Category:    uuid.Nil,
+				Price:       decimal.NewFromFloat(1.33),
+			},
+			expectedError: domain.ErrProductCategoryNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("", nil),
+					productRepository.EXPECT().
+						AddProduct(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(&domain.Product{}),
+						).Return(domain.ErrProductCategoryNotFound),
+				)
+			},
+		}, {
+			name: "error adding product",
+			dto: &domain.AddProductDTO{
+				Name:        "New Product",
+				Description: "New Description",
+				Category:    uuid.UUID{},
+				Price:       decimal.NewFromFloat(1.33),
+				Image:       nil,
+			},
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("", nil),
+					productRepository.EXPECT().
+						AddProduct(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(&domain.Product{}),
+						).Return(domain.ErrInternal),
+				)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				AddProduct(context.Background(), tt.dto)
+
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}
+
+func TestProductService_UpdateProduct(t *testing.T) {
+	name := "New Product"
+	tests := []struct {
+		name          string
+		dto           *domain.UpdateProductDTO
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name: "success",
+			dto: &domain.UpdateProductDTO{
+				Id:   uuid.UUID{},
+				Name: &name,
+			},
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateProduct(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateProductDTO{}),
+					).
+					Return(nil)
+			},
+		}, {
+			name: "product not found",
+			dto: &domain.UpdateProductDTO{
+				Id:   uuid.UUID{},
+				Name: &name,
+			},
+			expectedError: domain.ErrProductNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateProduct(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateProductDTO{}),
+					).
+					Return(domain.ErrProductNotFound)
+			},
+		}, {
+			name: "product name already in use",
+			dto: &domain.UpdateProductDTO{
+				Id:   uuid.UUID{},
+				Name: &name,
+			},
+			expectedError: domain.ErrProductNameAlreadyInUse,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateProduct(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateProductDTO{}),
+					).
+					Return(domain.ErrProductNameAlreadyInUse)
+			},
+		}, {
+			name: "product category not found",
+			dto: &domain.UpdateProductDTO{
+				Id:   uuid.UUID{},
+				Name: &name,
+			},
+			expectedError: domain.ErrProductCategoryNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateProduct(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateProductDTO{}),
+					).
+					Return(domain.ErrProductCategoryNotFound)
+			},
+		}, {
+			name:          "nothing to update",
+			dto:           &domain.UpdateProductDTO{},
+			expectedError: domain.ErrNothingToUpdate,
+		}, {
+			name: "error updating product",
+			dto: &domain.UpdateProductDTO{
+				Id:   uuid.UUID{},
+				Name: &name,
+			},
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					UpdateProduct(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.UpdateProductDTO{}),
+					).
+					Return(domain.ErrInternal)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				UpdateProduct(context.Background(), tt.dto)
 			require.ErrorIs(t, err, tt.expectedError)
 		})
 	}

@@ -15,6 +15,9 @@ var (
 	// ErrProductNameAlreadyInUse indicates a product name is already in use.
 	ErrProductNameAlreadyInUse = errors.New("product name is already in use")
 
+	// ErrProductNotFound indicates a product couldn't be found.
+	ErrProductNotFound = errors.New("product not found")
+
 	// ErrProductCategoryNameAlreadyInUse indicates a product category name is already in use.
 	ErrProductCategoryNameAlreadyInUse = errors.New("product category is already in use")
 

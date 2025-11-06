@@ -106,6 +106,13 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Product category not found",
 		},
 	},
+	domain.ErrProductNotFound: {
+		StatusCode: fiber.StatusNotFound,
+		Code:       "product_not_found",
+		Messages: []string{
+			"Product not found",
+		},
+	},
 	domain.ErrNothingToUpdate: {
 		StatusCode: fiber.StatusBadRequest,
 		Code:       "nothing_to_update",

@@ -33,10 +33,11 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 			Realm: "admin",
 		}))
 		{
-			products.Post("/product", productHandler.AddProduct)
-			products.Post("/category", productHandler.AddProductCategory)
-			products.Patch("/category/:id", productHandler.UpdateCategory)
-			products.Delete("/category/:id", productHandler.DeleteCategory)
+			products.Post("/products", productHandler.AddProduct)
+			products.Patch("/products/:id", productHandler.UpdateProduct)
+			products.Post("/categories", productHandler.AddProductCategory)
+			products.Patch("/categories/:id", productHandler.UpdateCategory)
+			products.Delete("/categories/:id", productHandler.DeleteCategory)
 		}
 	}
 	app.Use(middleware.NotFoundHandler())

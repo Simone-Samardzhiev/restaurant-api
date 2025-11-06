@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"restaurant/internal/core/domain"
 
 	"github.com/google/uuid"
@@ -21,56 +22,6 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{
 		db: db,
 	}
-}
-
-func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
-	_, err := r.db.ExecContext(
-		ctx,
-		`INSERT INTO 
-    	products(id, name, description, image_path, category, price)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
-		product.Id,
-		product.Name,
-		product.Description,
-		product.ImagePath,
-		product.Category,
-		product.Price,
-	)
-
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) {
-		errorMap := map[string]map[string]error{
-			"23505": {
-				"products_name_key": domain.ErrProductNameAlreadyInUse,
-			},
-			"23503": {
-				"products_category_fkey": domain.ErrProductCategoryNotFound,
-			},
-		}
-
-		if mappedCode, ok := errorMap[pqErr.Code.Name()]; ok {
-			if mappedConstraint, ok := mappedCode[pqErr.Constraint]; ok {
-				return mappedConstraint
-			}
-		}
-
-		zap.L().Error("unexpected pq error", zap.Error(pqErr))
-
-	} else if err != nil {
-		zap.L().Error(
-			"error adding product",
-			zap.String("id", product.Id.String()),
-			zap.String("description", product.Description),
-			zap.String("imageId", product.ImagePath),
-			zap.String("price", product.Price.String()),
-			zap.String("categoryId", product.Category.String()),
-			zap.String("name", product.Name),
-			zap.Error(err),
-		)
-		return domain.ErrInternal
-	}
-
-	return nil
 }
 
 func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.ProductCategory) error {
@@ -131,6 +82,110 @@ func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) er
 		return domain.ErrCategoryHasLinkedProducts
 	} else if err != nil {
 		zap.L().Error("error deleting category", zap.Error(pqErr))
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrProductCategoryNotFound
+	}
+	return nil
+}
+
+var addProductPqErrorMap = map[string]map[string]error{
+	"23505": {
+		"products_name_key": domain.ErrProductNameAlreadyInUse,
+	},
+	"23503": {
+		"products_category_fkey": domain.ErrProductCategoryNotFound,
+	},
+}
+
+func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO 
+    	products(id, name, description, image_path, category, price)
+		VALUES ($1, $2, $3, $4, $5, $6)`,
+		product.Id,
+		product.Name,
+		product.Description,
+		product.ImagePath,
+		product.Category,
+		product.Price,
+	)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if mappedCode, ok := addProductPqErrorMap[string(pqErr.Code)]; ok {
+			if mappedConstraint, ok := mappedCode[pqErr.Constraint]; ok {
+				return mappedConstraint
+			}
+		}
+
+		zap.L().Error("unexpected pq error", zap.Error(pqErr))
+
+	} else if err != nil {
+		zap.L().Error(
+			"error adding product",
+			zap.String("id", product.Id.String()),
+			zap.String("description", product.Description),
+			zap.String("imageId", product.ImagePath),
+			zap.String("price", product.Price.String()),
+			zap.String("categoryId", product.Category.String()),
+			zap.String("name", product.Name),
+			zap.Error(err),
+		)
+		return domain.ErrInternal
+	}
+
+	return nil
+}
+
+var updateProductPqErrorMap = map[string]map[string]error{
+	"23505": {
+		"products_name_key": domain.ErrProductNameAlreadyInUse,
+	},
+	"23503": {
+		"products_category_fkey": domain.ErrProductCategoryNotFound,
+	},
+}
+
+func (r *ProductRepository) UpdateProduct(ctx context.Context, dto *domain.UpdateProductDTO) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE products
+			SET name = COALESCE($1, name),
+			description = COALESCE($2, description),
+			category = COALESCE($3, category),
+			price = COALESCE($4, price)
+			WHERE id = $5`,
+		dto.Name,
+		dto.Description,
+		dto.Category,
+		dto.Price,
+		dto.Id,
+	)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if mappedCode, ok := updateProductPqErrorMap[string(pqErr.Code)]; ok {
+			if mappedConstraint, ok := mappedCode[pqErr.Constraint]; ok {
+				return mappedConstraint
+			}
+		}
+		fmt.Println(pqErr.Constraint)
+		fmt.Println(pqErr.Code)
+
+		zap.L().Error("unexpected pq error", zap.Error(pqErr))
+		return domain.ErrInternal
+	} else if err != nil {
+		zap.L().Error("error updating product", zap.Error(pqErr))
 		return domain.ErrInternal
 	}
 

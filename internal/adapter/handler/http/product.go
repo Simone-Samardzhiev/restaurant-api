@@ -30,6 +30,56 @@ func NewProductHandler(productService port.ProductService, validator *validator.
 	}
 }
 
+func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
+	var req request.AddProductCategoryRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if err := h.validator.Struct(req); err != nil {
+		return err
+	}
+
+	if err := h.productService.AddCategory(c.Context(), req.Name); err != nil {
+		return err
+	}
+	return c.SendStatus(fiber.StatusCreated)
+}
+
+func (h *ProductHandler) UpdateCategory(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	var req request.UpdateCategoryRequest
+	if err = c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if err = h.validator.Struct(req); err != nil {
+		return err
+	}
+
+	if err = h.productService.UpdateCategory(c.Context(), domain.NewUpdateCategoryProductDTO(id, req.NewName)); err != nil {
+		return err
+	}
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	if err = h.productService.DeleteCategory(c.Context(), id); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
 // readProductData reads product data from form values and parses the json.
 func readProductData(c *fiber.Ctx, validator *validator.Validate) (*request.AddProductRequest, error) {
 	productData := c.FormValue("product")
@@ -117,52 +167,30 @@ func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusCreated)
 }
 
-func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
-	var req request.AddProductCategoryRequest
-	if err := c.BodyParser(&req); err != nil {
-		return err
-	}
-
-	if err := h.validator.Struct(req); err != nil {
-		return err
-	}
-
-	if err := h.productService.AddCategory(c.Context(), req.Name); err != nil {
-		return err
-	}
-	return c.SendStatus(fiber.StatusCreated)
-}
-
-func (h *ProductHandler) UpdateCategory(c *fiber.Ctx) error {
+func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return domain.ErrInvalidUUID
 	}
-
-	var req request.UpdateCategoryRequest
+	var req request.UpdateProductRequest
 	if err = c.BodyParser(&req); err != nil {
 		return err
 	}
-
 	if err = h.validator.Struct(req); err != nil {
 		return err
 	}
 
-	if err = h.productService.UpdateCategory(c.Context(), domain.NewUpdateCategoryProductDTO(id, req.NewName)); err != nil {
+	if err = h.productService.
+		UpdateProduct(
+			c.Context(),
+			domain.NewUpdateProductDTO(
+				id,
+				req.NewName,
+				req.NewDescription,
+				req.NewCategory,
+				req.NewPrice),
+		); err != nil {
 		return err
 	}
-	return c.SendStatus(fiber.StatusOK)
-}
-
-func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
-	if err != nil {
-		return domain.ErrInvalidUUID
-	}
-
-	if err = h.productService.DeleteCategory(c.Context(), id); err != nil {
-		return err
-	}
-
 	return c.SendStatus(fiber.StatusOK)
 }
