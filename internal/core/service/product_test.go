@@ -159,3 +159,61 @@ func TestProductService_AddProduct(t *testing.T) {
 		})
 	}
 }
+
+func TestProductService_AddCategory(t *testing.T) {
+	tests := []struct {
+		name          string
+		category      string
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name:     "success",
+			category: "New Category",
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					AddCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.ProductCategory{}),
+					).Return(nil)
+			},
+		}, {
+			name:          "error category name already exists",
+			category:      "Duplicate Category",
+			expectedError: domain.ErrProductCategoryNameAlreadyInUse,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					AddCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.ProductCategory{}),
+					).Return(domain.ErrProductCategoryNameAlreadyInUse)
+			},
+		}, {
+			name:          "error adding category",
+			category:      "New Category",
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					AddCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(&domain.ProductCategory{}),
+					).Return(domain.ErrInternal)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				AddCategory(context.Background(), tt.category)
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}

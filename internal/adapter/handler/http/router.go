@@ -25,7 +25,7 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 
 	v1 := app.Group("/api/v1")
 	{
-		products := v1.Group("/products")
+		products := v1.Group("/admin")
 		products.Use(basicauth.New(basicauth.Config{
 			Users: map[string]string{
 				authConfig.Username: authConfig.Password,
@@ -33,7 +33,8 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 			Realm: "admin",
 		}))
 		{
-			products.Post("", productHandler.AddProduct)
+			products.Post("/product", productHandler.AddProduct)
+			products.Post("/category", productHandler.AddProductCategory)
 		}
 	}
 	app.Use(middleware.NotFoundHandler())

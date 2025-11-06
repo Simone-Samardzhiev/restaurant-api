@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 // ErrorResponse represents a API error response.
@@ -91,12 +92,27 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Product name is already in use",
 		},
 	},
+	domain.ErrProductCategoryNameAlreadyInUse: {
+		StatusCode: fiber.StatusConflict,
+		Code:       "product_category_name_already_exists",
+		Messages: []string{
+			"Product category is already in use",
+		},
+	},
+	domain.ErrProductCategoryNotFound: {
+		StatusCode: fiber.StatusNotFound,
+		Code:       "product_category_not_found",
+		Messages: []string{
+			"Product category not found",
+		},
+	},
 }
 
 // mapDomainError maps domain errors into ErrorResponse.
 func mapDomainError(err error) ErrorResponse {
 	response, ok := domainErrorsMap[err]
 	if !ok {
+		zap.L().Error("unknown error", zap.Error(err))
 		response = ErrorResponse{
 			StatusCode: fiber.StatusInternalServerError,
 			Code:       "internal_error",

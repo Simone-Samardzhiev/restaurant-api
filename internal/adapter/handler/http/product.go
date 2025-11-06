@@ -115,3 +115,19 @@ func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusCreated)
 }
+
+func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
+	var req request.AddProductCategoryRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if err := h.validator.Struct(req); err != nil {
+		return err
+	}
+
+	if err := h.productService.AddCategory(c.Context(), req.Name); err != nil {
+		return err
+	}
+	return c.SendStatus(fiber.StatusCreated)
+}

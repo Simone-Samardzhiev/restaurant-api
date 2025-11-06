@@ -71,3 +71,23 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 
 	return nil
 }
+
+func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.ProductCategory) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO products_categories(id, name)
+		VALUES ($1, $2)`,
+		category.Id,
+		category.Name,
+	)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		return domain.ErrProductCategoryNameAlreadyInUse
+	} else if err != nil {
+		zap.L().Error("error adding category", zap.Error(pqErr))
+		return domain.ErrInternal
+	}
+
+	return nil
+}

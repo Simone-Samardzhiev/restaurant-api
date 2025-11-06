@@ -41,6 +41,44 @@ func (m *MockProductRepository) EXPECT() *MockProductRepositoryMockRecorder {
 	return m.recorder
 }
 
+// AddCategory mocks base method.
+func (m *MockProductRepository) AddCategory(ctx context.Context, product *domain.ProductCategory) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCategory", ctx, product)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCategory indicates an expected call of AddCategory.
+func (mr *MockProductRepositoryMockRecorder) AddCategory(ctx, product any) *MockProductRepositoryAddCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCategory", reflect.TypeOf((*MockProductRepository)(nil).AddCategory), ctx, product)
+	return &MockProductRepositoryAddCategoryCall{Call: call}
+}
+
+// MockProductRepositoryAddCategoryCall wrap *gomock.Call
+type MockProductRepositoryAddCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductRepositoryAddCategoryCall) Return(arg0 error) *MockProductRepositoryAddCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductRepositoryAddCategoryCall) Do(f func(context.Context, *domain.ProductCategory) error) *MockProductRepositoryAddCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductRepositoryAddCategoryCall) DoAndReturn(f func(context.Context, *domain.ProductCategory) error) *MockProductRepositoryAddCategoryCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // AddProduct mocks base method.
 func (m *MockProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
 	m.ctrl.T.Helper()
@@ -101,6 +139,44 @@ func NewMockProductService(ctrl *gomock.Controller) *MockProductService {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockProductService) EXPECT() *MockProductServiceMockRecorder {
 	return m.recorder
+}
+
+// AddCategory mocks base method.
+func (m *MockProductService) AddCategory(ctx context.Context, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCategory", ctx, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCategory indicates an expected call of AddCategory.
+func (mr *MockProductServiceMockRecorder) AddCategory(ctx, name any) *MockProductServiceAddCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCategory", reflect.TypeOf((*MockProductService)(nil).AddCategory), ctx, name)
+	return &MockProductServiceAddCategoryCall{Call: call}
+}
+
+// MockProductServiceAddCategoryCall wrap *gomock.Call
+type MockProductServiceAddCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductServiceAddCategoryCall) Return(arg0 error) *MockProductServiceAddCategoryCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductServiceAddCategoryCall) Do(f func(context.Context, string) error) *MockProductServiceAddCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductServiceAddCategoryCall) DoAndReturn(f func(context.Context, string) error) *MockProductServiceAddCategoryCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
 }
 
 // AddProduct mocks base method.

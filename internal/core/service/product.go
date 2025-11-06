@@ -45,3 +45,8 @@ func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductD
 	}
 	return nil
 }
+
+func (s *ProductService) AddCategory(ctx context.Context, name string) error {
+	id := uuid.New()
+	return s.productRepository.AddCategory(ctx, domain.NewProductCategory(id, name))
+}
