@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
@@ -77,4 +78,13 @@ func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdatePr
 		return domain.ErrNothingToUpdate
 	}
 	return s.productRepository.UpdateProduct(ctx, dto)
+}
+
+func (s *ProductService) AddImage(ctx context.Context, image io.Reader, productId uuid.UUID) error {
+	path, err := s.imageRepository.Save(ctx, image, productId)
+	if err != nil {
+		return err
+	}
+
+	return s.productRepository.UpdateProductImagePath(ctx, productId, &path)
 }

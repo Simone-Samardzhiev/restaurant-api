@@ -206,3 +206,30 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, dto *domain.Updat
 	}
 	return nil
 }
+
+func (r *ProductRepository) UpdateProductImagePath(ctx context.Context, id uuid.UUID, path *string) error {
+	var sqlPath sql.NullString
+	if path != nil {
+		sqlPath.Valid = true
+		sqlPath.String = *path
+	}
+
+	var result bool
+	err := r.db.QueryRowContext(
+		ctx,
+		`UPDATE products SET image_path = $1 
+        WHERE id = $2
+        RETURNING TRUE`,
+		sqlPath,
+		id,
+	).Scan(&result)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.ErrProductNotFound
+	} else if err != nil {
+		zap.L().Error("error updating product image path", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	return nil
+}

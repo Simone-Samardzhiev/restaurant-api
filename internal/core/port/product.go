@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"io"
 	"restaurant/internal/core/domain"
 
 	"github.com/google/uuid"
@@ -19,6 +20,8 @@ type ProductRepository interface {
 	AddProduct(ctx context.Context, product *domain.Product) error
 	// UpdateProduct updates an existing product.
 	UpdateProduct(ctx context.Context, dto *domain.UpdateProductDTO) error
+	// UpdateProductImagePath updates the image path of specif product by id.
+	UpdateProductImagePath(ctx context.Context, id uuid.UUID, path *string) error
 }
 
 // ProductService is an interface for interacting with product business logic.
@@ -33,4 +36,6 @@ type ProductService interface {
 	AddProduct(ctx context.Context, dto *domain.AddProductDTO) error
 	// UpdateProduct updates an existing product.
 	UpdateProduct(ctx context.Context, dto *domain.UpdateProductDTO) error
+	// AddImage adds a new image to a product.
+	AddImage(ctx context.Context, image io.Reader, productId uuid.UUID) error
 }

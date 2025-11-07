@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"io"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port/mock"
 	"restaurant/internal/core/service"
@@ -231,7 +232,6 @@ func TestProductService_AddProduct(t *testing.T) {
 				Description: "New Description",
 				Category:    uuid.UUID{},
 				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
 			},
 			expectedError: nil,
 			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
@@ -257,7 +257,6 @@ func TestProductService_AddProduct(t *testing.T) {
 				Description: "New Description",
 				Category:    uuid.UUID{},
 				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
 			},
 			expectedError: domain.ErrInternal,
 			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
@@ -325,7 +324,6 @@ func TestProductService_AddProduct(t *testing.T) {
 				Description: "New Description",
 				Category:    uuid.UUID{},
 				Price:       decimal.NewFromFloat(1.33),
-				Image:       nil,
 			},
 			expectedError: domain.ErrInternal,
 			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
@@ -464,6 +462,118 @@ func TestProductService_UpdateProduct(t *testing.T) {
 
 			err := service.NewProductService(productRepository, imageRepository).
 				UpdateProduct(context.Background(), tt.dto)
+			require.ErrorIs(t, err, tt.expectedError)
+		})
+	}
+}
+
+func TestProductService_AddImage(t *testing.T) {
+	tests := []struct {
+		name          string
+		image         io.Reader
+		productId     uuid.UUID
+		expectedError error
+		mockSetup     func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name:      "success",
+			image:     nil,
+			productId: uuid.UUID{},
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("path/to/image", nil),
+					productRepository.EXPECT().
+						UpdateProductImagePath(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+							gomock.Any(),
+						).
+						Return(nil),
+				)
+			},
+		}, {
+			name:          "error product not found",
+			image:         nil,
+			productId:     uuid.UUID{},
+			expectedError: domain.ErrProductNotFound,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("path/to/image", nil),
+					productRepository.EXPECT().
+						UpdateProductImagePath(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+							gomock.Any(),
+						).
+						Return(domain.ErrProductNotFound),
+				)
+			},
+		}, {
+			name:          "error saving image",
+			image:         nil,
+			productId:     uuid.UUID{},
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("", domain.ErrInternal),
+				)
+			},
+		}, {
+			name:          "error updating product",
+			image:         nil,
+			productId:     uuid.UUID{},
+			expectedError: domain.ErrInternal,
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				gomock.InOrder(
+					imageRepository.EXPECT().
+						Save(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.Any(),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+						).
+						Return("path/to/image", nil),
+					productRepository.EXPECT().
+						UpdateProductImagePath(
+							gomock.AssignableToTypeOf(context.Background()),
+							gomock.AssignableToTypeOf(uuid.UUID{}),
+							gomock.Any(),
+						).
+						Return(domain.ErrInternal),
+				)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			err := service.NewProductService(productRepository, imageRepository).
+				AddImage(context.Background(), tt.image, tt.productId)
+
 			require.ErrorIs(t, err, tt.expectedError)
 		})
 	}

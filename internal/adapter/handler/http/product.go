@@ -1,6 +1,8 @@
 package http
 
 import (
+	"bytes"
+	"net/http"
 	"restaurant/internal/adapter/handler/http/request"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
@@ -124,4 +126,45 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 		return err
 	}
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func validateImageFormat(c *fiber.Ctx) error {
+	contentType := c.Get("content-type")
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return domain.ErrInvalidImageFormat
+	}
+
+	imageData := c.Body()
+	if len(imageData) < 512 {
+		return domain.ErrInvalidImageFormat
+	}
+
+	buffer := imageData[:512]
+	contentType = http.DetectContentType(buffer)
+
+	if contentType != "image/jpeg" && contentType != "image/png" {
+		return domain.ErrInvalidImageFormat
+	}
+	return nil
+}
+
+func (h *ProductHandler) AddImage(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	if err = validateImageFormat(c); err != nil {
+		return err
+	}
+
+	if err = h.productService.AddImage(
+		c.Context(),
+		bytes.NewReader(c.Body()),
+		id,
+	); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusCreated)
 }
