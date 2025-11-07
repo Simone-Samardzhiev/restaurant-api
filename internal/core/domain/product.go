@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"io"
-
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -40,13 +38,13 @@ type Product struct {
 	Id          uuid.UUID
 	Name        string
 	Description string
-	ImagePath   string
+	ImagePath   *string
 	Category    uuid.UUID
 	Price       decimal.Decimal
 }
 
 // NewProduct creates a new Product instance.
-func NewProduct(id uuid.UUID, name, description, imagePath string, category uuid.UUID, price decimal.Decimal) *Product {
+func NewProduct(id uuid.UUID, name, description string, imagePath *string, category uuid.UUID, price decimal.Decimal) *Product {
 	return &Product{
 		Id:          id,
 		Name:        name,
@@ -63,17 +61,15 @@ type AddProductDTO struct {
 	Description string
 	Category    uuid.UUID
 	Price       decimal.Decimal
-	Image       io.Reader
 }
 
 // NewAddProductDTO creates a new AddProductDTO instance.
-func NewAddProductDTO(name, description string, category uuid.UUID, price decimal.Decimal, imageFile io.Reader) *AddProductDTO {
+func NewAddProductDTO(name, description string, category uuid.UUID, price decimal.Decimal) *AddProductDTO {
 	return &AddProductDTO{
 		Name:        name,
 		Description: description,
 		Category:    category,
 		Price:       price,
-		Image:       imageFile,
 	}
 }
 

@@ -1,11 +1,6 @@
 package http
 
 import (
-	"encoding/json"
-	"image/jpeg"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"restaurant/internal/adapter/handler/http/request"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
@@ -13,7 +8,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 // ProductHandler handler product-related HTTP requests.
@@ -80,87 +74,24 @@ func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-// readProductData reads product data from form values and parses the json.
-func readProductData(c *fiber.Ctx, validator *validator.Validate) (*request.AddProductRequest, error) {
-	productData := c.FormValue("product")
-	var productRequest request.AddProductRequest
-	if err := json.Unmarshal([]byte(productData), &productRequest); err != nil {
-		return nil, err
-	}
-	if err := validator.Struct(productRequest); err != nil {
-		return nil, err
-	}
-	return &productRequest, nil
-}
-
-// readImageData reads product image from form value and validates its jpeg.
-func readImageData(c *fiber.Ctx) (multipart.File, error) {
-	imageData, err := c.FormFile("image")
-	if err != nil {
-		return nil, domain.ErrInvalidImageFormat
-	}
-
-	imageFile, err := imageData.Open()
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	buffer := make([]byte, 512)
-	_, _ = io.ReadAtLeast(imageFile, buffer, 512)
-
-	contentType := http.DetectContentType(buffer)
-	if contentType != "image/jpeg" {
-		return nil, domain.ErrInvalidImageFormat
-	}
-
-	_, err = imageFile.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	_, err = jpeg.Decode(imageFile)
-	if err != nil {
-		return nil, domain.ErrInvalidImageFormat
-	}
-
-	_, err = imageFile.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	return imageFile, nil
-}
-
 func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
-	productRequest, err := readProductData(c, h.validator)
-	if err != nil {
+	var req request.AddProductRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+	if err := h.validator.Struct(req); err != nil {
 		return err
 	}
 
-	file, err := readImageData(c)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			zap.L().Error(
-				"error closing image",
-				zap.Error(closeErr),
-			)
-		}
-	}()
-
-	err = h.productService.AddProduct(
+	if err := h.productService.AddProduct(
 		c.Context(),
 		domain.NewAddProductDTO(
-			productRequest.Name,
-			productRequest.Description,
-			productRequest.Category,
-			productRequest.Price,
-			file,
+			req.Name,
+			req.Description,
+			req.Category,
+			req.Price,
 		),
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 

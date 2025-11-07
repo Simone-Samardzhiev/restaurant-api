@@ -40,19 +40,15 @@ func (s *ProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error
 
 func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductDTO) error {
 	id := uuid.New()
-	imagePath, err := s.imageRepository.Save(ctx, dto.Image, id)
-	if err != nil {
-		return err
-	}
 
-	if err = s.productRepository.
+	if err := s.productRepository.
 		AddProduct(
 			ctx,
 			domain.NewProduct(
 				id,
 				dto.Name,
 				dto.Description,
-				imagePath,
+				nil,
 				dto.Category,
 				dto.Price,
 			),

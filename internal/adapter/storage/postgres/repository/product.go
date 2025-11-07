@@ -107,6 +107,12 @@ var addProductPqErrorMap = map[string]map[string]error{
 }
 
 func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
+	var imagePath sql.NullString
+	if product.ImagePath != nil {
+		imagePath.Valid = true
+		imagePath.String = *product.ImagePath
+	}
+
 	_, err := r.db.ExecContext(
 		ctx,
 		`INSERT INTO 
@@ -115,7 +121,7 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 		product.Id,
 		product.Name,
 		product.Description,
-		product.ImagePath,
+		imagePath.String,
 		product.Category,
 		product.Price,
 	)
@@ -134,11 +140,11 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 		zap.L().Error(
 			"error adding product",
 			zap.String("id", product.Id.String()),
+			zap.String("name", product.Name),
 			zap.String("description", product.Description),
-			zap.String("imageId", product.ImagePath),
+			zap.Any("imagePath", imagePath.String),
 			zap.String("price", product.Price.String()),
 			zap.String("categoryId", product.Category.String()),
-			zap.String("name", product.Name),
 			zap.Error(err),
 		)
 		return domain.ErrInternal
