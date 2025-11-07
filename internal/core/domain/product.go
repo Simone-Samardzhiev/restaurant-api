@@ -92,3 +92,17 @@ func NewUpdateProductDTO(id uuid.UUID, name, description *string, category *uuid
 		Price:       price,
 	}
 }
+
+// DeleteProductDTO is a DTO for deleting a product.
+type DeleteProductDTO struct {
+	ProductId  *uuid.UUID
+	CategoryId *uuid.UUID
+}
+
+// NewDeleteProductDTO creates a new DeleteProductDTO instance.
+func NewDeleteProductDTO(productId, categoryId *uuid.UUID) *DeleteProductDTO {
+	return &DeleteProductDTO{
+		ProductId:  productId,
+		CategoryId: categoryId,
+	}
+}

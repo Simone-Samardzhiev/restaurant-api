@@ -24,7 +24,7 @@ func NewImageRepository(config *config.StorageConfig) *ImageRepository {
 	}
 }
 
-func (r *ImageRepository) Save(_ context.Context, image io.Reader, id uuid.UUID) (string, error) {
+func (r *ImageRepository) Save(_ context.Context, image *domain.Image, id uuid.UUID) (string, error) {
 	saveDir := filepath.Join(r.basePath, "images")
 	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
 		zap.L().Error(
@@ -35,7 +35,7 @@ func (r *ImageRepository) Save(_ context.Context, image io.Reader, id uuid.UUID)
 		return "", domain.ErrInternal
 	}
 
-	savePath := filepath.Join(saveDir, id.String()+".jpeg")
+	savePath := filepath.Join(saveDir, id.String()+"."+string(image.Type))
 	file, err := os.Create(savePath)
 	if err != nil {
 		zap.L().Error(
@@ -52,10 +52,19 @@ func (r *ImageRepository) Save(_ context.Context, image io.Reader, id uuid.UUID)
 		}
 	}()
 
-	if _, err = io.Copy(file, image); err != nil {
+	if _, err = io.Copy(file, image.Data); err != nil {
 		zap.L().Error("error copying image", zap.Error(err))
 		return "", domain.ErrInternal
 	}
 
 	return savePath, nil
+}
+
+func (r *ImageRepository) Delete(_ context.Context, path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		zap.L().Error("error deleting image", zap.Error(err))
+		return domain.ErrInternal
+	}
+	return nil
 }

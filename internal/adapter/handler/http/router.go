@@ -39,6 +39,7 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 
 			products.Post("/products", productHandler.AddProduct)
 			products.Patch("/products/:id", productHandler.UpdateProduct)
+			products.Delete("/products", productHandler.DeleteProduct)
 			products.Put("/products/:id/image", productHandler.AddImage)
 		}
 	}

@@ -135,6 +135,14 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Delete the products first",
 		},
 	},
+	domain.ErrInvalidImageFormat: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "invalid_image_format",
+		Messages: []string{
+			"Invalid image format",
+			"Only jpeg and png are supported",
+		},
+	},
 }
 
 // mapDomainError maps domain errors into ErrorResponse.

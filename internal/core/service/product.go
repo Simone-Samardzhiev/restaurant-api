@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"io"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
@@ -80,11 +79,46 @@ func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdatePr
 	return s.productRepository.UpdateProduct(ctx, dto)
 }
 
-func (s *ProductService) AddImage(ctx context.Context, image io.Reader, productId uuid.UUID) error {
+func (s *ProductService) AddImage(ctx context.Context, image *domain.Image, productId uuid.UUID) error {
 	path, err := s.imageRepository.Save(ctx, image, productId)
 	if err != nil {
 		return err
 	}
 
 	return s.productRepository.UpdateProductImagePath(ctx, productId, &path)
+}
+
+func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeleteProductDTO) error {
+	switch {
+	case dto.ProductId != nil:
+		product, err := s.productRepository.DeleteProductById(ctx, *dto.ProductId)
+		if err != nil {
+			return err
+		}
+
+		if product.ImagePath != nil {
+			if err = s.imageRepository.Delete(ctx, *product.ImagePath); err != nil {
+				return err
+			}
+		}
+		return nil
+
+	case dto.CategoryId != nil:
+		products, err := s.productRepository.DeleteProductsByCategory(ctx, *dto.CategoryId)
+		if err != nil {
+			return err
+		}
+
+		for _, product := range products {
+			if product.ImagePath != nil {
+				if err = s.imageRepository.Delete(ctx, *product.ImagePath); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+
+	default:
+		return domain.ErrNothingToUpdate
+	}
 }

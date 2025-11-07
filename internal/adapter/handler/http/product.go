@@ -6,6 +6,7 @@ import (
 	"restaurant/internal/adapter/handler/http/request"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -128,24 +129,24 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func validateImageFormat(c *fiber.Ctx) error {
+func getImageFormat(c *fiber.Ctx) (domain.ImageType, error) {
 	contentType := c.Get("content-type")
 	if contentType != "image/jpeg" && contentType != "image/png" {
-		return domain.ErrInvalidImageFormat
+		return "", domain.ErrInvalidImageFormat
 	}
 
 	imageData := c.Body()
 	if len(imageData) < 512 {
-		return domain.ErrInvalidImageFormat
+		return "", domain.ErrInvalidImageFormat
 	}
 
 	buffer := imageData[:512]
 	contentType = http.DetectContentType(buffer)
 
 	if contentType != "image/jpeg" && contentType != "image/png" {
-		return domain.ErrInvalidImageFormat
+		return "", domain.ErrInvalidImageFormat
 	}
-	return nil
+	return domain.ImageType(strings.Split(contentType, "/")[1]), nil
 }
 
 func (h *ProductHandler) AddImage(c *fiber.Ctx) error {
@@ -154,17 +155,62 @@ func (h *ProductHandler) AddImage(c *fiber.Ctx) error {
 		return domain.ErrInvalidUUID
 	}
 
-	if err = validateImageFormat(c); err != nil {
+	imageType, err := getImageFormat(c)
+	if err != nil {
 		return err
 	}
 
-	if err = h.productService.AddImage(
-		c.Context(),
-		bytes.NewReader(c.Body()),
-		id,
-	); err != nil {
+	if err = h.productService.
+		AddImage(
+			c.Context(),
+			domain.NewImage(
+				bytes.NewReader(c.Body()),
+				imageType,
+			), id,
+		); err != nil {
 		return err
 	}
 
 	return c.SendStatus(fiber.StatusCreated)
+}
+
+func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
+	queryArgs := c.Context().QueryArgs()
+
+	var (
+		productID  *uuid.UUID
+		categoryID *uuid.UUID
+	)
+
+	if queryArgs.Has("product_id") {
+		raw := strings.TrimSpace(string(queryArgs.Peek("product_id")))
+		if raw == "" {
+			return domain.ErrInvalidUUID
+		}
+
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return domain.ErrInvalidUUID
+		}
+		productID = &id
+	}
+
+	if queryArgs.Has("category_id") {
+		raw := strings.TrimSpace(string(queryArgs.Peek("category_id")))
+		if raw == "" {
+			return domain.ErrInvalidUUID
+		}
+
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return domain.ErrInvalidUUID
+		}
+		categoryID = &id
+	}
+
+	if err := h.productService.DeleteProduct(c.Context(), domain.NewDeleteProductDTO(productID, categoryID)); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }

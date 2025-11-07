@@ -233,3 +233,76 @@ func (r *ProductRepository) UpdateProductImagePath(ctx context.Context, id uuid.
 
 	return nil
 }
+
+func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	var sqlPath sql.NullString
+
+	row := r.db.
+		QueryRowContext(
+			ctx,
+			`DELETE FROM products 
+       		WHERE id = $1 
+       		RETURNING id, name, description, image_path, category, price`,
+			id,
+		)
+
+	var product domain.Product
+	err := row.Scan(&product.Id, &product.Name, &product.Description, &sqlPath, &product.Category, &product.Price)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrProductNotFound
+	}
+	if err != nil {
+		zap.L().Error("error deleting product", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	if sqlPath.Valid {
+		product.ImagePath = &sqlPath.String
+	} else {
+		product.ImagePath = nil
+	}
+
+	return &product, nil
+}
+
+func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
+	var products []domain.Product
+
+	rows, err := r.db.QueryContext(
+		ctx,
+		`DELETE FROM products 
+       	WHERE category = $1 
+       	RETURNING id, name, description, image_path, category, price`,
+		categoryId,
+	)
+
+	if err != nil {
+		zap.L().Error("error deleting products", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	for rows.Next() {
+		var sqlPath sql.NullString
+		var product domain.Product
+
+		err = rows.Scan(&product.Id, &product.Name, &product.Description, &sqlPath, &product.Category, &product.Price)
+		if err != nil {
+			zap.L().Error("error scanning rows", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+
+		if sqlPath.Valid {
+			product.ImagePath = &sqlPath.String
+		} else {
+			product.ImagePath = nil
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}

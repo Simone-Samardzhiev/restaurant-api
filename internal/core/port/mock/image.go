@@ -11,8 +11,8 @@ package mock
 
 import (
 	context "context"
-	io "io"
 	reflect "reflect"
+	domain "restaurant/internal/core/domain"
 
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -42,8 +42,46 @@ func (m *MockImageRepository) EXPECT() *MockImageRepositoryMockRecorder {
 	return m.recorder
 }
 
+// Delete mocks base method.
+func (m *MockImageRepository) Delete(ctx context.Context, path string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockImageRepositoryMockRecorder) Delete(ctx, path any) *MockImageRepositoryDeleteCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockImageRepository)(nil).Delete), ctx, path)
+	return &MockImageRepositoryDeleteCall{Call: call}
+}
+
+// MockImageRepositoryDeleteCall wrap *gomock.Call
+type MockImageRepositoryDeleteCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockImageRepositoryDeleteCall) Return(arg0 error) *MockImageRepositoryDeleteCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockImageRepositoryDeleteCall) Do(f func(context.Context, string) error) *MockImageRepositoryDeleteCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockImageRepositoryDeleteCall) DoAndReturn(f func(context.Context, string) error) *MockImageRepositoryDeleteCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // Save mocks base method.
-func (m *MockImageRepository) Save(ctx context.Context, image io.Reader, id uuid.UUID) (string, error) {
+func (m *MockImageRepository) Save(ctx context.Context, image *domain.Image, id uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", ctx, image, id)
 	ret0, _ := ret[0].(string)
@@ -70,13 +108,13 @@ func (c *MockImageRepositorySaveCall) Return(arg0 string, arg1 error) *MockImage
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockImageRepositorySaveCall) Do(f func(context.Context, io.Reader, uuid.UUID) (string, error)) *MockImageRepositorySaveCall {
+func (c *MockImageRepositorySaveCall) Do(f func(context.Context, *domain.Image, uuid.UUID) (string, error)) *MockImageRepositorySaveCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockImageRepositorySaveCall) DoAndReturn(f func(context.Context, io.Reader, uuid.UUID) (string, error)) *MockImageRepositorySaveCall {
+func (c *MockImageRepositorySaveCall) DoAndReturn(f func(context.Context, *domain.Image, uuid.UUID) (string, error)) *MockImageRepositorySaveCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
