@@ -161,3 +161,64 @@ func TestProductService_DeleteProduct(t *testing.T) {
 		})
 	}
 }
+
+func TestProductService_GetProductById(t *testing.T) {
+	tests := []struct {
+		name            string
+		dto             *domain.GetProductsDTO
+		expectedProduct []domain.Product
+		expectedError   error
+		mockSetup       func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository)
+	}{
+		{
+			name: "success",
+			dto: &domain.GetProductsDTO{
+				CategoryId: &uuid.UUID{},
+			},
+			expectedProduct: []domain.Product{
+				{
+					Id:   uuid.UUID{},
+					Name: "fetched product",
+				},
+			},
+			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
+				productRepository.EXPECT().
+					GetProductsByCategory(
+						gomock.AssignableToTypeOf(context.Background()),
+						gomock.AssignableToTypeOf(uuid.UUID{}),
+					).Return([]domain.Product{
+					{
+						Id:   uuid.UUID{},
+						Name: "fetched product",
+					},
+				}, nil,
+				)
+			},
+		}, {
+			name:          "error nothing to update",
+			dto:           &domain.GetProductsDTO{},
+			expectedError: domain.ErrNothingToUpdate,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			productRepository := mock.NewMockProductRepository(ctrl)
+			imageRepository := mock.NewMockImageRepository(ctrl)
+			if tt.mockSetup != nil {
+				tt.mockSetup(productRepository, imageRepository)
+			}
+
+			res, err := service.NewProductService(productRepository, imageRepository).
+				GetProducts(context.Background(), tt.dto)
+
+			if tt.expectedError != nil {
+				require.ErrorIs(t, err, tt.expectedError)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedProduct, res)
+		})
+	}
+}

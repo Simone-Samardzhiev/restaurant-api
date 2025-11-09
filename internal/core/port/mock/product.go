@@ -273,6 +273,45 @@ func (c *MockProductRepositoryGetProductCategoriesCall) DoAndReturn(f func(conte
 	return c
 }
 
+// GetProductsByCategory mocks base method.
+func (m *MockProductRepository) GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductsByCategory", ctx, categoryId)
+	ret0, _ := ret[0].([]domain.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductsByCategory indicates an expected call of GetProductsByCategory.
+func (mr *MockProductRepositoryMockRecorder) GetProductsByCategory(ctx, categoryId any) *MockProductRepositoryGetProductsByCategoryCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductsByCategory", reflect.TypeOf((*MockProductRepository)(nil).GetProductsByCategory), ctx, categoryId)
+	return &MockProductRepositoryGetProductsByCategoryCall{Call: call}
+}
+
+// MockProductRepositoryGetProductsByCategoryCall wrap *gomock.Call
+type MockProductRepositoryGetProductsByCategoryCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductRepositoryGetProductsByCategoryCall) Return(arg0 []domain.Product, arg1 error) *MockProductRepositoryGetProductsByCategoryCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductRepositoryGetProductsByCategoryCall) Do(f func(context.Context, uuid.UUID) ([]domain.Product, error)) *MockProductRepositoryGetProductsByCategoryCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductRepositoryGetProductsByCategoryCall) DoAndReturn(f func(context.Context, uuid.UUID) ([]domain.Product, error)) *MockProductRepositoryGetProductsByCategoryCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // UpdateCategory mocks base method.
 func (m *MockProductRepository) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
 	m.ctrl.T.Helper()
@@ -636,6 +675,45 @@ func (c *MockProductServiceGetProductCategoriesCall) Do(f func(context.Context) 
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockProductServiceGetProductCategoriesCall) DoAndReturn(f func(context.Context) ([]domain.ProductCategory, error)) *MockProductServiceGetProductCategoriesCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// GetProducts mocks base method.
+func (m *MockProductService) GetProducts(ctx context.Context, dto *domain.GetProductsDTO) ([]domain.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProducts", ctx, dto)
+	ret0, _ := ret[0].([]domain.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProducts indicates an expected call of GetProducts.
+func (mr *MockProductServiceMockRecorder) GetProducts(ctx, dto any) *MockProductServiceGetProductsCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProducts", reflect.TypeOf((*MockProductService)(nil).GetProducts), ctx, dto)
+	return &MockProductServiceGetProductsCall{Call: call}
+}
+
+// MockProductServiceGetProductsCall wrap *gomock.Call
+type MockProductServiceGetProductsCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductServiceGetProductsCall) Return(arg0 []domain.Product, arg1 error) *MockProductServiceGetProductsCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductServiceGetProductsCall) Do(f func(context.Context, *domain.GetProductsDTO) ([]domain.Product, error)) *MockProductServiceGetProductsCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductServiceGetProductsCall) DoAndReturn(f func(context.Context, *domain.GetProductsDTO) ([]domain.Product, error)) *MockProductServiceGetProductsCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

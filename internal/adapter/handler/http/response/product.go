@@ -1,6 +1,11 @@
 package response
 
-import "github.com/google/uuid"
+import (
+	"restaurant/internal/core/domain"
+
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+)
 
 // ProductCategoryResponse represents a product category response.
 type ProductCategoryResponse struct {
@@ -13,5 +18,27 @@ func NewProductCategoryResponse(id uuid.UUID, name string) ProductCategoryRespon
 	return ProductCategoryResponse{
 		Id:   id,
 		Name: name,
+	}
+}
+
+// ProductResponse represents a product category response.
+type ProductResponse struct {
+	Id          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	ImagePath   *string         `json:"imagePath"`
+	Category    uuid.UUID       `json:"category"`
+	Price       decimal.Decimal `json:"price"`
+}
+
+// NewProductResponse creates a new ProductResponse instance.
+func NewProductResponse(product domain.Product) ProductResponse {
+	return ProductResponse{
+		Id:          product.Id,
+		Name:        product.Name,
+		Description: product.Description,
+		Category:    product.Category,
+		Price:       product.Price,
+		ImagePath:   product.ImagePath,
 	}
 }

@@ -332,3 +332,41 @@ func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.
 
 	return products, nil
 }
+
+func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
+	var products []domain.Product
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, name, description, image_path, category, price 
+		FROM products
+		WHERE category = $1`,
+		categoryId,
+	)
+	if err != nil {
+		zap.L().Error("error getting products", zap.Error(err))
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	for rows.Next() {
+		var product domain.Product
+		err = rows.Scan(
+			&product.Id,
+			&product.Name,
+			&product.Description,
+			&product.ImagePath,
+			&product.Category,
+			&product.Price,
+		)
+		if err != nil {
+			zap.L().Error("error scanning rows", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}

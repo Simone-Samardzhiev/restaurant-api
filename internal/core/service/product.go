@@ -126,3 +126,10 @@ func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeletePr
 func (s *ProductService) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
 	return s.productRepository.GetProductCategories(ctx)
 }
+
+func (s *ProductService) GetProducts(ctx context.Context, dto *domain.GetProductsDTO) ([]domain.Product, error) {
+	if dto.CategoryId == nil {
+		return nil, domain.ErrNothingToUpdate
+	}
+	return s.productRepository.GetProductsByCategory(ctx, *dto.CategoryId)
+}

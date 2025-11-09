@@ -45,7 +45,8 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 
 		public := v1.Group("/public")
 		{
-			public.Group("/product-categories", productHandler.GetProductCategories)
+			public.Get("/product-categories", productHandler.GetProductCategories)
+			public.Get("/products", productHandler.GetProducts)
 		}
 
 	}

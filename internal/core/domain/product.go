@@ -106,3 +106,15 @@ func NewDeleteProductDTO(productId, categoryId *uuid.UUID) *DeleteProductDTO {
 		CategoryId: categoryId,
 	}
 }
+
+// GetProductsDTO is a DTO for getting products.
+type GetProductsDTO struct {
+	CategoryId *uuid.UUID
+}
+
+// NewGetProductsDTO creates a new GetProductsDTO instance.
+func NewGetProductsDTO(categoryId *uuid.UUID) *GetProductsDTO {
+	return &GetProductsDTO{
+		CategoryId: categoryId,
+	}
+}

@@ -27,6 +27,8 @@ type ProductRepository interface {
 	DeleteProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error)
 	// GetProductCategories fetches all product categories.
 	GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error)
+	// GetProductsByCategory fetches products by category id.
+	GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error)
 }
 
 // ProductService is an interface for interacting with product business logic.
@@ -47,4 +49,6 @@ type ProductService interface {
 	DeleteProduct(ctx context.Context, dto *domain.DeleteProductDTO) error
 	// GetProductCategories fetches all product categories.
 	GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error)
+	// GetProducts fetches products.
+	GetProducts(ctx context.Context, dto *domain.GetProductsDTO) ([]domain.Product, error)
 }

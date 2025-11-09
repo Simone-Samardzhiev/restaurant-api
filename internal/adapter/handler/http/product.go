@@ -228,3 +228,32 @@ func (h *ProductHandler) GetProductCategories(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusOK).JSON(res)
 }
+
+func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
+	var (
+		categoryID *uuid.UUID
+	)
+
+	if c.Context().QueryArgs().Has("category_id") {
+		raw := strings.TrimSpace(string(c.Context().QueryArgs().Peek("category_id")))
+		if raw == "" {
+			return domain.ErrInvalidUUID
+		}
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return domain.ErrInvalidUUID
+		}
+		categoryID = &id
+	}
+
+	products, err := h.productService.GetProducts(c.Context(), domain.NewGetProductsDTO(categoryID))
+	if err != nil {
+		return err
+	}
+
+	res := make([]response.ProductResponse, 0, len(products))
+	for _, product := range products {
+		res = append(res, response.NewProductResponse(product))
+	}
+	return c.Status(http.StatusOK).JSON(res)
+}
