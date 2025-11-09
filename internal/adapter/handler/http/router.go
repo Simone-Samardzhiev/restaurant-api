@@ -25,23 +25,29 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 
 	v1 := app.Group("/api/v1")
 	{
-		products := v1.Group("/admin")
-		products.Use(basicauth.New(basicauth.Config{
+		admin := v1.Group("/admin")
+		admin.Use(basicauth.New(basicauth.Config{
 			Users: map[string]string{
 				authConfig.Username: authConfig.Password,
 			},
 			Realm: "admin",
 		}))
 		{
-			products.Post("/categories", productHandler.AddProductCategory)
-			products.Patch("/categories/:id", productHandler.UpdateCategory)
-			products.Delete("/categories/:id", productHandler.DeleteCategory)
+			admin.Post("/categories", productHandler.AddProductCategory)
+			admin.Patch("/categories/:id", productHandler.UpdateCategory)
+			admin.Delete("/categories/:id", productHandler.DeleteCategory)
 
-			products.Post("/products", productHandler.AddProduct)
-			products.Patch("/products/:id", productHandler.UpdateProduct)
-			products.Delete("/products", productHandler.DeleteProduct)
-			products.Put("/products/:id/image", productHandler.AddImage)
+			admin.Post("/admin", productHandler.AddProduct)
+			admin.Patch("/admin/:id", productHandler.UpdateProduct)
+			admin.Delete("/admin", productHandler.DeleteProduct)
+			admin.Put("/admin/:id/image", productHandler.AddImage)
 		}
+
+		public := v1.Group("/public")
+		{
+			public.Group("/product-categories", productHandler.GetProductCategories)
+		}
+
 	}
 	app.Use(middleware.NotFoundHandler())
 

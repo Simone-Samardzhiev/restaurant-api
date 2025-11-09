@@ -122,3 +122,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeletePr
 		return domain.ErrNothingToUpdate
 	}
 }
+
+func (s *ProductService) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
+	return s.productRepository.GetProductCategories(ctx)
+}

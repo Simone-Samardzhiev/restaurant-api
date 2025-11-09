@@ -306,3 +306,29 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 	}
 	return products, nil
 }
+
+func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
+	var products []domain.ProductCategory
+	rows, err := r.db.QueryContext(ctx, `SELECT id, name FROM product_categories`)
+	if err != nil {
+		zap.L().Error("error getting product categories", zap.Error(err))
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	for rows.Next() {
+		var product domain.ProductCategory
+		err = rows.Scan(&product.Id, &product.Name)
+		if err != nil {
+			zap.L().Error("error scanning rows", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+		products = append(products, product)
+	}
+
+	return products, nil
+}

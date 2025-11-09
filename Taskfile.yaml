@@ -28,7 +28,7 @@ tasks:
   migrate-force:
     desc: "Forces the database version to a specific V, ignoring dirty state."
     vars:
-      TARGET_VERSION: '{{.version | default "-1"}}'
+      TARGET_VERSION: '{{.v | default "-1"}}'
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" force {{.TARGET_VERSION}}
 
   swag-init:

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"restaurant/internal/adapter/handler/http/request"
+	"restaurant/internal/adapter/handler/http/response"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 	"strings"
@@ -213,4 +214,17 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *ProductHandler) GetProductCategories(c *fiber.Ctx) error {
+	categories, err := h.productService.GetProductCategories(c.Context())
+	if err != nil {
+		return err
+	}
+
+	res := make([]response.ProductCategoryResponse, 0, len(categories))
+	for _, category := range categories {
+		res = append(res, response.NewProductCategoryResponse(category.Id, category.Name))
+	}
+	return c.Status(http.StatusOK).JSON(res)
 }

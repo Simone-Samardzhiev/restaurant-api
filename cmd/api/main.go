@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"restaurant/internal/adapter/config"
 	"restaurant/internal/adapter/handler/http"
 	"restaurant/internal/adapter/handler/http/validation"
