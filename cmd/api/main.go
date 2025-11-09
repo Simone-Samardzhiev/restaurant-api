@@ -21,8 +21,4 @@ func main() {
 		validation.Module,
 		http.Module,
 	).Run()
-
-	for i := 10; i < 20; i++ {
-		fmt.Print(i)
-	}
 }
