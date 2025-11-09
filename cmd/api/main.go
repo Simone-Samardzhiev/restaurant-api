@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"restaurant/internal/adapter/config"
 	"restaurant/internal/adapter/handler/http"
 	"restaurant/internal/adapter/handler/http/validation"
@@ -20,4 +21,8 @@ func main() {
 		validation.Module,
 		http.Module,
 	).Run()
+
+	for i := 10; i < 20; i++ {
+		fmt.Print(i)
+	}
 }
