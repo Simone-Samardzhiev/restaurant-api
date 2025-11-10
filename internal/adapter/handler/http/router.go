@@ -33,6 +33,9 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 			Realm: "admin",
 		}))
 		{
+			admin.Get("/login", func(c *fiber.Ctx) error {
+				return c.SendStatus(fiber.StatusOK)
+			})
 			admin.Post("/categories", productHandler.AddProductCategory)
 			admin.Patch("/categories/:id", productHandler.UpdateCategory)
 			admin.Delete("/categories/:id", productHandler.DeleteCategory)
