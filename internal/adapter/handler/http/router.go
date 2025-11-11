@@ -17,7 +17,7 @@ type Router struct {
 }
 
 // NewRouter creates a new Router instance.
-func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, productHandler *ProductHandler) *Router {
+func NewRouter(container *config.Container, productHandler *ProductHandler) *Router {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: response.ErrorHandler,
 	})
@@ -28,7 +28,7 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 		admin := v1.Group("/admin")
 		admin.Use(basicauth.New(basicauth.Config{
 			Users: map[string]string{
-				authConfig.Username: authConfig.Password,
+				container.AuthConfig.Username: container.AuthConfig.Password,
 			},
 			Realm: "admin",
 		}))
@@ -40,16 +40,17 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 			admin.Patch("/categories/:id", productHandler.UpdateCategory)
 			admin.Delete("/categories/:id", productHandler.DeleteCategory)
 
-			admin.Post("/admin", productHandler.AddProduct)
-			admin.Patch("/admin/:id", productHandler.UpdateProduct)
-			admin.Delete("/admin", productHandler.DeleteProduct)
-			admin.Put("/admin/:id/image", productHandler.AddImage)
+			admin.Post("/products", productHandler.AddProduct)
+			admin.Patch("/products/:id", productHandler.UpdateProduct)
+			admin.Delete("/products", productHandler.DeleteProduct)
+			admin.Put("/products/:id/image", productHandler.AddImage)
 		}
 
 		public := v1.Group("/public")
 		{
 			public.Get("/product-categories", productHandler.GetProductCategories)
 			public.Get("/products", productHandler.GetProducts)
+			public.Static("/images", container.DbConfig.LocalFilesPath)
 		}
 
 	}
@@ -57,7 +58,7 @@ func NewRouter(appConfig *config.AppConfig, authConfig *config.AuthConfig, produ
 
 	return &Router{
 		app:    app,
-		config: appConfig,
+		config: &container.AppConfig,
 	}
 }
 
