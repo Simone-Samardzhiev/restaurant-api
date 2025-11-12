@@ -421,9 +421,9 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 		}
 
 		if deleteImageUrl.Valid {
-			product.ImageUrl = &deleteImageUrl.String
+			product.DeleteImageUrl = &deleteImageUrl.String
 		} else {
-			product.ImageUrl = nil
+			product.DeleteImageUrl = nil
 		}
 		products = append(products, product)
 	}
