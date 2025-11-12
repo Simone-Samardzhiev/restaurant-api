@@ -26,7 +26,7 @@ type ProductResponse struct {
 	Id          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
-	ImagePath   *string         `json:"imagePath"`
+	ImageUrl    *string         `json:"imageUrl"`
 	Category    uuid.UUID       `json:"category"`
 	Price       decimal.Decimal `json:"price"`
 }
@@ -39,6 +39,6 @@ func NewProductResponse(product *domain.Product) ProductResponse {
 		Description: product.Description,
 		Category:    product.Category,
 		Price:       product.Price,
-		ImagePath:   product.ImageUrl,
+		ImageUrl:    product.ImageUrl,
 	}
 }
