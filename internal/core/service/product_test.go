@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -104,8 +103,6 @@ func TestProductService_UpdateProduct(t *testing.T) {
 }
 
 func TestProductService_DeleteProduct(t *testing.T) {
-	pathToImage := "path/to/image"
-
 	tests := []struct {
 		name          string
 		dto           *domain.DeleteProductDTO
@@ -115,7 +112,8 @@ func TestProductService_DeleteProduct(t *testing.T) {
 		{
 			name: "success",
 			dto: &domain.DeleteProductDTO{
-				ProductId: &uuid.UUID{},
+				ProductId:  &uuid.UUID{},
+				CategoryId: &uuid.UUID{},
 			},
 			mockSetup: func(productRepository *mock.MockProductRepository, imageRepository *mock.MockImageRepository) {
 				gomock.InOrder(
@@ -123,26 +121,25 @@ func TestProductService_DeleteProduct(t *testing.T) {
 						DeleteProductById(
 							gomock.AssignableToTypeOf(context.Background()),
 							gomock.AssignableToTypeOf(uuid.UUID{}),
-						).Return(&domain.Product{
-						Id:          uuid.UUID{},
-						Name:        "",
-						Description: "",
-						ImagePath:   &pathToImage,
-						Category:    uuid.UUID{},
-						Price:       decimal.Decimal{},
-					}, nil),
+						).Return(
+						&domain.Product{
+							DeleteImageUrl: new(string),
+						},
+						nil,
+					),
 
 					imageRepository.EXPECT().
-						Delete(
+						DeleteImage(
 							gomock.AssignableToTypeOf(context.Background()),
 							gomock.AssignableToTypeOf(""),
-						).Return(nil),
+						).
+						Return(nil),
 				)
 			},
 		}, {
-			name:          "error nothing to update",
+			name:          "error nothing to delete",
 			dto:           &domain.DeleteProductDTO{},
-			expectedError: domain.ErrNothingToUpdate,
+			expectedError: domain.ErrNothingToDelete,
 		},
 	}
 
@@ -195,9 +192,9 @@ func TestProductService_GetProductById(t *testing.T) {
 				)
 			},
 		}, {
-			name:          "error nothing to update",
+			name:          "error nothing to fetch",
 			dto:           &domain.GetProductsDTO{},
-			expectedError: domain.ErrNothingToUpdate,
+			expectedError: domain.ErrNothingToFetch,
 		},
 	}
 

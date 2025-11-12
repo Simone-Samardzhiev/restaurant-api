@@ -42,15 +42,14 @@ func NewRouter(container *config.Container, productHandler *ProductHandler) *Rou
 
 			admin.Post("/products", productHandler.AddProduct)
 			admin.Patch("/products/:id", productHandler.UpdateProduct)
+			admin.Put("/products/:id/image", productHandler.ReplaceProductImage)
 			admin.Delete("/products", productHandler.DeleteProduct)
-			admin.Put("/products/:id/image", productHandler.AddImage)
 		}
 
 		public := v1.Group("/public")
 		{
 			public.Get("/product-categories", productHandler.GetProductCategories)
 			public.Get("/products", productHandler.GetProducts)
-			public.Static("/images", container.DbConfig.LocalFilesPath)
 		}
 
 	}

@@ -11,6 +11,7 @@ package mock
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 	domain "restaurant/internal/core/domain"
 
@@ -234,6 +235,45 @@ func (c *MockProductRepositoryDeleteProductsByCategoryCall) DoAndReturn(f func(c
 	return c
 }
 
+// GetProductById mocks base method.
+func (m *MockProductRepository) GetProductById(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProductById", ctx, id)
+	ret0, _ := ret[0].(*domain.Product)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProductById indicates an expected call of GetProductById.
+func (mr *MockProductRepositoryMockRecorder) GetProductById(ctx, id any) *MockProductRepositoryGetProductByIdCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductById", reflect.TypeOf((*MockProductRepository)(nil).GetProductById), ctx, id)
+	return &MockProductRepositoryGetProductByIdCall{Call: call}
+}
+
+// MockProductRepositoryGetProductByIdCall wrap *gomock.Call
+type MockProductRepositoryGetProductByIdCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductRepositoryGetProductByIdCall) Return(arg0 *domain.Product, arg1 error) *MockProductRepositoryGetProductByIdCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductRepositoryGetProductByIdCall) Do(f func(context.Context, uuid.UUID) (*domain.Product, error)) *MockProductRepositoryGetProductByIdCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductRepositoryGetProductByIdCall) DoAndReturn(f func(context.Context, uuid.UUID) (*domain.Product, error)) *MockProductRepositoryGetProductByIdCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // GetProductCategories mocks base method.
 func (m *MockProductRepository) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
 	m.ctrl.T.Helper()
@@ -388,40 +428,40 @@ func (c *MockProductRepositoryUpdateProductCall) DoAndReturn(f func(context.Cont
 	return c
 }
 
-// UpdateProductImagePath mocks base method.
-func (m *MockProductRepository) UpdateProductImagePath(ctx context.Context, id uuid.UUID, path *string) error {
+// UpdateProductImage mocks base method.
+func (m *MockProductRepository) UpdateProductImage(ctx context.Context, productId uuid.UUID, image *domain.Image) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProductImagePath", ctx, id, path)
+	ret := m.ctrl.Call(m, "ReplaceProductImage", ctx, productId, image)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateProductImagePath indicates an expected call of UpdateProductImagePath.
-func (mr *MockProductRepositoryMockRecorder) UpdateProductImagePath(ctx, id, path any) *MockProductRepositoryUpdateProductImagePathCall {
+// UpdateProductImage indicates an expected call of UpdateProductImage.
+func (mr *MockProductRepositoryMockRecorder) UpdateProductImage(ctx, productId, image any) *MockProductRepositoryUpdateProductImageCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProductImagePath", reflect.TypeOf((*MockProductRepository)(nil).UpdateProductImagePath), ctx, id, path)
-	return &MockProductRepositoryUpdateProductImagePathCall{Call: call}
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceProductImage", reflect.TypeOf((*MockProductRepository)(nil).UpdateProductImage), ctx, productId, image)
+	return &MockProductRepositoryUpdateProductImageCall{Call: call}
 }
 
-// MockProductRepositoryUpdateProductImagePathCall wrap *gomock.Call
-type MockProductRepositoryUpdateProductImagePathCall struct {
+// MockProductRepositoryUpdateProductImageCall wrap *gomock.Call
+type MockProductRepositoryUpdateProductImageCall struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *MockProductRepositoryUpdateProductImagePathCall) Return(arg0 error) *MockProductRepositoryUpdateProductImagePathCall {
+func (c *MockProductRepositoryUpdateProductImageCall) Return(arg0 error) *MockProductRepositoryUpdateProductImageCall {
 	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockProductRepositoryUpdateProductImagePathCall) Do(f func(context.Context, uuid.UUID, *string) error) *MockProductRepositoryUpdateProductImagePathCall {
+func (c *MockProductRepositoryUpdateProductImageCall) Do(f func(context.Context, uuid.UUID, *domain.Image) error) *MockProductRepositoryUpdateProductImageCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockProductRepositoryUpdateProductImagePathCall) DoAndReturn(f func(context.Context, uuid.UUID, *string) error) *MockProductRepositoryUpdateProductImagePathCall {
+func (c *MockProductRepositoryUpdateProductImageCall) DoAndReturn(f func(context.Context, uuid.UUID, *domain.Image) error) *MockProductRepositoryUpdateProductImageCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -484,44 +524,6 @@ func (c *MockProductServiceAddCategoryCall) Do(f func(context.Context, string) e
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockProductServiceAddCategoryCall) DoAndReturn(f func(context.Context, string) error) *MockProductServiceAddCategoryCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
-// AddImage mocks base method.
-func (m *MockProductService) AddImage(ctx context.Context, image *domain.Image, productId uuid.UUID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddImage", ctx, image, productId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddImage indicates an expected call of AddImage.
-func (mr *MockProductServiceMockRecorder) AddImage(ctx, image, productId any) *MockProductServiceAddImageCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddImage", reflect.TypeOf((*MockProductService)(nil).AddImage), ctx, image, productId)
-	return &MockProductServiceAddImageCall{Call: call}
-}
-
-// MockProductServiceAddImageCall wrap *gomock.Call
-type MockProductServiceAddImageCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockProductServiceAddImageCall) Return(arg0 error) *MockProductServiceAddImageCall {
-	c.Call = c.Call.Return(arg0)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockProductServiceAddImageCall) Do(f func(context.Context, *domain.Image, uuid.UUID) error) *MockProductServiceAddImageCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockProductServiceAddImageCall) DoAndReturn(f func(context.Context, *domain.Image, uuid.UUID) error) *MockProductServiceAddImageCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -790,6 +792,45 @@ func (c *MockProductServiceUpdateProductCall) Do(f func(context.Context, *domain
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockProductServiceUpdateProductCall) DoAndReturn(f func(context.Context, *domain.UpdateProductDTO) error) *MockProductServiceUpdateProductCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// UpdateProductImage mocks base method.
+func (m *MockProductService) ReplaceProductImage(ctx context.Context, productId uuid.UUID, data io.Reader) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReplaceProductImage", ctx, productId, data)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateProductImage indicates an expected call of UpdateProductImage.
+func (mr *MockProductServiceMockRecorder) UpdateProductImage(ctx, productId, data any) *MockProductServiceUpdateProductImageCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceProductImage", reflect.TypeOf((*MockProductService)(nil).ReplaceProductImage), ctx, productId, data)
+	return &MockProductServiceUpdateProductImageCall{Call: call}
+}
+
+// MockProductServiceUpdateProductImageCall wrap *gomock.Call
+type MockProductServiceUpdateProductImageCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockProductServiceUpdateProductImageCall) Return(arg0 string, arg1 error) *MockProductServiceUpdateProductImageCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockProductServiceUpdateProductImageCall) Do(f func(context.Context, uuid.UUID, io.Reader) (string, error)) *MockProductServiceUpdateProductImageCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockProductServiceUpdateProductImageCall) DoAndReturn(f func(context.Context, uuid.UUID, io.Reader) (string, error)) *MockProductServiceUpdateProductImageCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

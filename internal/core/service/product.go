@@ -2,13 +2,15 @@ package service
 
 import (
 	"context"
+	"io"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
-// ProductService implements port.ProductService and provides access to product-related bussiness logic.
+// ProductService implements port.ProductService and provides access to product-related business logic.
 type ProductService struct {
 	productRepository port.ProductRepository
 	imageRepository   port.ImageRepository
@@ -22,9 +24,12 @@ func NewProductService(productRepository port.ProductRepository, imageRepository
 	}
 }
 
-func (s *ProductService) AddCategory(ctx context.Context, name string) error {
-	id := uuid.New()
-	return s.productRepository.AddCategory(ctx, domain.NewProductCategory(id, name))
+func (s *ProductService) AddCategory(ctx context.Context, name string) (*domain.ProductCategory, error) {
+	category := domain.NewProductCategory(uuid.New(), name)
+	if err := s.productRepository.AddCategory(ctx, category); err != nil {
+		return nil, err
+	}
+	return category, nil
 }
 
 func (s *ProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
@@ -38,38 +43,42 @@ func (s *ProductService) DeleteCategory(ctx context.Context, id uuid.UUID) error
 	return s.productRepository.DeleteCategory(ctx, id)
 }
 
-func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductDTO) error {
-	id := uuid.New()
+func (s *ProductService) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
+	return s.productRepository.GetProductCategories(ctx)
+}
+
+func (s *ProductService) AddProduct(ctx context.Context, dto *domain.AddProductDTO) (*domain.Product, error) {
+	product := domain.NewProduct(
+		uuid.New(),
+		dto.Name,
+		dto.Description,
+		nil,
+		nil,
+		dto.Category,
+		dto.Price,
+	)
 
 	if err := s.productRepository.
 		AddProduct(
 			ctx,
-			domain.NewProduct(
-				id,
-				dto.Name,
-				dto.Description,
-				nil,
-				dto.Category,
-				dto.Price,
-			),
+			product,
 		); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	return product, nil
 }
 
 func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdateProductDTO) error {
 	hasFieldToUpdate := false
-	if dto.Name != nil {
+	switch {
+	case dto.Name != nil:
 		hasFieldToUpdate = true
-	}
-	if dto.Description != nil {
+	case dto.Description != nil:
 		hasFieldToUpdate = true
-	}
-	if dto.Category != nil {
+	case dto.Price != nil:
 		hasFieldToUpdate = true
-	}
-	if dto.Price != nil {
+	case dto.Category != nil:
 		hasFieldToUpdate = true
 	}
 
@@ -79,13 +88,29 @@ func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdatePr
 	return s.productRepository.UpdateProduct(ctx, dto)
 }
 
-func (s *ProductService) AddImage(ctx context.Context, image *domain.Image, productId uuid.UUID) error {
-	path, err := s.imageRepository.Save(ctx, image, productId)
+func (s *ProductService) ReplaceProductImage(ctx context.Context, productId uuid.UUID, data io.Reader) (string, error) {
+	product, err := s.productRepository.GetProductById(ctx, productId)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return s.productRepository.UpdateProductImagePath(ctx, productId, &path)
+	if product.DeleteImageUrl != nil {
+		err = s.imageRepository.DeleteImage(ctx, *product.DeleteImageUrl)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	image, err := s.imageRepository.SaveImage(ctx, data)
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.productRepository.UpdateProductImage(ctx, productId, image); err != nil {
+		return "", err
+	}
+
+	return image.Url, nil
 }
 
 func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeleteProductDTO) error {
@@ -96,13 +121,14 @@ func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeletePr
 			return err
 		}
 
-		if product.ImagePath != nil {
-			if err = s.imageRepository.Delete(ctx, *product.ImagePath); err != nil {
-				return err
-			}
+		if product.DeleteImageUrl == nil {
+			return nil
 		}
-		return nil
+		if err = s.imageRepository.DeleteImage(ctx, *product.DeleteImageUrl); err != nil {
+			return err
+		}
 
+		return nil
 	case dto.CategoryId != nil:
 		products, err := s.productRepository.DeleteProductsByCategory(ctx, *dto.CategoryId)
 		if err != nil {
@@ -110,26 +136,24 @@ func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeletePr
 		}
 
 		for _, product := range products {
-			if product.ImagePath != nil {
-				if err = s.imageRepository.Delete(ctx, *product.ImagePath); err != nil {
-					return err
-				}
+			if product.DeleteImageUrl == nil {
+				continue
+			}
+
+			if err = s.imageRepository.DeleteImage(ctx, *product.DeleteImageUrl); err != nil {
+				zap.L().Error("error deleting image url", zap.Error(err))
 			}
 		}
+
 		return nil
-
 	default:
-		return domain.ErrNothingToUpdate
+		return domain.ErrNothingToDelete
 	}
-}
-
-func (s *ProductService) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
-	return s.productRepository.GetProductCategories(ctx)
 }
 
 func (s *ProductService) GetProducts(ctx context.Context, dto *domain.GetProductsDTO) ([]domain.Product, error) {
 	if dto.CategoryId == nil {
-		return nil, domain.ErrNothingToUpdate
+		return nil, domain.ErrNothingToFetch
 	}
 	return s.productRepository.GetProductsByCategory(ctx, *dto.CategoryId)
 }

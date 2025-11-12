@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"restaurant/internal/adapter/storage/local"
+	"restaurant/internal/adapter/storage/http"
 	"restaurant/internal/adapter/storage/postgres"
 
 	"go.uber.org/fx"
@@ -9,6 +9,6 @@ import (
 
 var Module = fx.Module(
 	"storage",
-	local.Module,
+	http.Module,
 	postgres.Module,
 )

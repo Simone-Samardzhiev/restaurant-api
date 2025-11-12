@@ -32,13 +32,13 @@ type ProductResponse struct {
 }
 
 // NewProductResponse creates a new ProductResponse instance.
-func NewProductResponse(product domain.Product) ProductResponse {
+func NewProductResponse(product *domain.Product) ProductResponse {
 	return ProductResponse{
 		Id:          product.Id,
 		Name:        product.Name,
 		Description: product.Description,
 		Category:    product.Category,
 		Price:       product.Price,
-		ImagePath:   product.ImagePath,
+		ImagePath:   product.ImageUrl,
 	}
 }

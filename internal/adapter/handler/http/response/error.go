@@ -85,11 +85,32 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Server cannot proceed the request",
 		},
 	},
-	domain.ErrProductNameAlreadyInUse: {
-		StatusCode: fiber.StatusConflict,
-		Code:       "product_name_already_exists",
+	domain.ErrNothingToUpdate: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "nothing_to_update",
 		Messages: []string{
-			"Product name is already in use",
+			"Update request won't change any data.",
+		},
+	},
+	domain.ErrNothingToDelete: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "nothing_to_delete",
+		Messages: []string{
+			"Delete request won't change any data.",
+		},
+	},
+	domain.ErrNothingToFetch: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "nothing_to_fetch",
+		Messages: []string{
+			"Fetch request won't change any data.",
+		},
+	},
+	domain.ErrInvalidUUID: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "invalid_uuid",
+		Messages: []string{
+			"Invalid uuid",
 		},
 	},
 	domain.ErrProductCategoryNameAlreadyInUse: {
@@ -106,25 +127,18 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Product category not found",
 		},
 	},
+	domain.ErrProductNameAlreadyInUse: {
+		StatusCode: fiber.StatusConflict,
+		Code:       "product_name_already_exists",
+		Messages: []string{
+			"Product name is already in use",
+		},
+	},
 	domain.ErrProductNotFound: {
 		StatusCode: fiber.StatusNotFound,
 		Code:       "product_not_found",
 		Messages: []string{
 			"Product not found",
-		},
-	},
-	domain.ErrNothingToUpdate: {
-		StatusCode: fiber.StatusBadRequest,
-		Code:       "nothing_to_update",
-		Messages: []string{
-			"Update request won't change any data.",
-		},
-	},
-	domain.ErrInvalidUUID: {
-		StatusCode: fiber.StatusBadRequest,
-		Code:       "invalid_uuid",
-		Messages: []string{
-			"Invalid uuid",
 		},
 	},
 	domain.ErrCategoryHasLinkedProducts: {
@@ -133,14 +147,6 @@ var domainErrorsMap = map[error]ErrorResponse{
 		Messages: []string{
 			"Product category has linked products",
 			"Delete the products first",
-		},
-	},
-	domain.ErrInvalidImageFormat: {
-		StatusCode: fiber.StatusBadRequest,
-		Code:       "invalid_image_format",
-		Messages: []string{
-			"Invalid image format",
-			"Only jpeg and png are supported",
 		},
 	},
 }

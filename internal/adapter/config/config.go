@@ -54,7 +54,7 @@ type (
 		DbUrl                string
 		DbMaxIdleConnections int
 		DbMaxOpenConnections int
-		LocalFilesPath       string
+		ImagesApiKey         string
 	}
 
 	// AuthConfig holds all environment variable for the authentication.
@@ -97,16 +97,16 @@ func newStorageConfig() (StorageConfig, error) {
 		return StorageConfig{}, fmt.Errorf("max open connections must be greater than zero: %d", maxOpenConnections)
 	}
 
-	localFilesPath := os.Getenv("LOCAL_FILES_PATH")
+	localFilesPath := os.Getenv("IMAGES_API_KEY")
 	if localFilesPath == "" {
-		return StorageConfig{}, fmt.Errorf("local files path environment variable not set")
+		return StorageConfig{}, fmt.Errorf("images api key environment variable not set")
 	}
 
 	return StorageConfig{
 		DbUrl:                dbURL,
 		DbMaxIdleConnections: maxIdleConnections,
 		DbMaxOpenConnections: maxOpenConnections,
-		LocalFilesPath:       localFilesPath,
+		ImagesApiKey:         localFilesPath,
 	}, nil
 }
 

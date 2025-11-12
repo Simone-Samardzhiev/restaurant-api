@@ -38,10 +38,12 @@ func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.productService.AddCategory(c.Context(), req.Name); err != nil {
+	category, err := h.productService.AddCategory(c.Context(), req.Name)
+	if err != nil {
 		return err
 	}
-	return c.SendStatus(fiber.StatusCreated)
+
+	return c.Status(fiber.StatusCreated).JSON(response.NewProductCategoryResponse(category.Id, req.Name))
 }
 
 func (h *ProductHandler) UpdateCategory(c *fiber.Ctx) error {
@@ -78,6 +80,19 @@ func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+func (h *ProductHandler) GetProductCategories(c *fiber.Ctx) error {
+	categories, err := h.productService.GetProductCategories(c.Context())
+	if err != nil {
+		return err
+	}
+
+	res := make([]response.ProductCategoryResponse, 0, len(categories))
+	for _, category := range categories {
+		res = append(res, response.NewProductCategoryResponse(category.Id, category.Name))
+	}
+	return c.Status(http.StatusOK).JSON(res)
+}
+
 func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 	var req request.AddProductRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -87,7 +102,7 @@ func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := h.productService.AddProduct(
+	product, err := h.productService.AddProduct(
 		c.Context(),
 		domain.NewAddProductDTO(
 			req.Name,
@@ -95,11 +110,12 @@ func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 			req.Category,
 			req.Price,
 		),
-	); err != nil {
+	)
+	if err != nil {
 		return err
 	}
 
-	return c.SendStatus(fiber.StatusCreated)
+	return c.Status(http.StatusCreated).JSON(response.NewProductResponse(product))
 }
 
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
@@ -130,49 +146,20 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func getImageFormat(c *fiber.Ctx) (domain.ImageType, error) {
-	contentType := c.Get("content-type")
-	if contentType != "image/jpeg" && contentType != "image/png" {
-		return "", domain.ErrInvalidImageFormat
-	}
-
-	imageData := c.Body()
-	if len(imageData) < 512 {
-		return "", domain.ErrInvalidImageFormat
-	}
-
-	buffer := imageData[:512]
-	contentType = http.DetectContentType(buffer)
-
-	if contentType != "image/jpeg" && contentType != "image/png" {
-		return "", domain.ErrInvalidImageFormat
-	}
-	return domain.ImageType(strings.Split(contentType, "/")[1]), nil
-}
-
-func (h *ProductHandler) AddImage(c *fiber.Ctx) error {
+func (h *ProductHandler) ReplaceProductImage(c *fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return domain.ErrInvalidUUID
 	}
 
-	imageType, err := getImageFormat(c)
+	url, err := h.productService.ReplaceProductImage(c.Context(), id, bytes.NewReader(c.Body()))
 	if err != nil {
 		return err
 	}
 
-	if err = h.productService.
-		AddImage(
-			c.Context(),
-			domain.NewImage(
-				bytes.NewReader(c.Body()),
-				imageType,
-			), id,
-		); err != nil {
-		return err
-	}
-
-	return c.SendStatus(fiber.StatusCreated)
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
+		"url": url,
+	})
 }
 
 func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
@@ -216,19 +203,6 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func (h *ProductHandler) GetProductCategories(c *fiber.Ctx) error {
-	categories, err := h.productService.GetProductCategories(c.Context())
-	if err != nil {
-		return err
-	}
-
-	res := make([]response.ProductCategoryResponse, 0, len(categories))
-	for _, category := range categories {
-		res = append(res, response.NewProductCategoryResponse(category.Id, category.Name))
-	}
-	return c.Status(http.StatusOK).JSON(res)
-}
-
 func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 	var (
 		categoryID *uuid.UUID
@@ -253,7 +227,7 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 
 	res := make([]response.ProductResponse, 0, len(products))
 	for _, product := range products {
-		res = append(res, response.NewProductResponse(product))
+		res = append(res, response.NewProductResponse(&product))
 	}
 	return c.Status(http.StatusOK).JSON(res)
 }

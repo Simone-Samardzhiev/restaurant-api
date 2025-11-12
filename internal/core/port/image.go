@@ -2,15 +2,14 @@ package port
 
 import (
 	"context"
+	"io"
 	"restaurant/internal/core/domain"
-
-	"github.com/google/uuid"
 )
 
-// ImageRepository is an interface for interacting with image data.
 type ImageRepository interface {
-	// Save saves an image with specified id and returns the path where ist saved.
-	Save(ctx context.Context, image *domain.Image, id uuid.UUID) (string, error)
-	// Delete deletes an image with specified id.
-	Delete(ctx context.Context, path string) error
+	// SaveImage saves an image and returns the URL to the image.
+	SaveImage(ctx context.Context, data io.Reader) (*domain.Image, error)
+
+	// DeleteImage deletes an image.
+	DeleteImage(ctx context.Context, deleteUrl string) error
 }

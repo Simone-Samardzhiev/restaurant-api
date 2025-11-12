@@ -1,2 +1,2 @@
 DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS products_categories;
+DROP TABLE IF EXISTS product_categories;

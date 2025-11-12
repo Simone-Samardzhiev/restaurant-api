@@ -27,7 +27,7 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.ProductCategory) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO products_categories(id, name)
+		`INSERT INTO product_categories(id, name)
 		VALUES ($1, $2)`,
 		category.Id,
 		category.Name,
@@ -47,7 +47,7 @@ func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.Pr
 func (r *ProductRepository) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
 	result, err := r.db.ExecContext(
 		ctx,
-		`UPDATE products_categories
+		`UPDATE product_categories
 		SET name = COALESCE($1, name)
 		WHERE id = $2`,
 		dto.Name,
@@ -75,7 +75,7 @@ func (r *ProductRepository) UpdateCategory(ctx context.Context, dto *domain.Upda
 }
 
 func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
-	result, err := r.db.ExecContext(ctx, "DELETE FROM products_categories WHERE id = $1", id)
+	result, err := r.db.ExecContext(ctx, "DELETE FROM product_categories WHERE id = $1", id)
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23503" {
@@ -97,6 +97,33 @@ func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) er
 	return nil
 }
 
+func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id, name FROM product_categories`)
+	if err != nil {
+		zap.L().Error("error getting product categories", zap.Error(err))
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	var products []domain.ProductCategory
+
+	for rows.Next() {
+		var product domain.ProductCategory
+		err = rows.Scan(&product.Id, &product.Name)
+		if err != nil {
+			zap.L().Error("error scanning rows", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+		products = append(products, product)
+	}
+
+	return products, nil
+}
+
 var addProductPqErrorMap = map[string]map[string]error{
 	"23505": {
 		"products_name_key": domain.ErrProductNameAlreadyInUse,
@@ -107,21 +134,16 @@ var addProductPqErrorMap = map[string]map[string]error{
 }
 
 func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
-	var imagePath sql.NullString
-	if product.ImagePath != nil {
-		imagePath.Valid = true
-		imagePath.String = *product.ImagePath
-	}
-
 	_, err := r.db.ExecContext(
 		ctx,
 		`INSERT INTO 
-    	products(id, name, description, image_path, category, price)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
+    	products(id, name, description, image_url, delete_image_url ,category, price)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		product.Id,
 		product.Name,
 		product.Description,
-		imagePath.String,
+		product.ImageUrl,
+		product.DeleteImageUrl,
 		product.Category,
 		product.Price,
 	)
@@ -142,7 +164,6 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 			zap.String("id", product.Id.String()),
 			zap.String("name", product.Name),
 			zap.String("description", product.Description),
-			zap.Any("imagePath", imagePath.String),
 			zap.String("price", product.Price.String()),
 			zap.String("categoryId", product.Category.String()),
 			zap.Error(err),
@@ -207,30 +228,32 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, dto *domain.Updat
 	return nil
 }
 
-func (r *ProductRepository) UpdateProductImagePath(ctx context.Context, id uuid.UUID, path *string) error {
-	var sqlPath sql.NullString
-	if path != nil {
-		sqlPath.Valid = true
-		sqlPath.String = *path
-	}
-
-	var result bool
-	err := r.db.QueryRowContext(
+func (r *ProductRepository) UpdateProductImage(ctx context.Context, productId uuid.UUID, image *domain.Image) error {
+	result, err := r.db.ExecContext(
 		ctx,
-		`UPDATE products SET image_path = $1 
-        WHERE id = $2
-        RETURNING TRUE`,
-		sqlPath,
-		id,
-	).Scan(&result)
+		`UPDATE products
+		SET image_url = $1,
+		delete_image_url = $2
+		WHERE id = $3`,
+		image.Url,
+		image.DeleteUrl,
+		productId,
+	)
 
-	if errors.Is(err, sql.ErrNoRows) {
-		return domain.ErrProductNotFound
-	} else if err != nil {
-		zap.L().Error("error updating product image path", zap.Error(err))
+	if err != nil {
+		zap.L().Error("error updating product image", zap.Error(err))
 		return domain.ErrInternal
 	}
 
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrProductNotFound
+	}
 	return nil
 }
 
@@ -257,9 +280,9 @@ func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID)
 	}
 
 	if sqlPath.Valid {
-		product.ImagePath = &sqlPath.String
+		product.ImageUrl = &sqlPath.String
 	} else {
-		product.ImagePath = nil
+		product.ImageUrl = nil
 	}
 
 	return &product, nil
@@ -298,52 +321,71 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 		}
 
 		if sqlPath.Valid {
-			product.ImagePath = &sqlPath.String
+			product.ImageUrl = &sqlPath.String
 		} else {
-			product.ImagePath = nil
+			product.ImageUrl = nil
 		}
 		products = append(products, product)
 	}
 	return products, nil
 }
 
-func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.ProductCategory, error) {
-	var products []domain.ProductCategory
-	rows, err := r.db.QueryContext(ctx, `SELECT id, name FROM product_categories`)
-	if err != nil {
-		zap.L().Error("error getting product categories", zap.Error(err))
+func (r *ProductRepository) GetProductById(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT name, description, image_url, delete_image_url, category, price
+		FROM products
+		WHERE id = $1`,
+		id,
+	)
+
+	var product domain.Product
+	var imageUrl sql.NullString
+	var deleteImageUrl sql.NullString
+
+	err := row.Scan(
+		&product.Name,
+		&product.Description,
+		&imageUrl,
+		&deleteImageUrl,
+		&product.Category,
+		&product.Price,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrProductNotFound
+	} else if err != nil {
+		zap.L().Error("error getting product", zap.Error(err))
+		return nil, domain.ErrInternal
 	}
 
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			zap.L().Warn("error closing rows", zap.Error(closeErr))
-		}
-	}()
-
-	for rows.Next() {
-		var product domain.ProductCategory
-		err = rows.Scan(&product.Id, &product.Name)
-		if err != nil {
-			zap.L().Error("error scanning rows", zap.Error(err))
-			return nil, domain.ErrInternal
-		}
-		products = append(products, product)
+	if deleteImageUrl.Valid {
+		product.ImageUrl = &deleteImageUrl.String
+	} else {
+		product.ImageUrl = nil
 	}
 
-	return products, nil
+	if deleteImageUrl.Valid {
+		product.DeleteImageUrl = &deleteImageUrl.String
+	} else {
+		product.DeleteImageUrl = nil
+	}
+
+	product.Id = id
+	return &product, nil
 }
 
 func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
-	var products []domain.Product
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, name, description, image_path, category, price 
+		`SELECT id, name, description, image_url, delete_image_url, price 
 		FROM products
 		WHERE category = $1`,
 		categoryId,
 	)
 	if err != nil {
 		zap.L().Error("error getting products", zap.Error(err))
+		return nil, domain.ErrInternal
 	}
 
 	defer func() {
@@ -351,6 +393,10 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 			zap.L().Warn("error closing rows", zap.Error(closeErr))
 		}
 	}()
+
+	var products []domain.Product
+	var imageUrl sql.NullString
+	var deleteImageUrl sql.NullString
 
 	for rows.Next() {
 		var product domain.Product
@@ -358,13 +404,26 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 			&product.Id,
 			&product.Name,
 			&product.Description,
-			&product.ImagePath,
-			&product.Category,
+			&imageUrl,
+			&deleteImageUrl,
 			&product.Price,
 		)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
 			return nil, domain.ErrInternal
+		}
+
+		product.Category = categoryId
+		if imageUrl.Valid {
+			product.ImageUrl = &imageUrl.String
+		} else {
+			product.ImageUrl = nil
+		}
+
+		if deleteImageUrl.Valid {
+			product.ImageUrl = &deleteImageUrl.String
+		} else {
+			product.ImageUrl = nil
 		}
 		products = append(products, product)
 	}

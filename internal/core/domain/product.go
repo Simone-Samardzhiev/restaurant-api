@@ -35,23 +35,25 @@ func NewUpdateCategoryProductDTO(id uuid.UUID, name *string) *UpdateCategoryProd
 
 // Product is an entity representing a product.
 type Product struct {
-	Id          uuid.UUID
-	Name        string
-	Description string
-	ImagePath   *string
-	Category    uuid.UUID
-	Price       decimal.Decimal
+	Id             uuid.UUID
+	Name           string
+	Description    string
+	ImageUrl       *string
+	DeleteImageUrl *string
+	Category       uuid.UUID
+	Price          decimal.Decimal
 }
 
 // NewProduct creates a new Product instance.
-func NewProduct(id uuid.UUID, name, description string, imagePath *string, category uuid.UUID, price decimal.Decimal) *Product {
+func NewProduct(id uuid.UUID, name, description string, imageUrl, deleteImageUrl *string, category uuid.UUID, price decimal.Decimal) *Product {
 	return &Product{
-		Id:          id,
-		Name:        name,
-		Description: description,
-		ImagePath:   imagePath,
-		Category:    category,
-		Price:       price,
+		Id:             id,
+		Name:           name,
+		Description:    description,
+		ImageUrl:       imageUrl,
+		DeleteImageUrl: deleteImageUrl,
+		Category:       category,
+		Price:          price,
 	}
 }
 
