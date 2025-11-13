@@ -40,6 +40,9 @@ type ProductRepository interface {
 	// GetProductById fetches a single product by id.
 	GetProductById(ctx context.Context, id uuid.UUID) (*domain.Product, error)
 
+	// GetProducts fetches all products.
+	GetProducts(ctx context.Context) ([]domain.Product, error)
+
 	// GetProductsByCategory fetches products by category id.
 	GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error)
 }

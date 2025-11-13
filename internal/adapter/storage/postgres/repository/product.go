@@ -375,6 +375,59 @@ func (r *ProductRepository) GetProductById(ctx context.Context, id uuid.UUID) (*
 	return &product, nil
 }
 
+func (r *ProductRepository) GetProducts(ctx context.Context) ([]domain.Product, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, name, description, image_url, delete_image_url, category, price
+		FROM products`,
+	)
+	if err != nil {
+		zap.L().Error("error getting products", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	var products []domain.Product
+	var imageUrl sql.NullString
+	var deleteImageUrl sql.NullString
+
+	for rows.Next() {
+		var product domain.Product
+		err = rows.Scan(
+			&product.Id,
+			&product.Name,
+			&product.Description,
+			&imageUrl,
+			&deleteImageUrl,
+			&product.Category,
+			&product.Price,
+		)
+		if err != nil {
+			zap.L().Error("error scanning rows", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+
+		if imageUrl.Valid {
+			product.ImageUrl = &imageUrl.String
+		} else {
+			product.ImageUrl = nil
+		}
+
+		if deleteImageUrl.Valid {
+			product.DeleteImageUrl = &deleteImageUrl.String
+		} else {
+			product.DeleteImageUrl = nil
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
+
 func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
