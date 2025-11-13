@@ -156,5 +156,5 @@ func (s *ProductService) GetProducts(ctx context.Context, dto *domain.GetProduct
 		return s.productRepository.GetProductsByCategory(ctx, *dto.CategoryId)
 	}
 
-	return s.productRepository.GetProductsByCategory(ctx, *dto.CategoryId)
+	return s.productRepository.GetProducts(ctx)
 }
