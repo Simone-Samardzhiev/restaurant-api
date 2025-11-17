@@ -157,9 +157,7 @@ func (h *ProductHandler) ReplaceProductImage(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
-		"url": url,
-	})
+	return c.Status(fiber.StatusOK).JSON(response.NewUpdateImageResponse(url))
 }
 
 func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {

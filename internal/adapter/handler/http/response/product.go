@@ -42,3 +42,15 @@ func NewProductResponse(product *domain.Product) ProductResponse {
 		ImageUrl:    product.ImageUrl,
 	}
 }
+
+// UpdateImageResponse represents a response when updating the image of a product.
+type UpdateImageResponse struct {
+	Url string `json:"url"`
+}
+
+// NewUpdateImageResponse creates a new UpdateImageResponse instance.
+func NewUpdateImageResponse(url string) UpdateImageResponse {
+	return UpdateImageResponse{
+		Url: url,
+	}
+}
