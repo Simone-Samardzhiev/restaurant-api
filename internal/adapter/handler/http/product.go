@@ -152,6 +152,11 @@ func (h *ProductHandler) ReplaceProductImage(c *fiber.Ctx) error {
 		return domain.ErrInvalidUUID
 	}
 
+	content := http.DetectContentType(c.Body())
+	if content != "image/jpeg" && content != "image/png" {
+
+	}
+
 	url, err := h.productService.ReplaceProductImage(c.Context(), id, bytes.NewReader(c.Body()))
 	if err != nil {
 		return err

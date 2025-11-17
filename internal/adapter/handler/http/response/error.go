@@ -113,6 +113,14 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Invalid uuid",
 		},
 	},
+	domain.ErrInvalidImageFormat: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "invalid_image_format",
+		Messages: []string{
+			"Invalid image format",
+			"Supported formats are jpeg and png",
+		},
+	},
 	domain.ErrProductCategoryNameAlreadyInUse: {
 		StatusCode: fiber.StatusConflict,
 		Code:       "product_category_name_already_exists",

@@ -18,6 +18,9 @@ var (
 	// ErrInvalidUUID indicates an id is not valid uuid.
 	ErrInvalidUUID = errors.New("invalid entity")
 
+	// ErrInvalidImageFormat indicates provided image format is not valid.
+	ErrInvalidImageFormat = errors.New("invalid image format")
+
 	// ErrProductCategoryNameAlreadyInUse indicates a product category name is already in use.
 	ErrProductCategoryNameAlreadyInUse = errors.New("product category is already in use")
 
