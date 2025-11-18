@@ -258,19 +258,20 @@ func (r *ProductRepository) UpdateProductImage(ctx context.Context, productId uu
 }
 
 func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
-	var sqlPath sql.NullString
+	var imageUrl sql.NullString
+	var deleteImageUrl sql.NullString
 
 	row := r.db.
 		QueryRowContext(
 			ctx,
 			`DELETE FROM products 
        		WHERE id = $1 
-       		RETURNING id, name, description, image_path, category, price`,
+       		RETURNING id, name, description, image_url, delete_image_url, category, price`,
 			id,
 		)
 
 	var product domain.Product
-	err := row.Scan(&product.Id, &product.Name, &product.Description, &sqlPath, &product.Category, &product.Price)
+	err := row.Scan(&product.Id, &product.Name, &product.Description, &imageUrl, &deleteImageUrl, &product.Category, &product.Price)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, domain.ErrProductNotFound
 	}
@@ -279,10 +280,16 @@ func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID)
 		return nil, domain.ErrInternal
 	}
 
-	if sqlPath.Valid {
-		product.ImageUrl = &sqlPath.String
+	if imageUrl.Valid {
+		product.ImageUrl = &imageUrl.String
 	} else {
 		product.ImageUrl = nil
+	}
+
+	if deleteImageUrl.Valid {
+		product.DeleteImageUrl = &deleteImageUrl.String
+	} else {
+		product.DeleteImageUrl = nil
 	}
 
 	return &product, nil
@@ -295,7 +302,7 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 		ctx,
 		`DELETE FROM products 
        	WHERE category = $1 
-       	RETURNING id, name, description, image_path, category, price`,
+       	RETURNING id, name, description, image_url, delete_image_url, category, price`,
 		categoryId,
 	)
 
