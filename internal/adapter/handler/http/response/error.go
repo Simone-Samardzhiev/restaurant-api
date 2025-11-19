@@ -23,34 +23,24 @@ func mapValidationErrors(err validator.ValidationErrors) ErrorResponse {
 	messages := make([]string, 0, len(err))
 
 	for _, e := range err {
-		messages = append(messages, fmt.Sprintf("%s failed on %s", e.Field(), e.Tag()))
+		messages = append(messages, fmt.Sprintf("%s failed on %s.", e.Field(), e.Tag()))
 	}
 
 	return ErrorResponse{
 		StatusCode: fiber.StatusUnprocessableEntity,
-		Code:       "validation_error",
+		Code:       "invalid_body",
 		Messages:   messages,
 	}
 }
 
 // mapFiberError maps fiber.Error into ErrorResponse.
 func mapFiberError(fiberErr *fiber.Error) ErrorResponse {
-	if errors.Is(fiberErr, fiber.ErrBadRequest) {
-		return ErrorResponse{
-			StatusCode: fiber.StatusBadRequest,
-			Code:       "bad_request",
-			Messages: []string{
-				"Invalid request",
-			},
-		}
-	} else {
-		return ErrorResponse{
-			StatusCode: fiber.StatusInternalServerError,
-			Code:       "internal_error",
-			Messages: []string{
-				"Server cannot proceed the request",
-			},
-		}
+	return ErrorResponse{
+		StatusCode: fiberErr.Code,
+		Code:       fiberErr.Error(),
+		Messages: []string{
+			fiberErr.Error() + ".",
+		},
 	}
 }
 
@@ -58,9 +48,9 @@ func mapFiberError(fiberErr *fiber.Error) ErrorResponse {
 func mapUnmarshalJsonError(jsonErr *json.UnmarshalTypeError) ErrorResponse {
 	return ErrorResponse{
 		StatusCode: fiber.StatusUnprocessableEntity,
-		Code:       "bad_request",
+		Code:       "invalid_body",
 		Messages: []string{
-			fmt.Sprintf("Invalid value %s for field %s", jsonErr.Value, jsonErr.Field),
+			fmt.Sprintf("Invalid value %s for field %s.", jsonErr.Value, jsonErr.Field),
 		},
 	}
 }
@@ -69,9 +59,9 @@ func mapUnmarshalJsonError(jsonErr *json.UnmarshalTypeError) ErrorResponse {
 func mapJsonSyntaxError(jsonErr *json.SyntaxError) ErrorResponse {
 	return ErrorResponse{
 		StatusCode: fiber.StatusUnprocessableEntity,
-		Code:       "bad_request",
+		Code:       "invalid_body",
 		Messages: []string{
-			fmt.Sprintf("Error parsing JSON near %d", jsonErr.Offset),
+			fmt.Sprintf("Error parsing JSON near %d.", jsonErr.Offset),
 		},
 	}
 }
@@ -82,7 +72,7 @@ var domainErrorsMap = map[error]ErrorResponse{
 		StatusCode: fiber.StatusInternalServerError,
 		Code:       "internal_error",
 		Messages: []string{
-			"Server cannot proceed the request",
+			"Server cannot proceed the request.",
 		},
 	},
 	domain.ErrNothingToUpdate: {
@@ -110,51 +100,51 @@ var domainErrorsMap = map[error]ErrorResponse{
 		StatusCode: fiber.StatusBadRequest,
 		Code:       "invalid_uuid",
 		Messages: []string{
-			"Invalid uuid",
+			"Invalid uuid.",
 		},
 	},
 	domain.ErrInvalidImageFormat: {
 		StatusCode: fiber.StatusBadRequest,
 		Code:       "invalid_image_format",
 		Messages: []string{
-			"Invalid image format",
-			"Supported formats are jpeg and png",
+			"Invalid image format.",
+			"Supported formats are jpeg and png.",
 		},
 	},
 	domain.ErrProductCategoryNameAlreadyInUse: {
 		StatusCode: fiber.StatusConflict,
 		Code:       "product_category_name_already_exists",
 		Messages: []string{
-			"Product category is already in use",
+			"Product category is already in use.",
 		},
 	},
 	domain.ErrProductCategoryNotFound: {
 		StatusCode: fiber.StatusNotFound,
 		Code:       "product_category_not_found",
 		Messages: []string{
-			"Product category not found",
+			"Product category not found.",
 		},
 	},
 	domain.ErrProductNameAlreadyInUse: {
 		StatusCode: fiber.StatusConflict,
 		Code:       "product_name_already_exists",
 		Messages: []string{
-			"Product name is already in use",
+			"Product name is already in use.",
 		},
 	},
 	domain.ErrProductNotFound: {
 		StatusCode: fiber.StatusNotFound,
 		Code:       "product_not_found",
 		Messages: []string{
-			"Product not found",
+			"Product not found.",
 		},
 	},
 	domain.ErrCategoryHasLinkedProducts: {
 		StatusCode: fiber.StatusBadRequest,
 		Code:       "category_has_linked_products",
 		Messages: []string{
-			"Product category has linked products",
-			"Delete the products first",
+			"Product category has linked products.",
+			"Delete the products first.",
 		},
 	},
 }
@@ -168,7 +158,7 @@ func mapDomainError(err error) ErrorResponse {
 			StatusCode: fiber.StatusInternalServerError,
 			Code:       "internal_error",
 			Messages: []string{
-				"Server cannot proceed the request",
+				"Server cannot proceed the request.",
 			},
 		}
 	}
