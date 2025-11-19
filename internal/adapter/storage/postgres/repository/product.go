@@ -296,7 +296,6 @@ func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID)
 }
 
 func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, categoryId uuid.UUID) ([]domain.Product, error) {
-	var products []domain.Product
 
 	rows, err := r.db.QueryContext(
 		ctx,
@@ -317,21 +316,30 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 		}
 	}()
 
+	var products []domain.Product
 	for rows.Next() {
-		var sqlPath sql.NullString
 		var product domain.Product
+		var imageUrl sql.NullString
+		var deleteImageUrl sql.NullString
 
-		err = rows.Scan(&product.Id, &product.Name, &product.Description, &sqlPath, &product.Category, &product.Price)
+		err = rows.Scan(&product.Id, &product.Name, &product.Description, &imageUrl, &deleteImageUrl, &product.Category, &product.Price)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
 			return nil, domain.ErrInternal
 		}
 
-		if sqlPath.Valid {
-			product.ImageUrl = &sqlPath.String
+		if imageUrl.Valid {
+			product.ImageUrl = &imageUrl.String
 		} else {
 			product.ImageUrl = nil
 		}
+
+		if deleteImageUrl.Valid {
+			product.DeleteImageUrl = &deleteImageUrl.String
+		} else {
+			product.DeleteImageUrl = nil
+		}
+
 		products = append(products, product)
 	}
 	return products, nil
@@ -400,11 +408,12 @@ func (r *ProductRepository) GetProducts(ctx context.Context) ([]domain.Product, 
 	}()
 
 	var products []domain.Product
-	var imageUrl sql.NullString
-	var deleteImageUrl sql.NullString
 
 	for rows.Next() {
 		var product domain.Product
+		var imageUrl sql.NullString
+		var deleteImageUrl sql.NullString
+
 		err = rows.Scan(
 			&product.Id,
 			&product.Name,
@@ -455,11 +464,11 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 	}()
 
 	var products []domain.Product
-	var imageUrl sql.NullString
-	var deleteImageUrl sql.NullString
-
 	for rows.Next() {
 		var product domain.Product
+		var imageUrl sql.NullString
+		var deleteImageUrl sql.NullString
+
 		err = rows.Scan(
 			&product.Id,
 			&product.Name,
