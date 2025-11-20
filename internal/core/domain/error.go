@@ -12,6 +12,9 @@ var (
 	// ErrNothingToDelete indicates a delete request won't delete any data.
 	ErrNothingToDelete = errors.New("nothing to delete")
 
+	// ErrMultipleDeleteCriteria indicates that more than one delete criteria is provided leading to inconsistent data.
+	ErrMultipleDeleteCriteria = errors.New("multiple delete criteria found")
+
 	// ErrNothingToFetch indicates a fetch request won't fetch any data.
 	ErrNothingToFetch = errors.New("nothing to fetch")
 

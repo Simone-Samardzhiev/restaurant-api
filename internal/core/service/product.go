@@ -115,6 +115,8 @@ func (s *ProductService) ReplaceProductImage(ctx context.Context, productId uuid
 
 func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeleteProductDTO) error {
 	switch {
+	case dto.ProductId != nil && dto.CategoryId != nil:
+		return domain.ErrMultipleDeleteCriteria
 	case dto.ProductId != nil:
 		product, err := s.productRepository.DeleteProductById(ctx, *dto.ProductId)
 		if err != nil {

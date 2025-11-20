@@ -89,6 +89,14 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Delete request won't change any data.",
 		},
 	},
+	domain.ErrMultipleDeleteCriteria: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "multiple_delete_criteria",
+		Messages: []string{
+			"Delete request will lead to inconsistent data.",
+			"Please provide only one delete criteria.",
+		},
+	},
 	domain.ErrNothingToFetch: {
 		StatusCode: fiber.StatusBadRequest,
 		Code:       "nothing_to_fetch",
