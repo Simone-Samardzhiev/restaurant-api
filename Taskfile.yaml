@@ -22,7 +22,7 @@ tasks:
   migrate-create:
     desc: "Creates a new up/down migration file."
     vars:
-      MIGRATION_NAME: '{{.NAME | default "new_migration"}}'
+      MIGRATION_NAME: '{{.name | default "new_migration"}}'
     cmd: migrate create -ext sql -dir {{.MIGRATIONS_PATH}} -seq {{.MIGRATION_NAME}}
 
   migrate-force:
