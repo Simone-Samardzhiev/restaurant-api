@@ -7,10 +7,12 @@ CREATE TABLE orders
     status       order_status NOT NULL
 );
 
+
+CREATE TYPE ordered_product_status AS ENUM ('pending', 'preparing', 'done');
 CREATE TABLE ordered_products
 (
     id         UUID PRIMARY KEY,
-    product_id UUID NOT NULL REFERENCES products (id),
-    quantity   INT  NOT NULL CHECK ( quantity > 0 ),
-    order_id   UUID NOT NULL REFERENCES orders (id)
+    product_id UUID                   NOT NULL REFERENCES products (id),
+    status     ordered_product_status NOT NULL,
+    order_id   UUID                   NOT NULL REFERENCES orders (id)
 )
