@@ -14,4 +14,10 @@ var Module = fx.Module(
 			fx.As(new(port.ProductService)),
 		),
 	),
+	fx.Provide(
+		fx.Annotate(
+			NewOrderService,
+			fx.As(new(port.OrderService)),
+		),
+	),
 )

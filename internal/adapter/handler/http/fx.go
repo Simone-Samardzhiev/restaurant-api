@@ -10,6 +10,7 @@ import (
 var Module = fx.Module(
 	"http",
 	fx.Provide(NewProductHandler),
+	fx.Provide(NewOrderHandler),
 	fx.Provide(NewRouter),
 	fx.Invoke(func(lc fx.Lifecycle, router *Router) {
 		lc.Append(fx.Hook{

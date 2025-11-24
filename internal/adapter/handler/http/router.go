@@ -17,7 +17,7 @@ type Router struct {
 }
 
 // NewRouter creates a new Router instance.
-func NewRouter(container *config.Container, productHandler *ProductHandler) *Router {
+func NewRouter(container *config.Container, productHandler *ProductHandler, orderHandler *OrderHandler) *Router {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: response.ErrorHandler,
 	})
@@ -33,17 +33,26 @@ func NewRouter(container *config.Container, productHandler *ProductHandler) *Rou
 			Realm: "admin",
 		}))
 		{
-			admin.Get("/login", func(c *fiber.Ctx) error {
+			admin.Post("/login", func(c *fiber.Ctx) error {
 				return c.SendStatus(fiber.StatusOK)
 			})
-			admin.Post("/categories", productHandler.AddProductCategory)
-			admin.Patch("/categories/:id", productHandler.UpdateCategory)
-			admin.Delete("/categories/:id", productHandler.DeleteCategory)
 
-			admin.Post("/products", productHandler.AddProduct)
-			admin.Patch("/products/:id", productHandler.UpdateProduct)
-			admin.Put("/products/:id/image", productHandler.ReplaceProductImage)
-			admin.Delete("/products", productHandler.DeleteProduct)
+			menu := admin.Group("/menu")
+			{
+				menu.Post("/categories", productHandler.AddProductCategory)
+				menu.Patch("/categories/:id", productHandler.UpdateCategory)
+				menu.Delete("/categories/:id", productHandler.DeleteCategory)
+
+				menu.Post("/products", productHandler.AddProduct)
+				menu.Patch("/products/:id", productHandler.UpdateProduct)
+				menu.Put("/products/:id/image", productHandler.ReplaceProductImage)
+				menu.Delete("/products", productHandler.DeleteProduct)
+			}
+
+			order := admin.Group("/orders")
+			{
+				order.Post("/sessions", orderHandler.AddOrder)
+			}
 		}
 
 		public := v1.Group("/public")

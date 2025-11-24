@@ -16,4 +16,10 @@ var Module = fx.Module(
 			fx.As(new(port.ProductRepository)),
 		),
 	),
+	fx.Provide(
+		fx.Annotate(
+			repository.NewOrderRepository,
+			fx.As(new(port.OrderRepository)),
+		),
+	),
 )
