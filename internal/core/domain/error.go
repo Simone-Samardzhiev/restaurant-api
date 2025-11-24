@@ -38,4 +38,7 @@ var (
 
 	// ErrCategoryHasLinkedProducts indicates an attempt to delete a product category that has linked products.
 	ErrCategoryHasLinkedProducts = errors.New("category has linked products")
+
+	// ErrOrderSessionNotFound indicates order session couldn't be found.
+	ErrOrderSessionNotFound = errors.New("order session not found")
 )

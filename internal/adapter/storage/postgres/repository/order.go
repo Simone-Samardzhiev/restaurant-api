@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"restaurant/internal/core/domain"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -31,9 +32,32 @@ func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSes
 	)
 
 	if err != nil {
-		zap.L().Error("failed to insert order", zap.Error(err))
+		zap.L().Error("error inserting order", zap.Error(err))
 		return domain.ErrInternal
 	}
 
+	return nil
+}
+
+func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.ExecContext(ctx, "DELETE FROM order_sessions WHERE id = $1", id)
+	if err != nil {
+		zap.L().Error(
+			"error deleting order_session",
+			zap.Error(err),
+			zap.String("id", id.String()),
+		)
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrOrderSessionNotFound
+	}
 	return nil
 }

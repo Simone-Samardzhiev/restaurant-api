@@ -155,6 +155,13 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Delete the products first.",
 		},
 	},
+	domain.ErrOrderSessionNotFound: {
+		StatusCode: fiber.StatusNotFound,
+		Code:       "order_session_not_found",
+		Messages: []string{
+			"Order session not found.",
+		},
+	},
 }
 
 // mapDomainError maps domain errors into ErrorResponse.

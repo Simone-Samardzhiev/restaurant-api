@@ -28,3 +28,7 @@ func (s *OrderService) CreateSession(ctx context.Context) (*domain.OrderSession,
 	}
 	return order, nil
 }
+
+func (s *OrderService) DeleteSession(ctx context.Context, id uuid.UUID) error {
+	return s.orderRepository.DeleteSession(ctx, id)
+}
