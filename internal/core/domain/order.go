@@ -2,39 +2,39 @@ package domain
 
 import "github.com/google/uuid"
 
-// OrderStatus is an enum for order status.
-type OrderStatus string
+// OrderSessionStatus is an enum for order status.
+type OrderSessionStatus string
 
 // Enum values
 const (
-	Closed OrderStatus = "closed"
-	Open   OrderStatus = "open"
-	Paid   OrderStatus = "paid"
+	Closed OrderSessionStatus = "closed"
+	Open   OrderSessionStatus = "open"
+	Paid   OrderSessionStatus = "paid"
 )
 
-// Order represents an order entity.
-type Order struct {
+// OrderSession represents an order session  entity.
+type OrderSession struct {
 	Id          uuid.UUID
 	TableNumber int
-	Status      OrderStatus
+	Status      OrderSessionStatus
 }
 
-// NewOrder creates a new Product instance.
-func NewOrder(id uuid.UUID, tableNumber int, status OrderStatus) *Order {
-	return &Order{
+// NewSession creates a new OrderSession instance.
+func NewSession(id uuid.UUID, tableNumber int, status OrderSessionStatus) *OrderSession {
+	return &OrderSession{
 		Id:          id,
 		TableNumber: tableNumber,
 		Status:      status,
 	}
 }
 
-// OrderProductStatus is an enum for ordered products status.
+// OrderProductStatus is an enum for ordered product status.
 type OrderProductStatus string
 
 const (
 	Pending   OrderProductStatus = "pending"
 	Preparing OrderProductStatus = "preparing"
-	Done      OrderProductStatus = "Done"
+	Done      OrderProductStatus = "done"
 )
 
 // OrderedProduct represents an ordered product entity.
