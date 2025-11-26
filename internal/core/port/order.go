@@ -15,6 +15,9 @@ type OrderRepository interface {
 	// AddSession inserts a new order session.
 	AddSession(ctx context.Context, session *domain.OrderSession) error
 
+	// UpdateSession updates a order session by id.
+	UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error
+
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
 }
@@ -26,6 +29,9 @@ type OrderService interface {
 
 	// CreateSession creates a new order session.
 	CreateSession(ctx context.Context) (*domain.OrderSession, error)
+
+	// UpdateSession updates a order session by id.
+	UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error
 
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error

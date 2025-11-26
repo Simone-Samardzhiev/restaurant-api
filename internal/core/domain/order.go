@@ -52,3 +52,19 @@ func NewOrderedProduct(id, productId uuid.UUID, orderId uuid.UUID) *OrderedProdu
 		OrderId:   orderId,
 	}
 }
+
+// UpdateOrderSessionDTO is a DTO for updating a order session.
+type UpdateOrderSessionDTO struct {
+	Id             uuid.UUID
+	NewTableNumber *int
+	NewStatus      *OrderSessionStatus
+}
+
+// NewUpdateOrderSessionDTO creates a new UpdateOrderSessionDTO instance.
+func NewUpdateOrderSessionDTO(id uuid.UUID, newTableNumber *int, newStatus *OrderSessionStatus) *UpdateOrderSessionDTO {
+	return &UpdateOrderSessionDTO{
+		Id:             id,
+		NewTableNumber: newTableNumber,
+		NewStatus:      newStatus,
+	}
+}

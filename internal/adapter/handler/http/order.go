@@ -2,7 +2,9 @@ package http
 
 import (
 	"net/http"
+	"restaurant/internal/adapter/handler/http/request"
 	"restaurant/internal/adapter/handler/http/response"
+	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
 	"github.com/go-playground/validator/v10"
@@ -38,13 +40,38 @@ func (h *OrderHandler) GetSessions(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(res)
 }
 
-func (h *OrderHandler) AddOrders(c *fiber.Ctx) error {
+func (h *OrderHandler) CreateSession(c *fiber.Ctx) error {
 	order, err := h.orderService.CreateSession(c.Context())
 	if err != nil {
 		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.NewOrderSessionResponse(order))
+}
+
+func (h *OrderHandler) UpdateSession(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	var req request.UpdateOrderSessionRequest
+	if err = c.BodyParser(&req); err != nil {
+		return err
+	}
+
+	if err = h.validator.Struct(req); err != nil {
+		return err
+	}
+
+	if err = h.orderService.UpdateSession(
+		c.Context(),
+		domain.NewUpdateOrderSessionDTO(id, req.NewTableNumber, req.NewStatus),
+	); err != nil {
+		return err
+	}
+
+	return c.SendStatus(http.StatusOK)
 }
 
 func (h *OrderHandler) DeleteSession(c *fiber.Ctx) error {

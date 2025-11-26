@@ -33,6 +33,22 @@ func (s *OrderService) CreateSession(ctx context.Context) (*domain.OrderSession,
 	return order, nil
 }
 
+func (s *OrderService) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error {
+	hasUpdate := false
+	switch {
+	case session.NewTableNumber != nil:
+		hasUpdate = true
+	case session.NewStatus != nil:
+		hasUpdate = true
+	}
+
+	if !hasUpdate {
+		return domain.ErrNothingToUpdate
+	}
+
+	return s.orderRepository.UpdateSession(ctx, session)
+}
+
 func (s *OrderService) DeleteSession(ctx context.Context, id uuid.UUID) error {
 	return s.orderRepository.DeleteSession(ctx, id)
 }

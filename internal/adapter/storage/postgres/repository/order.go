@@ -65,6 +65,34 @@ func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSes
 	return nil
 }
 
+func (r *OrderRepository) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE order_sessions
+		SET table_number = COALESCE($1, table_number),
+    		status       = COALESCE($2, status)
+		WHERE id = $3`,
+		session.NewTableNumber,
+		session.NewStatus,
+		session.Id,
+	)
+	if err != nil {
+		zap.L().Error("error updating order", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting rows affected", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrOrderSessionNotFound
+	}
+	return nil
+}
+
 func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM order_sessions WHERE id = $1", id)
 	if err != nil {
