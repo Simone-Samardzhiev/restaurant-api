@@ -21,6 +21,32 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 	}
 }
 
+func (r *OrderRepository) GetSessions(ctx context.Context) ([]domain.OrderSession, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, table_number, status FROM order_sessions")
+	if err != nil {
+		zap.L().Error("error getting product", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	var sessions []domain.OrderSession
+	for rows.Next() {
+		var session domain.OrderSession
+		if err = rows.Scan(&session.Id, &session.TableNumber, &session.Status); err != nil {
+			zap.L().Error("error scanning row", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+		sessions = append(sessions, session)
+	}
+
+	return sessions, nil
+}
+
 func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSession) error {
 	_, err := r.db.ExecContext(
 		ctx,

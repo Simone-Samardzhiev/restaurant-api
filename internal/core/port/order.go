@@ -9,16 +9,24 @@ import (
 
 // OrderRepository is an interface for interacting with orders data.
 type OrderRepository interface {
+	// GetSessions fetches all sessions.
+	GetSessions(ctx context.Context) ([]domain.OrderSession, error)
+
 	// AddSession inserts a new order session.
 	AddSession(ctx context.Context, session *domain.OrderSession) error
+
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
 }
 
 // OrderService is an interface for interacting with orders business login
 type OrderService interface {
+	// GetSessions fetches all sessions.
+	GetSessions(ctx context.Context) ([]domain.OrderSession, error)
+
 	// CreateSession creates a new order session.
 	CreateSession(ctx context.Context) (*domain.OrderSession, error)
+
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
 }

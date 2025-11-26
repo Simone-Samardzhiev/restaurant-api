@@ -51,8 +51,9 @@ func NewRouter(container *config.Container, productHandler *ProductHandler, orde
 
 			order := admin.Group("/orders")
 			{
-				order.Post("/sessions", orderHandler.AddOrder)
-				order.Delete("/sessions/:id", orderHandler.DeleteOrder)
+				order.Get("/sessions", orderHandler.GetSessions)
+				order.Post("/sessions", orderHandler.AddOrders)
+				order.Delete("/sessions/:id", orderHandler.DeleteSession)
 			}
 		}
 

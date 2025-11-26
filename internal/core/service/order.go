@@ -20,6 +20,10 @@ func NewOrderService(orderRepository port.OrderRepository) *OrderService {
 	}
 }
 
+func (s *OrderService) GetSessions(ctx context.Context) ([]domain.OrderSession, error) {
+	return s.orderRepository.GetSessions(ctx)
+}
+
 func (s *OrderService) CreateSession(ctx context.Context) (*domain.OrderSession, error) {
 	order := domain.NewSession(uuid.New(), 1, domain.Closed)
 	err := s.orderRepository.AddSession(ctx, order)
