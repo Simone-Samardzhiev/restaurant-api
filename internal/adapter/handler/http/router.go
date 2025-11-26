@@ -31,6 +31,13 @@ func NewRouter(container *config.Container, productHandler *ProductHandler, orde
 				container.AuthConfig.Username: container.AuthConfig.Password,
 			},
 			Realm: "admin",
+			Unauthorized: func(c *fiber.Ctx) error {
+				return c.Status(fiber.StatusUnauthorized).JSON(response.ErrorResponse{
+					StatusCode: fiber.StatusUnauthorized,
+					Code:       "unauthorized",
+					Messages:   []string{"You are not authorized to access this resource"},
+				})
+			},
 		}))
 		{
 			admin.Post("/login", func(c *fiber.Ctx) error {
