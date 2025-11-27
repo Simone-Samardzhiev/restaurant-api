@@ -12,6 +12,9 @@ type OrderRepository interface {
 	// GetSessions fetches all sessions.
 	GetSessions(ctx context.Context) ([]domain.OrderSession, error)
 
+	// GetSessionByID fetches a session by id.
+	GetSessionByID(ctx context.Context, id uuid.UUID) (*domain.OrderSession, error)
+
 	// AddSession inserts a new order session.
 	AddSession(ctx context.Context, session *domain.OrderSession) error
 
@@ -35,4 +38,7 @@ type OrderService interface {
 
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
+
+	// ValidateSession validates the session exists and its open.
+	ValidateSession(ctx context.Context, sessionId uuid.UUID) error
 }

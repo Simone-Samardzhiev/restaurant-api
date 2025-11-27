@@ -2,8 +2,10 @@ package main
 
 import (
 	"restaurant/internal/adapter/config"
+	"restaurant/internal/adapter/handler"
 	"restaurant/internal/adapter/handler/http"
 	"restaurant/internal/adapter/handler/http/validation"
+	"restaurant/internal/adapter/handler/websocket"
 	"restaurant/internal/adapter/logger"
 	"restaurant/internal/adapter/storage"
 	"restaurant/internal/core/service"
@@ -19,5 +21,7 @@ func main() {
 		service.Module,
 		validation.Module,
 		http.Module,
+		websocket.Module,
+		handler.Module,
 	).Run()
 }

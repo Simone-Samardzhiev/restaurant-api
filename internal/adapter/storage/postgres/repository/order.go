@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"restaurant/internal/core/domain"
 
 	"github.com/google/uuid"
@@ -45,6 +46,26 @@ func (r *OrderRepository) GetSessions(ctx context.Context) ([]domain.OrderSessio
 	}
 
 	return sessions, nil
+}
+
+func (r *OrderRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*domain.OrderSession, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		"SELECT id, table_number, status FROM order_sessions WHERE id = $1",
+		id,
+	)
+
+	var session domain.OrderSession
+	err := row.Scan(&session.Id, &session.TableNumber, &session.Status)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrOrderSessionNotFound
+	} else if err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	return &session, nil
 }
 
 func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSession) error {

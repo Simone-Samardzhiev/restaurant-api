@@ -52,3 +52,15 @@ func (s *OrderService) UpdateSession(ctx context.Context, session *domain.Update
 func (s *OrderService) DeleteSession(ctx context.Context, id uuid.UUID) error {
 	return s.orderRepository.DeleteSession(ctx, id)
 }
+
+func (s *OrderService) ValidateSession(ctx context.Context, sessionId uuid.UUID) error {
+	session, err := s.orderRepository.GetSessionByID(ctx, sessionId)
+	if err != nil {
+		return err
+	}
+
+	if session.Status != domain.Open {
+		return domain.ErrOrderSessionIsNotOpen
+	}
+	return nil
+}

@@ -1,13 +1,16 @@
-package http
+package handler
 
 import (
 	"restaurant/internal/adapter/config"
+	"restaurant/internal/adapter/handler/http"
 	"restaurant/internal/adapter/handler/http/middleware"
 	"restaurant/internal/adapter/handler/http/response"
 
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	"restaurant/internal/adapter/handler/websocket"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	fiberWebsocket "github.com/gofiber/websocket/v2"
 )
 
 // Router represents an HTTP router for requests.
@@ -17,7 +20,12 @@ type Router struct {
 }
 
 // NewRouter creates a new Router instance.
-func NewRouter(container *config.Container, productHandler *ProductHandler, orderHandler *OrderHandler) *Router {
+func NewRouter(
+	container *config.Container,
+	productHandler *http.ProductHandler,
+	orderHandler *http.OrderHandler,
+	websocketHandler *websocket.Handler,
+) *Router {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: response.ErrorHandler,
 	})
@@ -62,6 +70,7 @@ func NewRouter(container *config.Container, productHandler *ProductHandler, orde
 				order.Post("/sessions", orderHandler.CreateSession)
 				order.Patch("/sessions/:id", orderHandler.UpdateSession)
 				order.Delete("/sessions/:id", orderHandler.DeleteSession)
+				order.Get("/connect", fiberWebsocket.New(websocketHandler.ConnectAsAdmin))
 			}
 		}
 
@@ -69,8 +78,8 @@ func NewRouter(container *config.Container, productHandler *ProductHandler, orde
 		{
 			public.Get("/product-categories", productHandler.GetProductCategories)
 			public.Get("/products", productHandler.GetProducts)
+			public.Get("/connect/:session_id", websocketHandler.ValidateClientConnection, fiberWebsocket.New(websocketHandler.ConnectAsClient))
 		}
-
 	}
 	app.Use(middleware.NotFoundHandler())
 
