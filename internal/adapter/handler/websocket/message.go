@@ -2,34 +2,31 @@ package websocket
 
 import (
 	"encoding/json"
-	"restaurant/internal/core/domain"
 
 	"github.com/google/uuid"
 )
 
+// MessageType is an enum for message types
 type MessageType string
 
 const (
-	Order  MessageType = "order"
-	Update MessageType = "update"
-	Delete MessageType = "delete"
+	Order           MessageType = "order"
+	SuccessfulOrder MessageType = "successful_order"
 )
 
+// Message represent a websocket message.
 type Message struct {
-	Type MessageType     `json:"type"`
-	Data json.RawMessage `json:"data"`
+	Type MessageType     `json:"type" validate:"required,messageType"`
+	Data json.RawMessage `json:"data" validate:"required"`
 }
 
-type OrderData struct {
-	ProductId uuid.UUID `json:"productId"`
-	Quantity  int       `json:"quantity"`
+// OrderMessage represents the data needed for ordering a new product.
+type OrderMessage struct {
+	ProductId uuid.UUID `json:"productId" validate:"required"`
 }
 
-type UpdateData struct {
-	ProductId uuid.UUID                 `json:"productId"`
-	Status    domain.OrderProductStatus `json:"status"`
-}
-
-type DeleteData struct {
-	ProductId uuid.UUID `json:"productId"`
+// SuccessfulOrderMessage represents the data send when order is ordering a product is completed.
+type SuccessfulOrderMessage struct {
+	ProductId        uuid.UUID `json:"productId"`
+	OrderedProductId uuid.UUID `json:"orderedProductId"`
 }

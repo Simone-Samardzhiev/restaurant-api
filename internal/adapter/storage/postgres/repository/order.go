@@ -7,6 +7,7 @@ import (
 	"restaurant/internal/core/domain"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
@@ -134,5 +135,28 @@ func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error
 	if rows == 0 {
 		return domain.ErrOrderSessionNotFound
 	}
+	return nil
+}
+
+func (r *OrderRepository) AddOrderedProduct(ctx context.Context, product *domain.OrderedProduct) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO ordered_products(id, product_id, session_id, status) VALUES ($1, $2, $3, $4)`,
+		product.Id,
+		product.ProductId,
+		product.OrderSessionID,
+		product.Status,
+	)
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" && pqErr.Constraint == "ordered_products_product_id_fkey" {
+			return domain.ErrProductNotFound
+		}
+	} else if err != nil {
+		zap.L().Error("error inserting ordered product", zap.Error(err))
+		return domain.ErrInternal
+	}
+
 	return nil
 }

@@ -28,28 +28,30 @@ func NewSession(id uuid.UUID, tableNumber int, status OrderSessionStatus) *Order
 	}
 }
 
-// OrderProductStatus is an enum for ordered product status.
-type OrderProductStatus string
+// OrderedProductStatus is an enum for ordered product status.
+type OrderedProductStatus string
 
 const (
-	Pending   OrderProductStatus = "pending"
-	Preparing OrderProductStatus = "preparing"
-	Done      OrderProductStatus = "done"
+	Pending   OrderedProductStatus = "pending"
+	Preparing OrderedProductStatus = "preparing"
+	Done      OrderedProductStatus = "done"
 )
 
 // OrderedProduct represents an ordered product entity.
 type OrderedProduct struct {
-	Id        uuid.UUID
-	ProductId uuid.UUID
-	OrderId   uuid.UUID
+	Id             uuid.UUID
+	ProductId      uuid.UUID
+	OrderSessionID uuid.UUID
+	Status         OrderedProductStatus
 }
 
 // NewOrderedProduct creates a new OrderedProduct instance.
-func NewOrderedProduct(id, productId uuid.UUID, orderId uuid.UUID) *OrderedProduct {
+func NewOrderedProduct(id, productId, orderSessionID uuid.UUID, status OrderedProductStatus) *OrderedProduct {
 	return &OrderedProduct{
-		Id:        id,
-		ProductId: productId,
-		OrderId:   orderId,
+		Id:             id,
+		ProductId:      productId,
+		OrderSessionID: orderSessionID,
+		Status:         status,
 	}
 }
 

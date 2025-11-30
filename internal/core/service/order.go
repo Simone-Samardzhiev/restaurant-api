@@ -64,3 +64,13 @@ func (s *OrderService) ValidateSession(ctx context.Context, sessionId uuid.UUID)
 	}
 	return nil
 }
+
+func (s *OrderService) OrderProduct(ctx context.Context, productId uuid.UUID, sessionId uuid.UUID) (uuid.UUID, error) {
+	if err := s.ValidateSession(ctx, sessionId); err != nil {
+		return uuid.Nil, err
+	}
+
+	id := uuid.New()
+	orderedProduct := domain.NewOrderedProduct(id, productId, sessionId, domain.Pending)
+	return id, s.orderRepository.AddOrderedProduct(ctx, orderedProduct)
+}
