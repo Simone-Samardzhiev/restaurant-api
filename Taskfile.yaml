@@ -2,6 +2,7 @@ version: '3'
 
 vars:
   MIGRATIONS_PATH: "./internal/adapter/storage/postgres/migrations"
+  SEEDS_PATH: "./internal/adapter/storage/postgres/seeds"
 
 dotenv:
   - .env
@@ -9,31 +10,59 @@ dotenv:
 tasks:
   migrate-up:
     desc: "Applies all pending migrations."
+    summary: |
+      Applies all pending migrations.
+      
+      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" up
+    requires:
+      vars: [ MIGRATIONS_PATH, DB_URL ]
 
   migrate-down:
     desc: "Reverts the last applied migration."
+
+    summary: |
+      Reverts the last applied migration.
+
+      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" down 1
+    requires:
+      vars: [ MIGRATIONS_PATH, DB_URL ]
 
   migrate-down-all:
     desc: "Reverts all migrations."
+    summary: |
+      Reverts all applied migration.
+      
+      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" down
+    requires:
+      vars: [ MIGRATIONS_PATH, DB_URL ]
 
   migrate-create:
-    desc: "Creates a new up/down migration file."
-    vars:
-      MIGRATION_NAME: '{{.name | default "new_migration"}}'
-    cmd: migrate create -ext sql -dir {{.MIGRATIONS_PATH}} -seq {{.MIGRATION_NAME}}
+    desc: "Creates a new up/down migration file with specific name."
+    summary: |
+      Creates a new up/down migration file with specific name.
+      
+      Please make sure you have set MIGRATIONS_PATH and NAME before starting.
+
+    cmd: migrate create -ext sql -dir {{.MIGRATIONS_PATH}} -seq {{.NAME}}
+    requires:
+      vars: [ MIGRATIONS_PATH, NAME ]
 
   migrate-force:
-    desc: "Forces the database version to a specific V, ignoring dirty state."
-    vars:
-      TARGET_VERSION: '{{.v | default "-1"}}'
-    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" force {{.TARGET_VERSION}}
+    desc: "Forces the database version to a specific version."
+    summary: |
+      Forces the database version to a specific version.
+      
+      Please make sure you have set MIGRATIONS_PATH, DB_URL and VERSION before starting.
 
-  swag-init:
-    desc: "Generate swagger dock using swag"
-    cmd: swag init -g cmd/http/main.go -o docs/ --parseInternal
+    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" force {{.VERSION}}
+    requires:
+      vars: [ MIGRATIONS_PATH, VERSION ]
 
   run-api:
     desc: "Starts the API"
@@ -42,9 +71,12 @@ tasks:
       - ./bin/http
 
   mockgen:
-    desc: "Generates mock implementation from interface"
-    vars:
-      FILE_NAME: '{{.file | default "no_name"}}'
-    cmd: mockgen -source=internal/core/port/{{.FILE_NAME}}.go -destination=internal/core/port/mock/{{.FILE_NAME}}.go -package=mock -typed=true
+    desc: "Generates mock implementation from specific file."
+    summary: |
+      Generates mock implementation from specific file.
+      
+      Please make sure you have set FILE before starting.
 
-
+    cmd: mockgen -source=internal/core/port/{{.FILE}}.go -destination=internal/core/port/mock/{{.FILE}}.go -package=mock -typed=true
+    requires:
+      vars: [ FILE ]
