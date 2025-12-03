@@ -29,4 +29,5 @@ type OrderMessage struct {
 type SuccessfulOrderMessage struct {
 	ProductId        uuid.UUID `json:"productId"`
 	OrderedProductId uuid.UUID `json:"orderedProductId"`
+	SessionId        uuid.UUID `json:"sessionId"`
 }

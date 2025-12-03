@@ -114,6 +114,7 @@ func (h *Handler) handleClientOrder(ctx context.Context, message *Message, clien
 		dataPayload, encodeErr := json.Marshal(SuccessfulOrderMessage{
 			ProductId:        orderMessageData.ProductId,
 			OrderedProductId: orderedProductId,
+			SessionId:        client.SessionID,
 		})
 		if encodeErr != nil {
 			zap.L().Error("json encode error", zap.Error(encodeErr))
@@ -127,14 +128,13 @@ func (h *Handler) handleClientOrder(ctx context.Context, message *Message, clien
 
 		resBytes, encodeErr := json.Marshal(resMessage)
 		if encodeErr != nil {
-			zap.L().Error("final message encode error", zap.Error(encodeErr))
+			zap.L().Error("json encode error", zap.Error(encodeErr))
 			return
 		}
 
 		writeMessage(resBytes, client.Connection)
 
 		h.hub.broadcast <- NewBroadcast(client.Id, client.SessionID, resBytes)
-
 	case errors.Is(err, domain.ErrOrderSessionIsNotOpen):
 		writeStringMessage("Session is not open!", client.Connection)
 	case errors.Is(err, domain.ErrProductNotFound):
