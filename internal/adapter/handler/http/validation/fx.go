@@ -18,10 +18,10 @@ func validatePrice(fl validator.FieldLevel) bool {
 	return price.GreaterThan(decimal.Zero)
 }
 
-var orderStatuses = map[domain.OrderSessionStatus]bool{
-	domain.Closed: true,
-	domain.Open:   true,
-	domain.Paid:   true,
+var orderStatuses = map[domain.OrderSessionStatus]struct{}{
+	domain.Closed: {},
+	domain.Open:   {},
+	domain.Paid:   {},
 }
 
 func validateOrderSessionStatus(fl validator.FieldLevel) bool {
@@ -29,13 +29,14 @@ func validateOrderSessionStatus(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
-	return orderStatuses[status]
+	_, exists := orderStatuses[status]
+	return exists
 }
 
-var orderedProductStatuses = map[domain.OrderedProductStatus]bool{
-	domain.Pending:   true,
-	domain.Preparing: true,
-	domain.Done:      true,
+var orderedProductStatuses = map[domain.OrderedProductStatus]struct{}{
+	domain.Pending:   {},
+	domain.Preparing: {},
+	domain.Done:      {},
 }
 
 func validateOrderedProductStatus(fl validator.FieldLevel) bool {
@@ -43,11 +44,16 @@ func validateOrderedProductStatus(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
-	return orderedProductStatuses[status]
+	_, exists := orderedProductStatuses[status]
+	return exists
 }
 
-var messageTypes = map[websocket.MessageType]bool{
-	websocket.Order: true,
+var messageTypes = map[websocket.MessageType]struct{}{
+	websocket.Order:                      {},
+	websocket.SuccessfulOrder:            {},
+	websocket.DeleteOrderedProduct:       {},
+	websocket.UpdateOrderedProductStatus: {},
+	websocket.UpdateSessionStatus:        {},
 }
 
 func validateMessageType(fl validator.FieldLevel) bool {
@@ -55,7 +61,8 @@ func validateMessageType(fl validator.FieldLevel) bool {
 	if !ok {
 		return false
 	}
-	return messageTypes[messageType]
+	_, exist := messageTypes[messageType]
+	return exist
 }
 
 var Module = fx.Module(
