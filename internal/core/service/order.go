@@ -33,7 +33,7 @@ func (s *OrderService) CreateSession(ctx context.Context) (*domain.OrderSession,
 	return order, nil
 }
 
-func (s *OrderService) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error {
+func (s *OrderService) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) (*domain.OrderSession, error) {
 	hasUpdate := false
 	switch {
 	case session.NewTableNumber != nil:
@@ -43,7 +43,7 @@ func (s *OrderService) UpdateSession(ctx context.Context, session *domain.Update
 	}
 
 	if !hasUpdate {
-		return domain.ErrNothingToUpdate
+		return nil, domain.ErrNothingToUpdate
 	}
 
 	return s.orderRepository.UpdateSession(ctx, session)

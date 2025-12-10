@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
 	"github.com/go-playground/validator/v10"
@@ -48,7 +49,7 @@ func (h *Handler) handleOrderedProductDeletion(ctx context.Context, message *Mes
 
 	data, encodeErr := json.Marshal(NewSuccessfulDeletionOfOrderedProductData(deletionData.Id))
 	if encodeErr != nil {
-		zap.L().Error("Error encoding message", zap.Error(encodeErr))
+		zap.L().Error("error encoding message", zap.Error(encodeErr))
 		writeString("Internal server error", conn)
 		return
 	}
@@ -75,6 +76,46 @@ func (h *Handler) handleUpdatingOrderedProductStatus(ctx context.Context, messag
 	}
 
 	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulUpdateOrderedProductStatus, message.Data), updatedProduct.OrderSessionID)
+}
+
+func (h *Handler) handleUpdatingOrderSession(ctx context.Context, message *Message, conn *websocket.Conn) {
+	var updatingData UpdateOrderSessionData
+	if err := json.Unmarshal(message.Data, &updatingData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	if err := h.validator.Struct(updatingData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	updatedOrderSession, err := h.orderService.UpdateSession(
+		ctx,
+		domain.NewUpdateOrderSessionDTO(
+			updatingData.Id,
+			updatingData.TableNumber,
+			updatingData.Status,
+		),
+	)
+
+	if err != nil {
+		handleDomainError(conn, err)
+		return
+	}
+
+	data, encodeErr := json.Marshal(
+		NewSuccessfulUpdateOrderSessionData(
+			updatedOrderSession.Id,
+			updatedOrderSession.TableNumber,
+			updatedOrderSession.Status),
+	)
+	if encodeErr != nil {
+		zap.L().Error("error encoding message", zap.Error(encodeErr))
+		writeString("Internal server error", conn)
+	}
+
+	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulUpdateSession, data), updatedOrderSession.Id)
 }
 
 // Admin handles admin websocket session.
@@ -117,6 +158,8 @@ func (h *Handler) Admin(conn *websocket.Conn) {
 			h.handleOrderedProductDeletion(ctx, &message, true, conn)
 		case UpdateOrderedProductStatus:
 			h.handleUpdatingOrderedProductStatus(ctx, &message, conn)
+		case UpdateSession:
+			h.handleUpdatingOrderSession(ctx, &message, conn)
 		default:
 			writeString("Unexpected message type", conn)
 		}
@@ -167,7 +210,7 @@ func (h *Handler) handleOrder(ctx context.Context, message *Message, sessionId u
 		),
 	)
 	if encodeErr != nil {
-		zap.L().Error("Error encoding message", zap.Error(encodeErr))
+		zap.L().Error("error encoding message", zap.Error(encodeErr))
 		writeString("Internal server error", conn)
 		return
 	}

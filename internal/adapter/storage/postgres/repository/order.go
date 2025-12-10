@@ -87,32 +87,29 @@ func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSes
 	return nil
 }
 
-func (r *OrderRepository) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) error {
-	result, err := r.db.ExecContext(
+func (r *OrderRepository) UpdateSession(ctx context.Context, session *domain.UpdateOrderSessionDTO) (*domain.OrderSession, error) {
+	row := r.db.QueryRowContext(
 		ctx,
 		`UPDATE order_sessions
 		SET table_number = COALESCE($1, table_number),
     		status       = COALESCE($2, status)
-		WHERE id = $3`,
+		WHERE id = $3
+		RETURNING id, table_number, status`,
 		session.NewTableNumber,
 		session.NewStatus,
 		session.Id,
 	)
-	if err != nil {
-		zap.L().Error("error updating order", zap.Error(err))
-		return domain.ErrInternal
+
+	var orderSession domain.OrderSession
+	err := row.Scan(&orderSession.Id, &orderSession.TableNumber, &orderSession.Status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrOrderSessionNotFound
+	} else if err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return nil, domain.ErrInternal
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
-	}
-
-	if rows == 0 {
-		return domain.ErrOrderSessionNotFound
-	}
-	return nil
+	return &orderSession, nil
 }
 
 func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error {

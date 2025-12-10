@@ -53,7 +53,7 @@ var messageTypes = map[websocket.MessageType]struct{}{
 	websocket.SuccessfulOrder:            {},
 	websocket.DeleteOrderedProduct:       {},
 	websocket.UpdateOrderedProductStatus: {},
-	websocket.UpdateSessionStatus:        {},
+	websocket.UpdateSession:              {},
 }
 
 func validateMessageType(fl validator.FieldLevel) bool {

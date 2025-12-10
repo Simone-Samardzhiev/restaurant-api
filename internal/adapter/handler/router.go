@@ -68,7 +68,6 @@ func NewRouter(
 			{
 				order.Get("/sessions", orderHandler.GetSessions)
 				order.Post("/sessions", orderHandler.CreateSession)
-				order.Patch("/sessions/:id", orderHandler.UpdateSession)
 				order.Delete("/sessions/:id", orderHandler.DeleteSession)
 				order.Get("/connect", fiberWebsocket.New(websocketHandler.Admin))
 			}

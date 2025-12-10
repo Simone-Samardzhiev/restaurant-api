@@ -34,6 +34,8 @@ const (
 	SuccessfulDeletionOfOrderedProduct   MessageType = "DELETE_ORDERED_PRODUCT_OK"
 	UpdateOrderedProductStatus           MessageType = "UPDATE_ORDERED_PRODUCT_STATUS"
 	SuccessfulUpdateOrderedProductStatus MessageType = "UPDATE_ORDERED_PRODUCT_STATUS_OK"
+	UpdateSession                        MessageType = "UPDATE_SESSION"
+	SuccessfulUpdateSession              MessageType = "UPDATE_SESSION_STATUS_OK"
 )
 
 // Message represent a websocket message.
@@ -78,10 +80,13 @@ type DeleteOrderedProductData struct {
 	Id uuid.UUID `json:"id" validate:"required"`
 }
 
+// SuccessfulDeletionOfOrderedProductData represent a successful message when
+// deletion of an ordered product is successful.
 type SuccessfulDeletionOfOrderedProductData struct {
 	Id uuid.UUID `json:"id" validate:"required"`
 }
 
+// NewSuccessfulDeletionOfOrderedProductData creates a new SuccessfulDeletionOfOrderedProductData instance.
 func NewSuccessfulDeletionOfOrderedProductData(id uuid.UUID) SuccessfulDeletionOfOrderedProductData {
 	return SuccessfulDeletionOfOrderedProductData{
 		Id: id,
@@ -92,6 +97,29 @@ func NewSuccessfulDeletionOfOrderedProductData(id uuid.UUID) SuccessfulDeletionO
 type UpdateOrderedProductStatusData struct {
 	Id     uuid.UUID                   `json:"id" validate:"required"`
 	Status domain.OrderedProductStatus `json:"status" validate:"orderedProductStatus"`
+}
+
+// UpdateOrderSessionData represents the message data for updating an order session
+type UpdateOrderSessionData struct {
+	Id          uuid.UUID                  `json:"id" validate:"required"`
+	TableNumber *int                       `json:"tableNumber" validate:"omitempty,min=1"`
+	Status      *domain.OrderSessionStatus `json:"status" validate:"omitempty,orderStatus"`
+}
+
+// SuccessfulUpdateOrderSessionData represent a successful message when order session update is successful.
+type SuccessfulUpdateOrderSessionData struct {
+	Id          uuid.UUID                  `json:"id"`
+	TableNumber int                        `json:"tableNumber"`
+	Status      *domain.OrderSessionStatus `json:"status"`
+}
+
+// NewSuccessfulUpdateOrderSessionData creates a new SuccessfulUpdateOrderSessionData instance.
+func NewSuccessfulUpdateOrderSessionData(id uuid.UUID, tableNumber int, status domain.OrderSessionStatus) SuccessfulUpdateOrderSessionData {
+	return SuccessfulUpdateOrderSessionData{
+		Id:          id,
+		TableNumber: tableNumber,
+		Status:      &status,
+	}
 }
 
 // Broadcast represent a broadcast to a specific session id.

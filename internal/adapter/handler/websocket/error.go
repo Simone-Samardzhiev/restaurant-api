@@ -18,14 +18,21 @@ func handleDomainError(conn *websocket.Conn, err error) {
 	switch {
 	case errors.Is(err, domain.ErrProductNotFound):
 		writeString("Product not found", conn)
+
 	case errors.Is(err, domain.ErrOrderSessionNotFound):
 		writeString("Session not found", conn)
+
 	case errors.Is(err, domain.ErrOrderSessionIsNotOpen):
 		writeString("Session is not open", conn)
+
 	case errors.Is(err, domain.ErrOrderedProductNotFound):
 		writeString("Ordered product not found", conn)
+
 	case errors.Is(err, domain.ErrOrderedProductNotPending):
 		writeString("Only pending products can be deleted by a client", conn)
+
+	case errors.Is(err, domain.ErrNothingToUpdate):
+		writeString("Nothing to update", conn)
 	default:
 		zap.L().Error("Unknown error", zap.Error(err))
 		writeString("Internal server error", conn)
