@@ -118,6 +118,84 @@ func (c *MockOrderRepositoryAddSessionCall) DoAndReturn(f func(context.Context, 
 	return c
 }
 
+// DeleteOrderedProduct mocks base method.
+func (m *MockOrderRepository) DeleteOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOrderedProduct", ctx, orderedProductId)
+	ret0, _ := ret[0].(*domain.OrderedProduct)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteOrderedProduct indicates an expected call of DeleteOrderedProduct.
+func (mr *MockOrderRepositoryMockRecorder) DeleteOrderedProduct(ctx, orderedProductId any) *MockOrderRepositoryDeleteOrderedProductCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrderedProduct", reflect.TypeOf((*MockOrderRepository)(nil).DeleteOrderedProduct), ctx, orderedProductId)
+	return &MockOrderRepositoryDeleteOrderedProductCall{Call: call}
+}
+
+// MockOrderRepositoryDeleteOrderedProductCall wrap *gomock.Call
+type MockOrderRepositoryDeleteOrderedProductCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockOrderRepositoryDeleteOrderedProductCall) Return(arg0 *domain.OrderedProduct, arg1 error) *MockOrderRepositoryDeleteOrderedProductCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockOrderRepositoryDeleteOrderedProductCall) Do(f func(context.Context, uuid.UUID) (*domain.OrderedProduct, error)) *MockOrderRepositoryDeleteOrderedProductCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockOrderRepositoryDeleteOrderedProductCall) DoAndReturn(f func(context.Context, uuid.UUID) (*domain.OrderedProduct, error)) *MockOrderRepositoryDeleteOrderedProductCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// DeletePendingOrderedProduct mocks base method.
+func (m *MockOrderRepository) DeletePendingOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePendingOrderedProduct", ctx, orderedProductId)
+	ret0, _ := ret[0].(*domain.OrderedProduct)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePendingOrderedProduct indicates an expected call of DeletePendingOrderedProduct.
+func (mr *MockOrderRepositoryMockRecorder) DeletePendingOrderedProduct(ctx, orderedProductId any) *MockOrderRepositoryDeletePendingOrderedProductCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingOrderedProduct", reflect.TypeOf((*MockOrderRepository)(nil).DeletePendingOrderedProduct), ctx, orderedProductId)
+	return &MockOrderRepositoryDeletePendingOrderedProductCall{Call: call}
+}
+
+// MockOrderRepositoryDeletePendingOrderedProductCall wrap *gomock.Call
+type MockOrderRepositoryDeletePendingOrderedProductCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockOrderRepositoryDeletePendingOrderedProductCall) Return(arg0 *domain.OrderedProduct, arg1 error) *MockOrderRepositoryDeletePendingOrderedProductCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockOrderRepositoryDeletePendingOrderedProductCall) Do(f func(context.Context, uuid.UUID) (*domain.OrderedProduct, error)) *MockOrderRepositoryDeletePendingOrderedProductCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockOrderRepositoryDeletePendingOrderedProductCall) DoAndReturn(f func(context.Context, uuid.UUID) (*domain.OrderedProduct, error)) *MockOrderRepositoryDeletePendingOrderedProductCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // DeleteSession mocks base method.
 func (m *MockOrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -331,6 +409,44 @@ func (c *MockOrderServiceCreateSessionCall) Do(f func(context.Context) (*domain.
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockOrderServiceCreateSessionCall) DoAndReturn(f func(context.Context) (*domain.OrderSession, error)) *MockOrderServiceCreateSessionCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// DeleteOrderedProduct mocks base method.
+func (m *MockOrderService) DeleteOrderedProduct(ctx context.Context, productId uuid.UUID, isPrivilegedCall bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOrderedProduct", ctx, productId, isPrivilegedCall)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteOrderedProduct indicates an expected call of DeleteOrderedProduct.
+func (mr *MockOrderServiceMockRecorder) DeleteOrderedProduct(ctx, productId, isPrivilegedCall any) *MockOrderServiceDeleteOrderedProductCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrderedProduct", reflect.TypeOf((*MockOrderService)(nil).DeleteOrderedProduct), ctx, productId, isPrivilegedCall)
+	return &MockOrderServiceDeleteOrderedProductCall{Call: call}
+}
+
+// MockOrderServiceDeleteOrderedProductCall wrap *gomock.Call
+type MockOrderServiceDeleteOrderedProductCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockOrderServiceDeleteOrderedProductCall) Return(arg0 error) *MockOrderServiceDeleteOrderedProductCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockOrderServiceDeleteOrderedProductCall) Do(f func(context.Context, uuid.UUID, bool) error) *MockOrderServiceDeleteOrderedProductCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockOrderServiceDeleteOrderedProductCall) DoAndReturn(f func(context.Context, uuid.UUID, bool) error) *MockOrderServiceDeleteOrderedProductCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

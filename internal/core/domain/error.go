@@ -44,4 +44,9 @@ var (
 
 	// ErrOrderSessionIsNotOpen indicates a user tries to order from closed session.
 	ErrOrderSessionIsNotOpen = errors.New("order session is not open")
+
+	// ErrOrderedProductNotFound indicates an ordered product was not found.
+	ErrOrderedProductNotFound = errors.New("ordered product not found")
+
+	ErrOrderedProductNotPending = errors.New("ordered product not pending")
 )

@@ -65,12 +65,21 @@ func (s *OrderService) ValidateSession(ctx context.Context, sessionId uuid.UUID)
 	return nil
 }
 
-func (s *OrderService) OrderProduct(ctx context.Context, productId uuid.UUID, sessionId uuid.UUID) (uuid.UUID, error) {
+func (s *OrderService) OrderProduct(ctx context.Context, productId uuid.UUID, sessionId uuid.UUID) (*domain.OrderedProduct, error) {
 	if err := s.ValidateSession(ctx, sessionId); err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	id := uuid.New()
 	orderedProduct := domain.NewOrderedProduct(id, productId, sessionId, domain.Pending)
-	return id, s.orderRepository.AddOrderedProduct(ctx, orderedProduct)
+	return orderedProduct, s.orderRepository.AddOrderedProduct(ctx, orderedProduct)
+}
+
+func (s *OrderService) DeleteOrderedProduct(ctx context.Context, productId uuid.UUID, isPrivilegedCall bool) (orderedProduct *domain.OrderedProduct, err error) {
+	if isPrivilegedCall {
+		orderedProduct, err = s.orderRepository.DeleteOrderedProduct(ctx, productId)
+	} else {
+		orderedProduct, err = s.orderRepository.DeletePendingOrderedProduct(ctx, productId)
+	}
+	return
 }

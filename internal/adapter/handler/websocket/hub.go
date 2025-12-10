@@ -1,71 +1,69 @@
 package websocket
 
-import "github.com/google/uuid"
+import (
+	"encoding/json"
 
-type Broadcast struct {
-	ClientId  uuid.UUID
-	SessionId uuid.UUID
-	Message   []byte
-}
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+)
 
-func NewBroadcast(clientId, sessionId uuid.UUID, message []byte) *Broadcast {
-	return &Broadcast{
-		ClientId:  clientId,
-		SessionId: sessionId,
-		Message:   message,
-	}
-}
-
-// Hub keeps all connected clients and manages message between them.
 type Hub struct {
-	register   chan *Client
-	unregister chan *Client
-	broadcast  chan *Broadcast
-	clients    map[uuid.UUID]*Client
-	admins     map[uuid.UUID]*Client
+	clients map[uuid.UUID]Client
+	admins  map[uuid.UUID]Admin
+
+	registerClient   chan *Client
+	unregisterClient chan *Client
+
+	registerAdmin   chan *Admin
+	unregisterAdmin chan *Admin
+
+	broadcast chan *Broadcast
 }
 
-// NewHub creates a new Hub instance.
 func NewHub() *Hub {
 	return &Hub{
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		broadcast:  make(chan *Broadcast),
-		clients:    make(map[uuid.UUID]*Client),
-		admins:     make(map[uuid.UUID]*Client),
+		clients: make(map[uuid.UUID]Client),
+		admins:  make(map[uuid.UUID]Admin),
+
+		registerClient:   make(chan *Client),
+		unregisterClient: make(chan *Client),
+
+		registerAdmin:   make(chan *Admin),
+		unregisterAdmin: make(chan *Admin),
+
+		broadcast: make(chan *Broadcast),
 	}
 }
 
-// Run start an infinity for loop listening on the channels.
 func (h *Hub) Run() {
 	for {
 		select {
-		case client := <-h.register:
-			if client.IsAdmin {
-				h.admins[client.Id] = client
-			} else {
-				h.clients[client.Id] = client
-			}
+		case client := <-h.registerClient:
+			h.clients[client.Id] = *client
+		case client := <-h.unregisterClient:
+			delete(h.clients, client.Id)
 
-		case client := <-h.unregister:
-			if client.IsAdmin {
-				delete(h.admins, client.Id)
-			} else {
-				delete(h.clients, client.Id)
-			}
+		case admin := <-h.registerAdmin:
+			h.admins[admin.Id] = *admin
+		case admin := <-h.unregisterAdmin:
+			delete(h.admins, admin.Id)
 
 		case broadcast := <-h.broadcast:
+			messageData, err := json.Marshal(broadcast.Message)
+			if err != nil {
+				zap.L().Error("error encoding broadcast message", zap.Error(err))
+			}
+
 			for _, client := range h.clients {
-				if client.SessionID == broadcast.SessionId && client.Id != broadcast.ClientId {
-					writeMessage(broadcast.Message, client.Connection)
+				if client.SessionId == broadcast.SessionId {
+					writeMessage(messageData, client.Conn)
 				}
 			}
 
 			for _, admin := range h.admins {
-				if admin.Id != broadcast.ClientId {
-					writeMessage(broadcast.Message, admin.Connection)
-				}
+				writeMessage(messageData, admin.Conn)
 			}
 		}
+
 	}
 }

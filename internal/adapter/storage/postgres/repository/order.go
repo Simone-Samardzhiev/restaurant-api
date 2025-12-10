@@ -160,3 +160,74 @@ func (r *OrderRepository) AddOrderedProduct(ctx context.Context, product *domain
 
 	return nil
 }
+
+func (r *OrderRepository) DeletePendingOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		zap.L().Error("error starting transaction", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	row := tx.QueryRowContext(
+		ctx, `DELETE FROM ordered_products 
+       	WHERE id = $1
+       	RETURNING id, product_id, session_id, status`,
+		orderedProductId,
+	)
+
+	var orderedProduct domain.OrderedProduct
+	err = row.Scan(
+		&orderedProduct.Id,
+		&orderedProduct.ProductId,
+		&orderedProduct.OrderSessionID,
+		&orderedProduct.Status,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrOrderedProductNotFound
+	} else if err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	if orderedProduct.Status != domain.Pending {
+		err = tx.Rollback()
+		if err != nil {
+			zap.L().Warn("error rolling back transaction", zap.Error(err))
+		}
+		return nil, domain.ErrOrderedProductNotPending
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		zap.L().Warn("error committing transaction", zap.Error(err))
+	}
+
+	return &orderedProduct, nil
+}
+
+func (r *OrderRepository) DeleteOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error) {
+	row := r.db.QueryRowContext(
+		ctx, `DELETE FROM ordered_products 
+       	WHERE id = $1
+       	RETURNING id, product_id, session_id, status`,
+		orderedProductId,
+	)
+
+	var orderedProduct domain.OrderedProduct
+	err := row.Scan(
+		&orderedProduct.Id,
+		&orderedProduct.ProductId,
+		&orderedProduct.OrderSessionID,
+		&orderedProduct.Status,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrOrderedProductNotFound
+	} else if err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	return &orderedProduct, nil
+}

@@ -1,190 +1,204 @@
 package websocket
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
-	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"golang.org/x/net/context"
 )
 
-// Handler handles websocket connections.
+// Handler represent a handler for websocket connections.
 type Handler struct {
-	hub          *Hub
 	orderService port.OrderService
+	hub          *Hub
 	validator    *validator.Validate
 }
 
 // NewHandler creates a new Handler instance.
-func NewHandler(hub *Hub, orderService port.OrderService, validator *validator.Validate) *Handler {
+func NewHandler(orderService port.OrderService, hub *Hub, validator *validator.Validate) *Handler {
 	return &Handler{
-		hub:          hub,
 		orderService: orderService,
+		hub:          hub,
 		validator:    validator,
 	}
 }
 
-func writeMessage(msg []byte, conn *websocket.Conn) {
-	if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-		zap.L().Error("websocket write message failed", zap.Error(err))
-	}
-}
-
-func writeStringMessage(msg string, conn *websocket.Conn) {
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
-		zap.L().Error("websocket write message failed", zap.Error(err))
-	}
-}
-
-func isUnexpectedCloseError(err error) bool {
-	return websocket.IsUnexpectedCloseError(
-		err,
-		websocket.CloseNormalClosure,
-		websocket.CloseNormalClosure,
-		websocket.CloseGoingAway,
-		websocket.CloseAbnormalClosure,
-		websocket.CloseNoStatusReceived,
-	)
-}
-
-func (h *Handler) ConnectAsAdmin(conn *websocket.Conn) {
-	client := NewClient(uuid.New(), true, uuid.Nil, conn)
-	h.hub.register <- client
-	defer func() {
-		h.hub.unregister <- client
-	}()
-
-	for {
-		_, _, err := conn.ReadMessage()
-
-		if err != nil {
-			if isUnexpectedCloseError(err) {
-				zap.L().Error("websocket connection closed", zap.Error(err))
-			}
-
-			break
-		}
-	}
-}
-
-func (h *Handler) ValidateClientConnection(c *fiber.Ctx) error {
-	if !websocket.IsWebSocketUpgrade(c) {
-		return fiber.ErrUpgradeRequired
-	}
-
-	sessionId, err := uuid.Parse(c.Params("session_id"))
-	if err != nil {
-		return domain.ErrInvalidUUID
-	}
-
-	if err = h.orderService.ValidateSession(c.Context(), sessionId); err != nil {
-		return err
-	}
-
-	c.Locals("session_id", sessionId)
-	return c.Next()
-}
-
-func (h *Handler) handleClientOrder(ctx context.Context, message *Message, client *Client) {
-	var orderMessageData OrderMessage
-	if err := json.Unmarshal(message.Data, &orderMessageData); err != nil {
-		writeStringMessage("Invalid json format", client.Connection)
+// handleOrderedProductDeletion handles ordered product deletion.
+func (h *Handler) handleOrderedProductDeletion(ctx context.Context, message *Message, isPrivilegedCall bool, conn *websocket.Conn) {
+	var deletionData DeleteOrderedProductData
+	if err := json.Unmarshal(message.Data, &deletionData); err != nil {
+		writeString("Invalid json data", conn)
 		return
 	}
 
-	if err := h.validator.Struct(orderMessageData); err != nil {
-		writeStringMessage("Invalid json format", client.Connection)
+	if err := h.validator.Struct(deletionData); err != nil {
+		writeString("Invalid json data", conn)
 		return
 	}
 
-	orderedProductId, err := h.orderService.OrderProduct(
-		ctx,
-		orderMessageData.ProductId,
-		client.SessionID,
-	)
-
-	switch {
-	case err == nil:
-		dataPayload, encodeErr := json.Marshal(SuccessfulOrderMessage{
-			ProductId:        orderMessageData.ProductId,
-			OrderedProductId: orderedProductId,
-			SessionId:        client.SessionID,
-		})
+	deletedProduct, err := h.orderService.DeleteOrderedProduct(ctx, deletionData.Id, isPrivilegedCall)
+	if err == nil {
+		data, encodeErr := json.Marshal(NewSuccessfulDeletionOfOrderedProductData(deletionData.Id))
 		if encodeErr != nil {
-			zap.L().Error("json encode error", zap.Error(encodeErr))
+			zap.L().Error("Error encoding message", zap.Error(encodeErr))
+			writeString("Internal server error", conn)
 			return
 		}
 
-		resMessage := Message{
-			Type: SuccessfulOrder,
-			Data: dataPayload,
-		}
-
-		resBytes, encodeErr := json.Marshal(resMessage)
-		if encodeErr != nil {
-			zap.L().Error("json encode error", zap.Error(encodeErr))
-			return
-		}
-
-		writeMessage(resBytes, client.Connection)
-
-		h.hub.broadcast <- NewBroadcast(client.Id, client.SessionID, resBytes)
-	case errors.Is(err, domain.ErrOrderSessionIsNotOpen):
-		writeStringMessage("Session is not open!", client.Connection)
-	case errors.Is(err, domain.ErrProductNotFound):
-		writeStringMessage("Product not found", client.Connection)
-	default:
-		zap.L().Error("error ordering a product", zap.Error(err))
-		writeStringMessage("Internal server error", client.Connection)
+		h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulDeletionOfOrderedProduct, data), deletedProduct.OrderSessionID)
+	} else {
+		handleDomainError(conn, err)
 	}
 }
 
-func (h *Handler) ConnectAsClient(conn *websocket.Conn) {
-	sessionIdValue := conn.Locals("session_id")
-	sessionId, ok := sessionIdValue.(uuid.UUID)
-	if !ok {
-		zap.L().Error("Missing session_id in locals")
-		return
-	}
-
+// Admin handles admin websocket session.
+func (h *Handler) Admin(conn *websocket.Conn) {
+	admin := NewAdmin(conn)
 	ctx, cancel := context.WithCancel(context.Background())
-	client := NewClient(uuid.New(), false, sessionId, conn)
-	h.hub.register <- client
+	h.hub.registerAdmin <- admin
+
 	defer func() {
 		cancel()
-		h.hub.unregister <- client
+		h.hub.unregisterAdmin <- admin
 	}()
 
 	for {
 		msgType, msg, err := conn.ReadMessage()
-
 		if err != nil {
-			if isUnexpectedCloseError(err) {
-				zap.L().Error("reading message error", zap.Error(err))
+			if !isExpectedCloseError(err) {
+				zap.L().Error("error reading message", zap.Error(err))
 			}
-			break
+			return
 		}
 
 		if msgType != websocket.TextMessage {
-			writeStringMessage("Unexpected message type, only text allowed", conn)
-			continue
+			writeString("Unexpected message type, only text messages are supported", conn)
+			return
 		}
 
 		var message Message
 		if err = json.Unmarshal(msg, &message); err != nil {
-			writeStringMessage("Invalid json format", conn)
-			continue
+			writeString("Unexpected json", conn)
+			return
+		}
+
+		if err = h.validator.Struct(&message); err != nil {
+			writeString("Unexpected json", conn)
+		}
+
+		switch message.Type {
+		case DeleteOrderedProduct:
+			h.handleOrderedProductDeletion(ctx, &message, true, conn)
+		default:
+			writeString("Unexpected message type", conn)
+		}
+	}
+
+}
+
+// validateClientSession validates the client session and return the session id
+// and bool variable representing if the session is valid.
+func (h *Handler) validateClientSession(ctx context.Context, conn *websocket.Conn) (uuid.UUID, bool) {
+	sessionId, err := uuid.Parse(conn.Params("session"))
+	if err != nil {
+		writeString("Invalid session id format", conn)
+		return uuid.Nil, false
+	}
+
+	if err = h.orderService.ValidateSession(ctx, sessionId); err != nil {
+		writeString("The session is not open. Please connect the waiter.", conn)
+		return uuid.Nil, false
+	}
+	return sessionId, true
+}
+
+// handleOrder handles order message from clients.
+func (h *Handler) handleOrder(ctx context.Context, message *Message, sessionId uuid.UUID, conn *websocket.Conn) {
+	var orderData OrderData
+	if err := json.Unmarshal(message.Data, &orderData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+	if err := h.validator.Struct(orderData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	orderedProduct, err := h.orderService.OrderProduct(ctx, orderData.ProductID, sessionId)
+	if err == nil {
+		data, encodeErr := json.Marshal(
+			NewSuccessfulOrderData(
+				orderedProduct.Id,
+				orderedProduct.ProductId,
+				orderedProduct.OrderSessionID,
+				orderedProduct.Status,
+			),
+		)
+		if encodeErr != nil {
+			zap.L().Error("Error encoding message", zap.Error(encodeErr))
+			writeString("Internal server error", conn)
+			return
+		}
+
+		h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulOrder, data), sessionId)
+	} else {
+		handleDomainError(conn, err)
+	}
+}
+
+// Client handles client websocket session.
+func (h *Handler) Client(conn *websocket.Conn) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	sessionId, ok := h.validateClientSession(ctx, conn)
+	if !ok {
+		return
+	}
+
+	client := NewClient(sessionId, conn)
+	h.hub.registerClient <- client
+
+	defer func() {
+		cancel()
+		h.hub.unregisterClient <- client
+	}()
+
+	for {
+		msgType, msg, err := conn.ReadMessage()
+		if err != nil {
+			if !isExpectedCloseError(err) {
+				zap.L().Error("error reading message", zap.Error(err))
+			}
+			return
+		}
+
+		if msgType != websocket.TextMessage {
+			writeString("Unexpected message type, only text messages are supported", conn)
+			return
+		}
+
+		var message Message
+		if err = json.Unmarshal(msg, &message); err != nil {
+			writeString("Unexpected json", conn)
+			return
+		}
+
+		if err = h.validator.Struct(&message); err != nil {
+			writeString("Unexpected json", conn)
+			return
 		}
 
 		switch message.Type {
 		case Order:
-			h.handleClientOrder(ctx, &message, client)
+			h.handleOrder(ctx, &message, sessionId, conn)
+		case DeleteOrderedProduct:
+			h.handleOrderedProductDeletion(ctx, &message, false, conn)
+		default:
+			writeString("Unexpected message type", conn)
 		}
 	}
 }

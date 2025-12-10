@@ -2,32 +2,100 @@ package websocket
 
 import (
 	"encoding/json"
+	"restaurant/internal/core/domain"
 
+	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
-// MessageType is an enum for message types
+// writeMessage writes a byte message to a connection and logs any errors.
+func writeMessage(msg []byte, conn *websocket.Conn) {
+	if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+		zap.L().Error("error writing message", zap.Error(err))
+	}
+}
+
+// writeString writes a string message to a connection and logs any errors.
+func writeString(msg string, conn *websocket.Conn) {
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+		zap.L().Error("error writing message", zap.Error(err))
+	}
+}
+
+// MessageType is an enum for message types.
 type MessageType string
 
+// MessageType enum values.
 const (
-	Order           MessageType = "order"
-	SuccessfulOrder MessageType = "successful_order"
+	Order                              MessageType = "ORDER"
+	SuccessfulOrder                    MessageType = "ORDER_OK"
+	DeleteOrderedProduct               MessageType = "DELETE_ORDERED_PRODUCT"
+	SuccessfulDeletionOfOrderedProduct MessageType = "DELETE_ORDERED_PRODUCT_OK"
 )
 
 // Message represent a websocket message.
 type Message struct {
-	Type MessageType     `json:"type" validate:"required,messageType"`
-	Data json.RawMessage `json:"data" validate:"required"`
+	Type MessageType     `json:"type" binding:"required,messageType"`
+	Data json.RawMessage `json:"data" binding:"required"`
 }
 
-// OrderMessage represents the data needed for ordering a new product.
-type OrderMessage struct {
-	ProductId uuid.UUID `json:"productId" validate:"required"`
+// NewMessage creates a new Message instance.
+func NewMessage(messageType MessageType, data json.RawMessage) Message {
+	return Message{
+		Type: messageType,
+		Data: data,
+	}
 }
 
-// SuccessfulOrderMessage represents the data send when order is ordering a product is completed.
-type SuccessfulOrderMessage struct {
-	ProductId        uuid.UUID `json:"productId"`
-	OrderedProductId uuid.UUID `json:"orderedProductId"`
-	SessionId        uuid.UUID `json:"sessionId"`
+// OrderData represent the message data for ordering a product.
+type OrderData struct {
+	ProductID uuid.UUID `json:"productId" validate:"required"`
+}
+
+// SuccessfulOrderData represent a successful message when order is accepted.
+type SuccessfulOrderData struct {
+	Id        uuid.UUID                   `json:"id"`
+	ProductID uuid.UUID                   `json:"productId"`
+	SessionId uuid.UUID                   `json:"sessionId"`
+	Status    domain.OrderedProductStatus `json:"status"`
+}
+
+// NewSuccessfulOrderData creates a new SuccessfulOrderData instance.
+func NewSuccessfulOrderData(id, productID, sessionId uuid.UUID, status domain.OrderedProductStatus) SuccessfulOrderData {
+	return SuccessfulOrderData{
+		Id:        id,
+		ProductID: productID,
+		SessionId: sessionId,
+		Status:    status,
+	}
+}
+
+// DeleteOrderedProductData represents the message data for deleting an ordered product.
+type DeleteOrderedProductData struct {
+	Id uuid.UUID `json:"id" validate:"required"`
+}
+
+type SuccessfulDeletionOfOrderedProductData struct {
+	Id uuid.UUID `json:"id" validate:"required"`
+}
+
+func NewSuccessfulDeletionOfOrderedProductData(id uuid.UUID) SuccessfulDeletionOfOrderedProductData {
+	return SuccessfulDeletionOfOrderedProductData{
+		Id: id,
+	}
+}
+
+// Broadcast represent a broadcast to a specific session id.
+type Broadcast struct {
+	Message   Message
+	SessionId uuid.UUID
+}
+
+// NewBroadcast creates a new Broadcast instance.
+func NewBroadcast(message Message, sessionId uuid.UUID) *Broadcast {
+	return &Broadcast{
+		Message:   message,
+		SessionId: sessionId,
+	}
 }

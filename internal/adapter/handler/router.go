@@ -70,7 +70,7 @@ func NewRouter(
 				order.Post("/sessions", orderHandler.CreateSession)
 				order.Patch("/sessions/:id", orderHandler.UpdateSession)
 				order.Delete("/sessions/:id", orderHandler.DeleteSession)
-				order.Get("/connect", fiberWebsocket.New(websocketHandler.ConnectAsAdmin))
+				order.Get("/connect", fiberWebsocket.New(websocketHandler.Admin))
 			}
 		}
 
@@ -78,7 +78,7 @@ func NewRouter(
 		{
 			public.Get("/product-categories", productHandler.GetProductCategories)
 			public.Get("/products", productHandler.GetProducts)
-			public.Get("/connect/:session_id", websocketHandler.ValidateClientConnection, fiberWebsocket.New(websocketHandler.ConnectAsClient))
+			public.Get("/connect/:session", fiberWebsocket.New(websocketHandler.Client))
 		}
 	}
 	app.Use(middleware.NotFoundHandler())

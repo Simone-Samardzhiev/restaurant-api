@@ -5,20 +5,28 @@ import (
 	"github.com/google/uuid"
 )
 
-// Client represents a connected user to the websocket.
 type Client struct {
-	Id         uuid.UUID
-	IsAdmin    bool
-	SessionID  uuid.UUID
-	Connection *websocket.Conn
+	Id        uuid.UUID
+	SessionId uuid.UUID
+	Conn      *websocket.Conn
 }
 
-// NewClient creates a new Client instance.
-func NewClient(id uuid.UUID, isAdmin bool, sessionID uuid.UUID, connection *websocket.Conn) *Client {
+func NewClient(sessionId uuid.UUID, conn *websocket.Conn) *Client {
 	return &Client{
-		Id:         id,
-		IsAdmin:    isAdmin,
-		SessionID:  sessionID,
-		Connection: connection,
+		Id:        uuid.New(),
+		SessionId: sessionId,
+		Conn:      conn,
+	}
+}
+
+type Admin struct {
+	Id   uuid.UUID
+	Conn *websocket.Conn
+}
+
+func NewAdmin(conn *websocket.Conn) *Admin {
+	return &Admin{
+		Id:   uuid.New(),
+		Conn: conn,
 	}
 }

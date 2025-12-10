@@ -26,6 +26,12 @@ type OrderRepository interface {
 
 	// AddOrderedProduct inserts an ordered product.
 	AddOrderedProduct(ctx context.Context, product *domain.OrderedProduct) error
+
+	// DeletePendingOrderedProduct deletes an ordered product only if the status is pending.
+	DeletePendingOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error)
+
+	// DeleteOrderedProduct deletes an ordered product.
+	DeleteOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error)
 }
 
 // OrderService is an interface for interacting with orders business login
@@ -46,5 +52,8 @@ type OrderService interface {
 	ValidateSession(ctx context.Context, sessionId uuid.UUID) error
 
 	// OrderProduct validates the session and adds the product.
-	OrderProduct(ctx context.Context, productId uuid.UUID, sessionId uuid.UUID) (uuid.UUID, error)
+	OrderProduct(ctx context.Context, productId uuid.UUID, sessionId uuid.UUID) (*domain.OrderedProduct, error)
+
+	// DeleteOrderedProduct deletes the ordered product status.
+	DeleteOrderedProduct(ctx context.Context, productId uuid.UUID, isPrivilegedCall bool) (*domain.OrderedProduct, error)
 }
