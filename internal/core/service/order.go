@@ -83,3 +83,7 @@ func (s *OrderService) DeleteOrderedProduct(ctx context.Context, productId uuid.
 	}
 	return
 }
+
+func (s *OrderService) UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error) {
+	return s.orderRepository.UpdateOrderedProductStatus(ctx, id, status)
+}

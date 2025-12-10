@@ -32,6 +32,9 @@ type OrderRepository interface {
 
 	// DeleteOrderedProduct deletes an ordered product.
 	DeleteOrderedProduct(ctx context.Context, orderedProductId uuid.UUID) (*domain.OrderedProduct, error)
+
+	// UpdateOrderedProductStatus updates and returns the ordered product with updates status.
+	UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error)
 }
 
 // OrderService is an interface for interacting with orders business login
@@ -56,4 +59,7 @@ type OrderService interface {
 
 	// DeleteOrderedProduct deletes the ordered product status.
 	DeleteOrderedProduct(ctx context.Context, productId uuid.UUID, isPrivilegedCall bool) (*domain.OrderedProduct, error)
+
+	// UpdateOrderedProductStatus updates and returns the ordered product with updates status.
+	UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error)
 }

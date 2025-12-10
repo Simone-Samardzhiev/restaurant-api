@@ -41,18 +41,40 @@ func (h *Handler) handleOrderedProductDeletion(ctx context.Context, message *Mes
 	}
 
 	deletedProduct, err := h.orderService.DeleteOrderedProduct(ctx, deletionData.Id, isPrivilegedCall)
-	if err == nil {
-		data, encodeErr := json.Marshal(NewSuccessfulDeletionOfOrderedProductData(deletionData.Id))
-		if encodeErr != nil {
-			zap.L().Error("Error encoding message", zap.Error(encodeErr))
-			writeString("Internal server error", conn)
-			return
-		}
-
-		h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulDeletionOfOrderedProduct, data), deletedProduct.OrderSessionID)
-	} else {
+	if err != nil {
 		handleDomainError(conn, err)
+		return
 	}
+
+	data, encodeErr := json.Marshal(NewSuccessfulDeletionOfOrderedProductData(deletionData.Id))
+	if encodeErr != nil {
+		zap.L().Error("Error encoding message", zap.Error(encodeErr))
+		writeString("Internal server error", conn)
+		return
+	}
+
+	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulDeletionOfOrderedProduct, data), deletedProduct.OrderSessionID)
+}
+
+// handleUpdatingOrderedProductStatus handles updating product statuses
+func (h *Handler) handleUpdatingOrderedProductStatus(ctx context.Context, message *Message, conn *websocket.Conn) {
+	var updatingData UpdateOrderedProductStatusData
+	if err := json.Unmarshal(message.Data, &updatingData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	if err := h.validator.Struct(updatingData); err != nil {
+		writeString("Invalid json data", conn)
+	}
+
+	updatedProduct, err := h.orderService.UpdateOrderedProductStatus(ctx, updatingData.Id, updatingData.Status)
+	if err != nil {
+		handleDomainError(conn, err)
+		return
+	}
+
+	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulUpdateOrderedProductStatus, message.Data), updatedProduct.OrderSessionID)
 }
 
 // Admin handles admin websocket session.
@@ -93,6 +115,8 @@ func (h *Handler) Admin(conn *websocket.Conn) {
 		switch message.Type {
 		case DeleteOrderedProduct:
 			h.handleOrderedProductDeletion(ctx, &message, true, conn)
+		case UpdateOrderedProductStatus:
+			h.handleUpdatingOrderedProductStatus(ctx, &message, conn)
 		default:
 			writeString("Unexpected message type", conn)
 		}
@@ -129,25 +153,26 @@ func (h *Handler) handleOrder(ctx context.Context, message *Message, sessionId u
 	}
 
 	orderedProduct, err := h.orderService.OrderProduct(ctx, orderData.ProductID, sessionId)
-	if err == nil {
-		data, encodeErr := json.Marshal(
-			NewSuccessfulOrderData(
-				orderedProduct.Id,
-				orderedProduct.ProductId,
-				orderedProduct.OrderSessionID,
-				orderedProduct.Status,
-			),
-		)
-		if encodeErr != nil {
-			zap.L().Error("Error encoding message", zap.Error(encodeErr))
-			writeString("Internal server error", conn)
-			return
-		}
-
-		h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulOrder, data), sessionId)
-	} else {
+	if err != nil {
 		handleDomainError(conn, err)
+		return
 	}
+
+	data, encodeErr := json.Marshal(
+		NewSuccessfulOrderData(
+			orderedProduct.Id,
+			orderedProduct.ProductId,
+			orderedProduct.OrderSessionID,
+			orderedProduct.Status,
+		),
+	)
+	if encodeErr != nil {
+		zap.L().Error("Error encoding message", zap.Error(encodeErr))
+		writeString("Internal server error", conn)
+		return
+	}
+
+	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulOrder, data), sessionId)
 }
 
 // Client handles client websocket session.

@@ -231,3 +231,32 @@ func (r *OrderRepository) DeleteOrderedProduct(ctx context.Context, orderedProdu
 
 	return &orderedProduct, nil
 }
+
+func (r *OrderRepository) UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`UPDATE ordered_products 
+		SET status = $1
+		WHERE id = $2
+		RETURNING id, product_id, session_id, status`,
+		status,
+		id,
+	)
+
+	var orderedProduct domain.OrderedProduct
+	err := row.Scan(
+		&orderedProduct.Id,
+		&orderedProduct.ProductId,
+		&orderedProduct.OrderSessionID,
+		&orderedProduct.Status,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrOrderedProductNotFound
+	} else if err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	return &orderedProduct, nil
+}

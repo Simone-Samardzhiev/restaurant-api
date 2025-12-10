@@ -28,10 +28,12 @@ type MessageType string
 
 // MessageType enum values.
 const (
-	Order                              MessageType = "ORDER"
-	SuccessfulOrder                    MessageType = "ORDER_OK"
-	DeleteOrderedProduct               MessageType = "DELETE_ORDERED_PRODUCT"
-	SuccessfulDeletionOfOrderedProduct MessageType = "DELETE_ORDERED_PRODUCT_OK"
+	Order                                MessageType = "ORDER"
+	SuccessfulOrder                      MessageType = "ORDER_OK"
+	DeleteOrderedProduct                 MessageType = "DELETE_ORDERED_PRODUCT"
+	SuccessfulDeletionOfOrderedProduct   MessageType = "DELETE_ORDERED_PRODUCT_OK"
+	UpdateOrderedProductStatus           MessageType = "UPDATE_ORDERED_PRODUCT_STATUS"
+	SuccessfulUpdateOrderedProductStatus MessageType = "UPDATE_ORDERED_PRODUCT_STATUS_OK"
 )
 
 // Message represent a websocket message.
@@ -84,6 +86,12 @@ func NewSuccessfulDeletionOfOrderedProductData(id uuid.UUID) SuccessfulDeletionO
 	return SuccessfulDeletionOfOrderedProductData{
 		Id: id,
 	}
+}
+
+// UpdateOrderedProductStatusData represent an update of a product status.
+type UpdateOrderedProductStatusData struct {
+	Id     uuid.UUID                   `json:"id" validate:"required"`
+	Status domain.OrderedProductStatus `json:"status" validate:"orderedProductStatus"`
 }
 
 // Broadcast represent a broadcast to a specific session id.
