@@ -35,6 +35,12 @@ type OrderRepository interface {
 
 	// UpdateOrderedProductStatus updates and returns the ordered product with updates status.
 	UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error)
+
+	// GetBillFromSession calculates the bill for order session.
+	GetBillFromSession(ctx context.Context, id uuid.UUID) (*domain.Bill, error)
+
+	// HasIncompletedOrderedProducts checks if there are any incompleted products for a session
+	HasIncompletedOrderedProducts(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 // OrderService is an interface for interacting with orders business login
@@ -62,4 +68,7 @@ type OrderService interface {
 
 	// UpdateOrderedProductStatus updates and returns the ordered product with updates status.
 	UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error)
+
+	// GetBill fetches the bill for a specific
+	GetBill(ctx context.Context, sessionId uuid.UUID) (*domain.Bill, error)
 }

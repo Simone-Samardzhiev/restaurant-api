@@ -162,6 +162,21 @@ var domainErrorsMap = map[error]ErrorResponse{
 			"Order session not found.",
 		},
 	},
+	domain.ErrOrderSessionIsNotOpen: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "order_session_is_not_open",
+		Messages: []string{
+			"Order session is not open.",
+		},
+	},
+	domain.ErrProductsAreIncomplete: {
+		StatusCode: fiber.StatusBadRequest,
+		Code:       "products_are_incomplete",
+		Messages: []string{
+			"Products are incomplete.",
+			"Please wait till all products have been incomplete in order to get the bill.",
+		},
+	},
 }
 
 // mapDomainError maps domain errors into ErrorResponse.

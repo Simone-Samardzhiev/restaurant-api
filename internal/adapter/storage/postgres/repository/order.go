@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
 
@@ -256,4 +257,79 @@ func (r *OrderRepository) UpdateOrderedProductStatus(ctx context.Context, id uui
 	}
 
 	return &orderedProduct, nil
+}
+
+func (r *OrderRepository) GetBillFromSession(ctx context.Context, id uuid.UUID) (*domain.Bill, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT
+    		p.id AS product_id,
+    		p.name,
+    		p.description, 
+    		p.image_url,
+    		p.delete_image_url,
+    		p.category, 
+    		p.price,
+    		COUNT(op.id) as quantity,
+    		(COUNT(op.id) * p.price) AS total_price
+    	FROM ordered_products op
+    	JOIN products p ON op.product_id = p.id
+    	WHERE op.session_id = $1
+    	GROUP BY p.id`,
+		id,
+	)
+	defer func() {
+		closeErr := rows.Close()
+		if closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	if err != nil {
+		zap.L().Error("error getting bill from session", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	var billItems []domain.BillItem
+	var totalPrice decimal.Decimal
+	for rows.Next() {
+		var billItem domain.BillItem
+		if err = rows.Scan(
+			&billItem.Product.Id,
+			&billItem.Product.Name,
+			&billItem.Product.Description,
+			&billItem.Product.ImageUrl,
+			&billItem.Product.DeleteImageUrl,
+			&billItem.Product.Category,
+			&billItem.Product.Price,
+			&billItem.Quantity,
+			&billItem.TotalPrice,
+		); err != nil {
+			zap.L().Error("error scanning row", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+
+		billItems = append(billItems, billItem)
+		totalPrice = totalPrice.Add(billItem.TotalPrice)
+	}
+
+	return domain.NewBill(billItems, totalPrice), nil
+}
+
+func (r *OrderRepository) HasIncompletedOrderedProducts(ctx context.Context, id uuid.UUID) (bool, error) {
+	var exists bool
+	if err := r.db.QueryRowContext(
+		ctx,
+		`SELECT EXISTS(	
+			SELECT id FROM ordered_products
+			WHERE status != 'done' AND session_id = $1
+    		LIMIT 1
+    	)`,
+		id,
+	).Scan(&exists); err != nil {
+		zap.L().Error("error scanning row", zap.Error(err))
+		return false, domain.ErrInternal
+	}
+
+	return exists, nil
 }

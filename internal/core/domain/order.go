@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+)
 
 // OrderSessionStatus is an enum for order status.
 type OrderSessionStatus string
@@ -69,4 +72,25 @@ func NewUpdateOrderSessionDTO(id uuid.UUID, newTableNumber *int, newStatus *Orde
 		NewTableNumber: newTableNumber,
 		NewStatus:      newStatus,
 	}
+}
+
+// Bill represents a bill entity.
+type Bill struct {
+	Items     []BillItem
+	FullPrice decimal.Decimal
+}
+
+// NewBill creates a new Bill instance.
+func NewBill(items []BillItem, fullPrice decimal.Decimal) *Bill {
+	return &Bill{
+		Items:     items,
+		FullPrice: fullPrice,
+	}
+}
+
+// BillItem represent a bill item entity.
+type BillItem struct {
+	Product    Product
+	Quantity   int
+	TotalPrice decimal.Decimal
 }

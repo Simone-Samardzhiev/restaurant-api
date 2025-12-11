@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"restaurant/internal/adapter/handler/http/response"
+	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
 	"github.com/go-playground/validator/v10"
@@ -59,4 +60,18 @@ func (h *OrderHandler) DeleteSession(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func (h *OrderHandler) GetBill(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return domain.ErrInvalidUUID
+	}
+
+	bill, err := h.orderService.GetBill(c.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.NewBillResponse(bill))
 }

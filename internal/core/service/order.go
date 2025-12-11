@@ -87,3 +87,19 @@ func (s *OrderService) DeleteOrderedProduct(ctx context.Context, productId uuid.
 func (s *OrderService) UpdateOrderedProductStatus(ctx context.Context, id uuid.UUID, status domain.OrderedProductStatus) (*domain.OrderedProduct, error) {
 	return s.orderRepository.UpdateOrderedProductStatus(ctx, id, status)
 }
+
+func (s *OrderService) GetBill(ctx context.Context, sessionId uuid.UUID) (*domain.Bill, error) {
+	if err := s.ValidateSession(ctx, sessionId); err != nil {
+		return nil, err
+	}
+
+	hasIncompleted, err := s.orderRepository.HasIncompletedOrderedProducts(ctx, sessionId)
+	if err != nil {
+		return nil, err
+	}
+	if hasIncompleted {
+		return nil, domain.ErrProductsAreIncomplete
+	}
+
+	return s.orderRepository.GetBillFromSession(ctx, sessionId)
+}

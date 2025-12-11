@@ -78,6 +78,7 @@ func NewRouter(
 			public.Get("/product-categories", productHandler.GetProductCategories)
 			public.Get("/products", productHandler.GetProducts)
 			public.Get("/connect/:session", fiberWebsocket.New(websocketHandler.Client))
+			public.Get("/bill/:id", orderHandler.GetBill)
 		}
 	}
 	app.Use(middleware.NotFoundHandler())

@@ -48,5 +48,9 @@ var (
 	// ErrOrderedProductNotFound indicates an ordered product was not found.
 	ErrOrderedProductNotFound = errors.New("ordered product not found")
 
+	// ErrOrderedProductNotPending indicates users tries to delete a product that is not pending
 	ErrOrderedProductNotPending = errors.New("ordered product not pending")
+
+	// ErrProductsAreIncomplete indicates an user tires to get a bill, when there are still uncompleted products.
+	ErrProductsAreIncomplete = errors.New("products are incomplete")
 )
