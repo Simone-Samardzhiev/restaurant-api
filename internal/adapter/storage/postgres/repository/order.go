@@ -333,3 +333,28 @@ func (r *OrderRepository) HasIncompletedOrderedProducts(ctx context.Context, id 
 
 	return exists, nil
 }
+
+func (r *OrderRepository) DeleteOrderedProductsBySessionId(ctx context.Context, sessionId uuid.UUID) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`DELETE FROM ordered_products 
+       	WHERE session_id = $1`,
+		sessionId,
+	)
+
+	if err != nil {
+		zap.L().Error("error deleting ordered products", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		zap.L().Error("error getting affected rows", zap.Error(err))
+		return domain.ErrInternal
+	}
+
+	if rows == 0 {
+		return domain.ErrOrderSessionNotFound
+	}
+	return nil
+}

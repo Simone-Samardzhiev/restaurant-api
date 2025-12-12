@@ -41,6 +41,9 @@ type OrderRepository interface {
 
 	// HasIncompletedOrderedProducts checks if there are any incompleted products for a session
 	HasIncompletedOrderedProducts(ctx context.Context, id uuid.UUID) (bool, error)
+
+	// DeleteOrderedProductsBySessionId deletes all ordered products with specified session.
+	DeleteOrderedProductsBySessionId(ctx context.Context, sessionId uuid.UUID) error
 }
 
 // OrderService is an interface for interacting with orders business login
@@ -71,4 +74,7 @@ type OrderService interface {
 
 	// GetBill fetches the bill for a specific
 	GetBill(ctx context.Context, sessionId uuid.UUID) (*domain.Bill, error)
+
+	// PayBill pays the bill for a specific order session.
+	PayBill(ctx context.Context, sessionId uuid.UUID) error
 }

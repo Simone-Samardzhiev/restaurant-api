@@ -103,3 +103,31 @@ func (s *OrderService) GetBill(ctx context.Context, sessionId uuid.UUID) (*domai
 
 	return s.orderRepository.GetBillFromSession(ctx, sessionId)
 }
+
+func (s *OrderService) PayBill(ctx context.Context, sessionId uuid.UUID) error {
+	if err := s.ValidateSession(ctx, sessionId); err != nil {
+		return err
+	}
+
+	hasIncompleted, err := s.orderRepository.HasIncompletedOrderedProducts(ctx, sessionId)
+	if err != nil {
+		return err
+	}
+	if hasIncompleted {
+		return domain.ErrProductsAreIncomplete
+	}
+
+	if err = s.orderRepository.DeleteOrderedProductsBySessionId(ctx, sessionId); err != nil {
+		return err
+	}
+
+	status := domain.Paid
+	if _, err = s.orderRepository.UpdateSession(
+		ctx,
+		domain.NewUpdateOrderSessionDTO(sessionId, nil, &status),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}

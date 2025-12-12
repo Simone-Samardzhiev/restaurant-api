@@ -36,6 +36,8 @@ const (
 	SuccessfulUpdateOrderedProductStatus MessageType = "UPDATE_ORDERED_PRODUCT_STATUS_OK"
 	UpdateSession                        MessageType = "UPDATE_SESSION"
 	SuccessfulUpdateSession              MessageType = "UPDATE_SESSION_STATUS_OK"
+	Pay                                  MessageType = "PAY"
+	SuccessfulPayment                    MessageType = "PAY_OK"
 )
 
 // Message represent a websocket message.
@@ -120,6 +122,10 @@ func NewSuccessfulUpdateOrderSessionData(id uuid.UUID, tableNumber int, status d
 		TableNumber: tableNumber,
 		Status:      &status,
 	}
+}
+
+type PaymentData struct {
+	Id uuid.UUID `json:"id" validate:"required"`
 }
 
 // Broadcast represent a broadcast to a specific session id.

@@ -218,6 +218,27 @@ func (h *Handler) handleOrder(ctx context.Context, message *Message, sessionId u
 	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulOrder, data), sessionId)
 }
 
+// handlePayment handles the payment
+func (h *Handler) handlePayment(ctx context.Context, message *Message, conn *websocket.Conn) {
+	var paymentData PaymentData
+	if err := json.Unmarshal(message.Data, &paymentData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	if err := h.validator.Struct(paymentData); err != nil {
+		writeString("Invalid json data", conn)
+		return
+	}
+
+	if err := h.orderService.PayBill(ctx, paymentData.Id); err != nil {
+		handleDomainError(conn, err)
+		return
+	}
+
+	h.hub.broadcast <- NewBroadcast(NewMessage(SuccessfulPayment, message.Data), paymentData.Id)
+}
+
 // Client handles client websocket session.
 func (h *Handler) Client(conn *websocket.Conn) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -265,6 +286,8 @@ func (h *Handler) Client(conn *websocket.Conn) {
 			h.handleOrder(ctx, &message, sessionId, conn)
 		case DeleteOrderedProduct:
 			h.handleOrderedProductDeletion(ctx, &message, false, conn)
+		case Pay:
+			h.handlePayment(ctx, &message, conn)
 		default:
 			writeString("Unexpected message type", conn)
 		}
