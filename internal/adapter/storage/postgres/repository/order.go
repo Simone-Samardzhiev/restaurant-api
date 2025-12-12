@@ -136,6 +136,34 @@ func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error
 	return nil
 }
 
+func (r *OrderRepository) GetOrderedProducts(ctx context.Context) ([]domain.OrderedProduct, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		"SELECT id, product_id, status, session_id FROM ordered_products",
+	)
+	if err != nil {
+		zap.L().Error("error getting products", zap.Error(err))
+		return nil, domain.ErrInternal
+	}
+
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			zap.L().Warn("error closing rows", zap.Error(closeErr))
+		}
+	}()
+
+	var products []domain.OrderedProduct
+	for rows.Next() {
+		var product domain.OrderedProduct
+		if err = rows.Scan(&product.Id, &product.ProductId, &product.Status, &product.OrderSessionID); err != nil {
+			zap.L().Error("error scanning row", zap.Error(err))
+			return nil, domain.ErrInternal
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
+
 func (r *OrderRepository) AddOrderedProduct(ctx context.Context, product *domain.OrderedProduct) error {
 	_, err := r.db.ExecContext(
 		ctx,

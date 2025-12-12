@@ -24,6 +24,9 @@ type OrderRepository interface {
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
 
+	// GetOrderedProducts fetches all ordered products.
+	GetOrderedProducts(ctx context.Context) ([]domain.OrderedProduct, error)
+
 	// AddOrderedProduct inserts an ordered product.
 	AddOrderedProduct(ctx context.Context, product *domain.OrderedProduct) error
 
@@ -59,6 +62,9 @@ type OrderService interface {
 
 	// DeleteSession deletes a session by specific id.
 	DeleteSession(ctx context.Context, id uuid.UUID) error
+
+	// GetOrderedProducts fetches all ordered products.
+	GetOrderedProducts(ctx context.Context) ([]domain.OrderedProduct, error)
 
 	// ValidateSession validates the session exists and its open.
 	ValidateSession(ctx context.Context, sessionId uuid.UUID) error

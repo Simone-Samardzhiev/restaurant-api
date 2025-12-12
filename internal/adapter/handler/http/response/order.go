@@ -62,3 +62,21 @@ func NewBillResponse(bill *domain.Bill) *BillResponse {
 		TotalPrice: bill.FullPrice,
 	}
 }
+
+// OrderedProductResponse represents an ordered product response.
+type OrderedProductResponse struct {
+	Id             uuid.UUID                   `json:"id"`
+	ProductId      uuid.UUID                   `json:"productId"`
+	Status         domain.OrderedProductStatus `json:"status"`
+	OrderSessionId uuid.UUID                   `json:"orderSessionId"`
+}
+
+// NewOrderedProductResponse creates a new OrderedProductResponse instance.
+func NewOrderedProductResponse(product *domain.OrderedProduct) OrderedProductResponse {
+	return OrderedProductResponse{
+		Id:             product.Id,
+		ProductId:      product.ProductId,
+		Status:         product.Status,
+		OrderSessionId: product.OrderSessionID,
+	}
+}

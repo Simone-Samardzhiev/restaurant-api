@@ -62,6 +62,18 @@ func (h *OrderHandler) DeleteSession(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+func (h *OrderHandler) GetOrderedProducts(c *fiber.Ctx) error {
+	products, err := h.orderService.GetOrderedProducts(c.Context())
+	if err != nil {
+		return err
+	}
+	res := make([]response.OrderedProductResponse, 0, len(products))
+	for _, product := range products {
+		res = append(res, response.NewOrderedProductResponse(&product))
+	}
+	return c.Status(http.StatusOK).JSON(res)
+}
+
 func (h *OrderHandler) GetBill(c *fiber.Ctx) error {
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
