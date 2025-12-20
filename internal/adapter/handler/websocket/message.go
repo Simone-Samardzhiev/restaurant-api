@@ -35,7 +35,7 @@ const (
 	UpdateOrderedProductStatus           MessageType = "UPDATE_ORDERED_PRODUCT_STATUS"
 	SuccessfulUpdateOrderedProductStatus MessageType = "UPDATE_ORDERED_PRODUCT_STATUS_OK"
 	UpdateSession                        MessageType = "UPDATE_SESSION"
-	SuccessfulUpdateSession              MessageType = "UPDATE_SESSION_STATUS_OK"
+	SuccessfulUpdateSession              MessageType = "UPDATE_SESSION_OK"
 	Pay                                  MessageType = "PAY"
 	SuccessfulPayment                    MessageType = "PAY_OK"
 )
