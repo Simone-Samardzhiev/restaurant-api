@@ -110,9 +110,9 @@ type UpdateOrderSessionData struct {
 
 // SuccessfulUpdateOrderSessionData represent a successful message when order session update is successful.
 type SuccessfulUpdateOrderSessionData struct {
-	Id          uuid.UUID                  `json:"id"`
-	TableNumber int                        `json:"tableNumber"`
-	Status      *domain.OrderSessionStatus `json:"status"`
+	Id          uuid.UUID                 `json:"id"`
+	TableNumber int                       `json:"tableNumber"`
+	Status      domain.OrderSessionStatus `json:"status"`
 }
 
 // NewSuccessfulUpdateOrderSessionData creates a new SuccessfulUpdateOrderSessionData instance.
@@ -120,7 +120,7 @@ func NewSuccessfulUpdateOrderSessionData(id uuid.UUID, tableNumber int, status d
 	return SuccessfulUpdateOrderSessionData{
 		Id:          id,
 		TableNumber: tableNumber,
-		Status:      &status,
+		Status:      status,
 	}
 }
 
