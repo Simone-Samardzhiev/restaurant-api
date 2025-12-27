@@ -43,7 +43,7 @@ func (s *OrderService) UpdateSession(ctx context.Context, session *domain.Update
 	}
 
 	if !hasUpdate {
-		return nil, domain.ErrNothingToUpdate
+		return nil, domain.NewBadRequestError(domain.NothingToUpdate)
 	}
 
 	return s.orderRepository.UpdateSession(ctx, session)
@@ -63,7 +63,7 @@ func (s *OrderService) ValidateSession(ctx context.Context, sessionId uuid.UUID)
 	}
 
 	if session.Status != domain.Open {
-		return domain.ErrOrderSessionIsNotOpen
+		return domain.NewInvalidStateError(domain.OrderSessionNotOpen)
 	}
 	return nil
 }
@@ -101,7 +101,7 @@ func (s *OrderService) GetBill(ctx context.Context, sessionId uuid.UUID) (*domai
 		return nil, err
 	}
 	if hasIncompleted {
-		return nil, domain.ErrProductsAreIncomplete
+		return nil, domain.NewInvalidStateError(domain.OrderedProductNotPending)
 	}
 
 	return s.orderRepository.GetBillFromSession(ctx, sessionId)
@@ -117,7 +117,7 @@ func (s *OrderService) PayBill(ctx context.Context, sessionId uuid.UUID) error {
 		return err
 	}
 	if hasIncompleted {
-		return domain.ErrProductsAreIncomplete
+		return domain.NewInvalidStateError(domain.ProductsAreIncomplete)
 	}
 
 	if err = s.orderRepository.DeleteOrderedProductsBySessionId(ctx, sessionId); err != nil {

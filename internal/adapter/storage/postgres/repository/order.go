@@ -28,7 +28,7 @@ func (r *OrderRepository) GetSessions(ctx context.Context) ([]domain.OrderSessio
 	rows, err := r.db.QueryContext(ctx, "SELECT id, table_number, status FROM order_sessions")
 	if err != nil {
 		zap.L().Error("error getting product", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	defer func() {
@@ -42,7 +42,7 @@ func (r *OrderRepository) GetSessions(ctx context.Context) ([]domain.OrderSessio
 		var session domain.OrderSession
 		if err = rows.Scan(&session.Id, &session.TableNumber, &session.Status); err != nil {
 			zap.L().Error("error scanning row", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 		sessions = append(sessions, session)
 	}
@@ -61,10 +61,10 @@ func (r *OrderRepository) GetSessionByID(ctx context.Context, id uuid.UUID) (*do
 	err := row.Scan(&session.Id, &session.TableNumber, &session.Status)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrOrderSessionNotFound
+		return nil, domain.NewNotFoundError(domain.OrderSessionResource)
 	} else if err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	return &session, nil
@@ -82,7 +82,7 @@ func (r *OrderRepository) AddSession(ctx context.Context, order *domain.OrderSes
 
 	if err != nil {
 		zap.L().Error("error inserting order", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	return nil
@@ -104,10 +104,10 @@ func (r *OrderRepository) UpdateSession(ctx context.Context, session *domain.Upd
 	var orderSession domain.OrderSession
 	err := row.Scan(&orderSession.Id, &orderSession.TableNumber, &orderSession.Status)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrOrderSessionNotFound
+		return nil, domain.NewNotFoundError(domain.OrderSessionResource)
 	} else if err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	return &orderSession, nil
@@ -121,17 +121,17 @@ func (r *OrderRepository) DeleteSession(ctx context.Context, id uuid.UUID) error
 			zap.Error(err),
 			zap.String("id", id.String()),
 		)
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrOrderSessionNotFound
+		return domain.NewNotFoundError(domain.OrderSessionResource)
 	}
 	return nil
 }
@@ -143,7 +143,7 @@ func (r *OrderRepository) GetOrderedProducts(ctx context.Context) ([]domain.Orde
 	)
 	if err != nil {
 		zap.L().Error("error getting products", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	defer func() {
@@ -157,7 +157,7 @@ func (r *OrderRepository) GetOrderedProducts(ctx context.Context) ([]domain.Orde
 		var product domain.OrderedProduct
 		if err = rows.Scan(&product.Id, &product.ProductId, &product.Status, &product.OrderSessionID); err != nil {
 			zap.L().Error("error scanning row", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 		products = append(products, product)
 	}
@@ -177,11 +177,11 @@ func (r *OrderRepository) AddOrderedProduct(ctx context.Context, product *domain
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) {
 		if pqErr.Code == "23503" && pqErr.Constraint == "ordered_products_product_id_fkey" {
-			return domain.ErrProductNotFound
+			return domain.NewNotFoundError(domain.OrderedProductResource)
 		}
 	} else if err != nil {
 		zap.L().Error("error inserting ordered product", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	return nil
@@ -191,7 +191,7 @@ func (r *OrderRepository) DeletePendingOrderedProduct(ctx context.Context, order
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		zap.L().Error("error starting transaction", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	row := tx.QueryRowContext(
@@ -210,10 +210,10 @@ func (r *OrderRepository) DeletePendingOrderedProduct(ctx context.Context, order
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrOrderedProductNotFound
+		return nil, domain.NewNotFoundError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewNotFoundError(domain.OrderedProductResource)
 	}
 
 	if orderedProduct.Status != domain.Pending {
@@ -221,7 +221,7 @@ func (r *OrderRepository) DeletePendingOrderedProduct(ctx context.Context, order
 		if err != nil {
 			zap.L().Warn("error rolling back transaction", zap.Error(err))
 		}
-		return nil, domain.ErrOrderedProductNotPending
+		return nil, domain.NewNotFoundError(domain.OrderedProductResource)
 	}
 
 	err = tx.Commit()
@@ -249,10 +249,10 @@ func (r *OrderRepository) DeleteOrderedProduct(ctx context.Context, orderedProdu
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrOrderedProductNotFound
+		return nil, domain.NewNotFoundError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	return &orderedProduct, nil
@@ -278,10 +278,10 @@ func (r *OrderRepository) UpdateOrderedProductStatus(ctx context.Context, id uui
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrOrderedProductNotFound
+		return nil, domain.NewNotFoundError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	return &orderedProduct, nil
@@ -315,7 +315,7 @@ func (r *OrderRepository) GetBillFromSession(ctx context.Context, id uuid.UUID) 
 
 	if err != nil {
 		zap.L().Error("error getting bill from session", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	var billItems []domain.BillItem
@@ -334,7 +334,7 @@ func (r *OrderRepository) GetBillFromSession(ctx context.Context, id uuid.UUID) 
 			&billItem.TotalPrice,
 		); err != nil {
 			zap.L().Error("error scanning row", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 
 		billItems = append(billItems, billItem)
@@ -356,7 +356,7 @@ func (r *OrderRepository) HasIncompletedOrderedProducts(ctx context.Context, id 
 		id,
 	).Scan(&exists); err != nil {
 		zap.L().Error("error scanning row", zap.Error(err))
-		return false, domain.ErrInternal
+		return false, domain.NewInternalError()
 	}
 
 	return exists, nil
@@ -372,17 +372,17 @@ func (r *OrderRepository) DeleteOrderedProductsBySessionId(ctx context.Context, 
 
 	if err != nil {
 		zap.L().Error("error deleting ordered products", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting affected rows", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrOrderSessionNotFound
+		return domain.NewNotFoundError(domain.OrderedProductResource)
 	}
 	return nil
 }

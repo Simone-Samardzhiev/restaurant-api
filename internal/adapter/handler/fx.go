@@ -20,8 +20,8 @@ var Module = fx.Module(
 				}()
 				return nil
 			},
-			OnStop: func(context.Context) error {
-				return router.Shutdown()
+			OnStop: func(ctx context.Context) error {
+				return router.Shutdown(ctx)
 			},
 		})
 	}),

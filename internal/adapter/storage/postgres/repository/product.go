@@ -35,10 +35,10 @@ func (r *ProductRepository) AddCategory(ctx context.Context, category *domain.Pr
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-		return domain.ErrProductCategoryNameAlreadyInUse
+		return domain.NewConflictError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error adding category", zap.Error(pqErr))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	return nil
@@ -56,20 +56,20 @@ func (r *ProductRepository) UpdateCategory(ctx context.Context, dto *domain.Upda
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-		return domain.ErrProductCategoryNameAlreadyInUse
+		return domain.NewConflictError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error updating category", zap.Error(pqErr))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrProductCategoryNotFound
+		return domain.NewNotFoundError(domain.OrderedProductResource)
 	}
 	return nil
 }
@@ -79,20 +79,20 @@ func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) er
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-		return domain.ErrCategoryHasLinkedProducts
+		return domain.NewConflictError(domain.OrderedProductResource)
 	} else if err != nil {
 		zap.L().Error("error deleting category", zap.Error(pqErr))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrProductCategoryNotFound
+		return domain.NewNotFoundError(domain.OrderedProductResource)
 	}
 	return nil
 }
@@ -116,7 +116,7 @@ func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.
 		err = rows.Scan(&product.Id, &product.Name)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 		products = append(products, product)
 	}
@@ -126,10 +126,10 @@ func (r *ProductRepository) GetProductCategories(ctx context.Context) ([]domain.
 
 var addProductPqErrorMap = map[string]map[string]error{
 	"23505": {
-		"products_name_key": domain.ErrProductNameAlreadyInUse,
+		"products_name_key": domain.NewConflictError(domain.ProductResource),
 	},
 	"23503": {
-		"products_category_fkey": domain.ErrProductCategoryNotFound,
+		"products_category_fkey": domain.NewNotFoundError(domain.ProductCategoryResource),
 	},
 }
 
@@ -168,7 +168,7 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 			zap.String("categoryId", product.Category.String()),
 			zap.Error(err),
 		)
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	return nil
@@ -176,10 +176,10 @@ func (r *ProductRepository) AddProduct(ctx context.Context, product *domain.Prod
 
 var updateProductPqErrorMap = map[string]map[string]error{
 	"23505": {
-		"products_name_key": domain.ErrProductNameAlreadyInUse,
+		"products_name_key": domain.NewConflictError(domain.ProductResource),
 	},
 	"23503": {
-		"products_category_fkey": domain.ErrProductCategoryNotFound,
+		"products_category_fkey": domain.NewNotFoundError(domain.ProductCategoryResource),
 	},
 }
 
@@ -210,20 +210,20 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, dto *domain.Updat
 		fmt.Println(pqErr.Code)
 
 		zap.L().Error("unexpected pq error", zap.Error(pqErr))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	} else if err != nil {
 		zap.L().Error("error updating product", zap.Error(pqErr))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrProductCategoryNotFound
+		return domain.NewNotFoundError(domain.ProductResource)
 	}
 	return nil
 }
@@ -242,17 +242,17 @@ func (r *ProductRepository) UpdateProductImage(ctx context.Context, productId uu
 
 	if err != nil {
 		zap.L().Error("error updating product image", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		zap.L().Error("error getting rows affected", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	if rows == 0 {
-		return domain.ErrProductNotFound
+		return domain.NewNotFoundError(domain.ProductResource)
 	}
 	return nil
 }
@@ -273,11 +273,11 @@ func (r *ProductRepository) DeleteProductById(ctx context.Context, id uuid.UUID)
 	var product domain.Product
 	err := row.Scan(&product.Id, &product.Name, &product.Description, &imageUrl, &deleteImageUrl, &product.Category, &product.Price)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrProductNotFound
+		return nil, domain.NewNotFoundError(domain.ProductResource)
 	}
 	if err != nil {
 		zap.L().Error("error deleting product", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	if imageUrl.Valid {
@@ -307,7 +307,7 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 
 	if err != nil {
 		zap.L().Error("error deleting products", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	defer func() {
@@ -325,7 +325,7 @@ func (r *ProductRepository) DeleteProductsByCategory(ctx context.Context, catego
 		err = rows.Scan(&product.Id, &product.Name, &product.Description, &imageUrl, &deleteImageUrl, &product.Category, &product.Price)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 
 		if imageUrl.Valid {
@@ -368,10 +368,10 @@ func (r *ProductRepository) GetProductById(ctx context.Context, id uuid.UUID) (*
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrProductNotFound
+		return nil, domain.NewNotFoundError(domain.ProductResource)
 	} else if err != nil {
 		zap.L().Error("error getting product", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	if deleteImageUrl.Valid {
@@ -398,7 +398,7 @@ func (r *ProductRepository) GetProducts(ctx context.Context) ([]domain.Product, 
 	)
 	if err != nil {
 		zap.L().Error("error getting products", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	defer func() {
@@ -425,7 +425,7 @@ func (r *ProductRepository) GetProducts(ctx context.Context) ([]domain.Product, 
 		)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 
 		if imageUrl.Valid {
@@ -454,7 +454,7 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 	)
 	if err != nil {
 		zap.L().Error("error getting products", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	defer func() {
@@ -479,7 +479,7 @@ func (r *ProductRepository) GetProductsByCategory(ctx context.Context, categoryI
 		)
 		if err != nil {
 			zap.L().Error("error scanning rows", zap.Error(err))
-			return nil, domain.ErrInternal
+			return nil, domain.NewInternalError()
 		}
 
 		product.Category = categoryId

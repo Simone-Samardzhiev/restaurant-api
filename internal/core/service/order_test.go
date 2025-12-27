@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port/mock"
 	"restaurant/internal/core/service"
@@ -27,13 +28,13 @@ func TestOrderService_UpdateSession(t *testing.T) {
 					UpdateSession(
 						gomock.AssignableToTypeOf(context.Background()),
 						gomock.AssignableToTypeOf(&domain.UpdateOrderSessionDTO{}),
-					).Return(nil)
+					).Return(&domain.OrderSession{}, nil)
 			},
 		},
 		{
 			name:          "nothing to update",
 			update:        domain.NewUpdateOrderSessionDTO(uuid.Nil, nil, nil),
-			expectedError: domain.ErrNothingToUpdate,
+			expectedError: domain.NewBadRequestError(domain.NothingToUpdate),
 		},
 	}
 
@@ -45,8 +46,18 @@ func TestOrderService_UpdateSession(t *testing.T) {
 				tt.mockSetup(orderRepository)
 			}
 
-			err := service.NewOrderService(orderRepository).UpdateSession(context.Background(), tt.update)
-			require.ErrorIs(t, err, tt.expectedError)
+			_, err := service.NewOrderService(orderRepository).UpdateSession(context.Background(), tt.update)
+
+			if tt.expectedError != nil {
+				var dError *domain.Error
+				if errors.As(err, &dError) {
+					require.Equal(t, tt.expectedError, dError)
+				} else {
+					t.Fatalf("Service returned an unexpected error: %v", err)
+				}
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

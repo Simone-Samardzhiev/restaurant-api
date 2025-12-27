@@ -1,56 +1,104 @@
 package domain
 
-import "errors"
-
-var (
-	// ErrInternal represents a generic internal service failure.
-	ErrInternal = errors.New("internal failure")
-
-	// ErrNothingToUpdate indicates an updates request won't change any data.
-	ErrNothingToUpdate = errors.New("nothing to update")
-
-	// ErrNothingToDelete indicates a delete request won't delete any data.
-	ErrNothingToDelete = errors.New("nothing to delete")
-
-	// ErrMultipleDeleteCriteria indicates that more than one delete criteria is provided leading to inconsistent data.
-	ErrMultipleDeleteCriteria = errors.New("multiple delete criteria found")
-
-	// ErrNothingToFetch indicates a fetch request won't fetch any data.
-	ErrNothingToFetch = errors.New("nothing to fetch")
-
-	// ErrInvalidUUID indicates an id is not valid uuid.
-	ErrInvalidUUID = errors.New("invalid entity")
-
-	// ErrInvalidImageFormat indicates provided image format is not valid.
-	ErrInvalidImageFormat = errors.New("invalid image format")
-
-	// ErrProductCategoryNameAlreadyInUse indicates a product category name is already in use.
-	ErrProductCategoryNameAlreadyInUse = errors.New("product category is already in use")
-
-	// ErrProductCategoryNotFound indicates a product category couldn't be found.
-	ErrProductCategoryNotFound = errors.New("product category not found")
-
-	// ErrProductNameAlreadyInUse indicates a product name is already in use.
-	ErrProductNameAlreadyInUse = errors.New("product name is already in use")
-
-	// ErrProductNotFound indicates a product couldn't be found.
-	ErrProductNotFound = errors.New("product not found")
-
-	// ErrCategoryHasLinkedProducts indicates an attempt to delete a product category that has linked products.
-	ErrCategoryHasLinkedProducts = errors.New("category has linked products")
-
-	// ErrOrderSessionNotFound indicates order session couldn't be found.
-	ErrOrderSessionNotFound = errors.New("order session not found")
-
-	// ErrOrderSessionIsNotOpen indicates a user tries to order from closed session.
-	ErrOrderSessionIsNotOpen = errors.New("order session is not open")
-
-	// ErrOrderedProductNotFound indicates an ordered product was not found.
-	ErrOrderedProductNotFound = errors.New("ordered product not found")
-
-	// ErrOrderedProductNotPending indicates users tries to delete a product that is not pending
-	ErrOrderedProductNotPending = errors.New("ordered product not pending")
-
-	// ErrProductsAreIncomplete indicates an user tires to get a bill, when there are still uncompleted products.
-	ErrProductsAreIncomplete = errors.New("products are incomplete")
+import (
+	"fmt"
 )
+
+// ErrorType represents the kind of error
+type ErrorType int
+
+const (
+	InternalError ErrorType = iota
+	NotFound
+	Conflict
+	BadRequest
+	InvalidState
+)
+
+// ResourceType represents domain resource names
+type ResourceType string
+
+const (
+	ProductResource         ResourceType = "product"
+	ProductCategoryResource ResourceType = "product_category"
+	OrderedProductResource  ResourceType = "ordered_product"
+	OrderSessionResource    ResourceType = "order_session"
+)
+
+// BadRequestReason represents specific reasons for BadRequest errors
+type BadRequestReason string
+
+const (
+	InvalidUUID        BadRequestReason = "invalid UUID"
+	InvalidImageFormat BadRequestReason = "invalid image format"
+	NothingToUpdate    BadRequestReason = "nothing to update"
+	NothingToDelete    BadRequestReason = "nothing to delete"
+	MultipleDelete     BadRequestReason = "multiple delete criteria"
+)
+
+// InvalidStateReason represents specific reasons for InvalidState errors.
+type InvalidStateReason string
+
+const (
+	OrderSessionNotOpen      InvalidStateReason = "order session not open"
+	OrderedProductNotPending InvalidStateReason = "ordered product not pending"
+	ProductsAreIncomplete    InvalidStateReason = "products are incomplete"
+)
+
+// Error is the structured domain error
+type Error struct {
+	ErrorType ErrorType
+	Code      string
+	Message   string
+	Resource  ResourceType
+}
+
+func (e *Error) Error() string {
+	return e.Message
+}
+
+func NewInternalError() *Error {
+	return &Error{
+		ErrorType: InternalError,
+		Code:      "internal_error",
+		Message:   "internal error",
+	}
+}
+
+// NewNotFoundError creates a new Error with specific not found ResourceType.
+func NewNotFoundError(resource ResourceType) *Error {
+	return &Error{
+		ErrorType: NotFound,
+		Code:      fmt.Sprintf("%s_not_found", resource),
+		Message:   fmt.Sprintf("%s was not found", resource),
+		Resource:  resource,
+	}
+}
+
+// NewConflictError creates a new Error with specific conflicting ResourceType.
+func NewConflictError(resource ResourceType) *Error {
+	return &Error{
+		ErrorType: Conflict,
+		Code:      fmt.Sprintf("%s_conflict", resource),
+		Message:   fmt.Sprintf("%s already exists", resource),
+		Resource:  resource,
+	}
+}
+
+// NewBadRequestError creates a new Error with specific BadRequestReason.
+func NewBadRequestError(reason BadRequestReason) *Error {
+	return &Error{
+		ErrorType: BadRequest,
+		Code:      "bad_request",
+		Message:   string(reason),
+	}
+}
+
+// NewInvalidStateError creates a new Error with specific InvalidStateReason.
+func NewInvalidStateError(reason InvalidStateReason) *Error {
+	return &Error{
+		ErrorType: InvalidState,
+		Code:      "bad_state",
+		Message:   string(reason),
+	}
+}

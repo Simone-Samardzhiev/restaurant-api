@@ -34,7 +34,7 @@ func (s *ProductService) AddCategory(ctx context.Context, name string) (*domain.
 
 func (s *ProductService) UpdateCategory(ctx context.Context, dto *domain.UpdateCategoryProductDTO) error {
 	if dto.Name == nil {
-		return domain.ErrNothingToUpdate
+		return domain.NewBadRequestError(domain.NothingToUpdate)
 	}
 	return s.productRepository.UpdateCategory(ctx, dto)
 }
@@ -83,7 +83,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, dto *domain.UpdatePr
 	}
 
 	if !hasFieldToUpdate {
-		return domain.ErrNothingToUpdate
+		return domain.NewBadRequestError(domain.NothingToUpdate)
 	}
 	return s.productRepository.UpdateProduct(ctx, dto)
 }
@@ -116,7 +116,7 @@ func (s *ProductService) ReplaceProductImage(ctx context.Context, productId uuid
 func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeleteProductDTO) error {
 	switch {
 	case dto.ProductId != nil && dto.CategoryId != nil:
-		return domain.ErrMultipleDeleteCriteria
+		return domain.NewBadRequestError(domain.MultipleDelete)
 	case dto.ProductId != nil:
 		product, err := s.productRepository.DeleteProductById(ctx, *dto.ProductId)
 		if err != nil {
@@ -149,7 +149,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, dto *domain.DeletePr
 
 		return nil
 	default:
-		return domain.ErrNothingToDelete
+		return domain.NewBadRequestError(domain.NothingToDelete)
 	}
 }
 

@@ -40,7 +40,7 @@ func (r *ImageRepository) createRequest(ctx context.Context, data io.Reader) (*h
 			"error creating form file",
 			zap.Error(err),
 		)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	_, err = io.Copy(part, data)
@@ -49,7 +49,7 @@ func (r *ImageRepository) createRequest(ctx context.Context, data io.Reader) (*h
 			"error copping data",
 			zap.Error(err),
 		)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	if err = writer.Close(); err != nil {
@@ -62,7 +62,7 @@ func (r *ImageRepository) createRequest(ctx context.Context, data io.Reader) (*h
 			"error creating request",
 			zap.Error(err),
 		)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, nil
@@ -102,13 +102,13 @@ func (r *ImageRepository) SaveImage(ctx context.Context, data io.Reader) (*domai
 			"error executing request",
 			zap.Int("status_code", httpResponse.StatusCode),
 		)
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	var imageResponse addImageResponse
 	if err = json.NewDecoder(httpResponse.Body).Decode(&imageResponse); err != nil {
 		zap.L().Error("error decoding imageResponse", zap.Error(err))
-		return nil, domain.ErrInternal
+		return nil, domain.NewInternalError()
 	}
 
 	return &domain.Image{
@@ -121,16 +121,16 @@ func (r *ImageRepository) DeleteImage(ctx context.Context, deleteUrl string) err
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, deleteUrl, nil)
 	if err != nil {
 		zap.L().Error("error creating request", zap.Error(err))
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	httpResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 	if httpResponse.StatusCode != http.StatusOK {
 		zap.L().Error("error executing request")
-		return domain.ErrInternal
+		return domain.NewInternalError()
 	}
 
 	return nil

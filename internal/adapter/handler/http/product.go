@@ -2,14 +2,14 @@ package http
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"restaurant/internal/adapter/handler/http/request"
 	"restaurant/internal/adapter/handler/http/response"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
-	"strings"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -17,93 +17,95 @@ import (
 // ProductHandler handler product-related HTTP requests.
 type ProductHandler struct {
 	productService port.ProductService
-	validator      *validator.Validate
 }
 
 // NewProductHandler creates a new ProductHandler instance.
-func NewProductHandler(productService port.ProductService, validator *validator.Validate) *ProductHandler {
+func NewProductHandler(productService port.ProductService) *ProductHandler {
 	return &ProductHandler{
 		productService: productService,
-		validator:      validator,
 	}
 }
 
-func (h *ProductHandler) AddProductCategory(c *fiber.Ctx) error {
+func (h *ProductHandler) AddProductCategory(c *gin.Context) {
 	var req request.AddProductCategoryRequest
-	if err := c.BodyParser(&req); err != nil {
-		return err
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind)
+		return
 	}
 
-	if err := h.validator.Struct(req); err != nil {
-		return err
-	}
-
-	category, err := h.productService.AddCategory(c.Context(), req.Name)
+	category, err := h.productService.AddCategory(c, req.Name)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.NewProductCategoryResponse(category.Id, req.Name))
+	c.JSON(http.StatusCreated, response.NewProductCategoryResponse(category.Id, req.Name))
 }
 
-func (h *ProductHandler) UpdateCategory(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *ProductHandler) UpdateCategory(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return domain.ErrInvalidUUID
+		c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypePublic)
+		return
 	}
 
 	var req request.UpdateCategoryRequest
-	if err = c.BodyParser(&req); err != nil {
-		return err
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind)
+		return
 	}
 
-	if err = h.validator.Struct(req); err != nil {
-		return err
+	if err = h.productService.UpdateCategory(c, domain.NewUpdateCategoryProductDTO(id, req.NewName)); err != nil {
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	if err = h.productService.UpdateCategory(c.Context(), domain.NewUpdateCategoryProductDTO(id, req.NewName)); err != nil {
-		return err
-	}
-	return c.SendStatus(fiber.StatusOK)
+	c.Status(http.StatusOK)
 }
 
-func (h *ProductHandler) DeleteCategory(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *ProductHandler) DeleteCategory(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return domain.ErrInvalidUUID
+		c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+		return
 	}
 
-	if err = h.productService.DeleteCategory(c.Context(), id); err != nil {
-		return err
+	if err = h.productService.DeleteCategory(c, id); err != nil {
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	c.Status(fiber.StatusOK)
 }
 
-func (h *ProductHandler) GetProductCategories(c *fiber.Ctx) error {
-	categories, err := h.productService.GetProductCategories(c.Context())
+func (h *ProductHandler) GetProductCategories(c *gin.Context) {
+	categories, err := h.productService.GetProductCategories(c)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
 	res := make([]response.ProductCategoryResponse, 0, len(categories))
 	for _, category := range categories {
 		res = append(res, response.NewProductCategoryResponse(category.Id, category.Name))
 	}
-	return c.Status(http.StatusOK).JSON(res)
+	c.JSON(http.StatusOK, res)
 }
 
-func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) AddProduct(c *gin.Context) {
 	var req request.AddProductRequest
-	if err := c.BodyParser(&req); err != nil {
-		return err
-	}
-	if err := h.validator.Struct(req); err != nil {
-		return err
+	if err := c.ShouldBindJSON(&req); err != nil {
+		if uuid.IsInvalidLengthError(err) {
+			c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+			return
+		}
+
+		c.Error(err).SetType(gin.ErrorTypeBind)
+		return
 	}
 
 	product, err := h.productService.AddProduct(
-		c.Context(),
+		c,
 		domain.NewAddProductDTO(
 			req.Name,
 			req.Description,
@@ -112,28 +114,28 @@ func (h *ProductHandler) AddProduct(c *fiber.Ctx) error {
 		),
 	)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.Status(http.StatusCreated).JSON(response.NewProductResponse(product))
+	c.JSON(http.StatusCreated, response.NewProductResponse(product))
 }
 
-func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return domain.ErrInvalidUUID
+		c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+
 	}
 	var req request.UpdateProductRequest
-	if err = c.BodyParser(&req); err != nil {
-		return err
-	}
-	if err = h.validator.Struct(req); err != nil {
-		return err
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.Error(err).SetType(gin.ErrorTypeBind)
+		return
 	}
 
 	if err = h.productService.
 		UpdateProduct(
-			c.Context(),
+			c,
 			domain.NewUpdateProductDTO(
 				id,
 				req.NewName,
@@ -141,96 +143,106 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 				req.NewCategory,
 				req.NewPrice),
 		); err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
-	return c.SendStatus(fiber.StatusOK)
+
+	c.Status(http.StatusOK)
 }
 
-func (h *ProductHandler) ReplaceProductImage(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *ProductHandler) ReplaceProductImage(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return domain.ErrInvalidUUID
+		c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+		return
 	}
 
-	content := http.DetectContentType(c.Body())
+	const maxImageSize = 5 << 20 // 5MB
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxImageSize)
+
+	buf := make([]byte, 512)
+	_, err = io.ReadAtLeast(c.Request.Body, buf, 512)
+	if err != nil {
+		c.Error(domain.NewBadRequestError(domain.InvalidImageFormat)).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	content := http.DetectContentType(buf)
 	if content != "image/jpeg" && content != "image/png" {
-
+		c.Error(domain.NewBadRequestError(domain.InvalidImageFormat)).SetType(gin.ErrorTypeBind)
+		return
 	}
 
-	url, err := h.productService.ReplaceProductImage(c.Context(), id, bytes.NewReader(c.Body()))
+	c.Request.Body = io.NopCloser(io.MultiReader(bytes.NewReader(buf), c.Request.Body))
+
+	url, err := h.productService.ReplaceProductImage(c, id, c.Request.Body)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.NewUpdateImageResponse(url))
+	c.JSON(http.StatusOK, response.NewUpdateImageResponse(url))
 }
 
-func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
-	queryArgs := c.Context().QueryArgs()
-
+func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	var (
 		productID  *uuid.UUID
 		categoryID *uuid.UUID
 	)
 
-	if queryArgs.Has("product_id") {
-		raw := strings.TrimSpace(string(queryArgs.Peek("product_id")))
-		if raw == "" {
-			return domain.ErrInvalidUUID
-		}
-
-		id, err := uuid.Parse(raw)
+	rawProductId, exist := c.GetQuery("product_id")
+	if exist {
+		id, err := uuid.Parse(rawProductId)
 		if err != nil {
-			return domain.ErrInvalidUUID
+			c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+			return
 		}
 		productID = &id
 	}
+	rawCategoryId, exist := c.GetQuery("category_id")
 
-	if queryArgs.Has("category_id") {
-		raw := strings.TrimSpace(string(queryArgs.Peek("category_id")))
-		if raw == "" {
-			return domain.ErrInvalidUUID
-		}
-
-		id, err := uuid.Parse(raw)
+	if exist {
+		id, err := uuid.Parse(rawCategoryId)
 		if err != nil {
-			return domain.ErrInvalidUUID
+			c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+			return
 		}
 		categoryID = &id
 	}
 
-	if err := h.productService.DeleteProduct(c.Context(), domain.NewDeleteProductDTO(productID, categoryID)); err != nil {
-		return err
+	if err := h.productService.DeleteProduct(c, domain.NewDeleteProductDTO(productID, categoryID)); err != nil {
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	c.Status(fiber.StatusOK)
 }
 
-func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
+func (h *ProductHandler) GetProducts(c *gin.Context) {
 	var (
 		categoryID *uuid.UUID
 	)
 
-	if c.Context().QueryArgs().Has("category_id") {
-		raw := strings.TrimSpace(string(c.Context().QueryArgs().Peek("category_id")))
-		if raw == "" {
-			return domain.ErrInvalidUUID
-		}
-		id, err := uuid.Parse(raw)
+	rawCategoryId, exist := c.GetQuery("category_id")
+	if exist {
+		id, err := uuid.Parse(rawCategoryId)
 		if err != nil {
-			return domain.ErrInvalidUUID
+			c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypeBind)
+			return
 		}
 		categoryID = &id
 	}
 
-	products, err := h.productService.GetProducts(c.Context(), domain.NewGetProductsDTO(categoryID))
+	products, err := h.productService.GetProducts(c, domain.NewGetProductsDTO(categoryID))
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
 	res := make([]response.ProductResponse, 0, len(products))
 	for _, product := range products {
 		res = append(res, response.NewProductResponse(&product))
 	}
-	return c.Status(http.StatusOK).JSON(res)
+
+	c.JSON(http.StatusOK, res)
 }

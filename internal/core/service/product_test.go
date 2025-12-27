@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port/mock"
 	"restaurant/internal/core/service"
@@ -37,7 +38,7 @@ func TestProductService_UpdateCategory(t *testing.T) {
 		}, {
 			name:          "error nothing to update",
 			dto:           &domain.UpdateCategoryProductDTO{},
-			expectedError: domain.ErrNothingToUpdate,
+			expectedError: domain.NewBadRequestError(domain.NothingToUpdate),
 		},
 	}
 
@@ -52,7 +53,17 @@ func TestProductService_UpdateCategory(t *testing.T) {
 
 			err := service.NewProductService(productRepository, imageRepository).
 				UpdateCategory(context.Background(), tt.dto)
-			require.ErrorIs(t, err, tt.expectedError)
+
+			if tt.expectedError != nil {
+				var dError *domain.Error
+				if errors.As(err, &dError) {
+					require.Equal(t, tt.expectedError, dError)
+				} else {
+					t.Fatalf("Service returned an unexpected error: %v", err)
+				}
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
@@ -82,7 +93,7 @@ func TestProductService_UpdateProduct(t *testing.T) {
 		}, {
 			name:          "nothing to update",
 			dto:           &domain.UpdateProductDTO{},
-			expectedError: domain.ErrNothingToUpdate,
+			expectedError: domain.NewBadRequestError(domain.NothingToUpdate),
 		},
 	}
 
@@ -97,7 +108,17 @@ func TestProductService_UpdateProduct(t *testing.T) {
 
 			err := service.NewProductService(productRepository, imageRepository).
 				UpdateProduct(context.Background(), tt.dto)
-			require.ErrorIs(t, err, tt.expectedError)
+
+			if tt.expectedError != nil {
+				var dError *domain.Error
+				if errors.As(err, &dError) {
+					require.Equal(t, tt.expectedError, dError)
+				} else {
+					t.Fatalf("Service returned an unexpected error: %v", err)
+				}
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
@@ -139,7 +160,7 @@ func TestProductService_DeleteProduct(t *testing.T) {
 		}, {
 			name:          "error nothing to delete",
 			dto:           &domain.DeleteProductDTO{},
-			expectedError: domain.ErrNothingToDelete,
+			expectedError: domain.NewBadRequestError(domain.NothingToDelete),
 		},
 	}
 
@@ -154,7 +175,17 @@ func TestProductService_DeleteProduct(t *testing.T) {
 
 			err := service.NewProductService(productRepository, imageRepository).
 				DeleteProduct(context.Background(), tt.dto)
-			require.ErrorIs(t, err, tt.expectedError)
+
+			if tt.expectedError != nil {
+				var dError *domain.Error
+				if errors.As(err, &dError) {
+					require.Equal(t, tt.expectedError, dError)
+				} else {
+					t.Fatalf("Service returned an unexpected error: %v", err)
+				}
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

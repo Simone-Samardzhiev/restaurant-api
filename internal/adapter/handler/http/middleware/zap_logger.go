@@ -3,18 +3,18 @@ package middleware
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-func ZapLogger() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+func ZapLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		now := time.Now()
-		path := c.Path()
-		method := c.Method()
-		clientIP := c.IP()
+		path := c.Request.URL.Path
+		method := c.Request.Method
+		clientIP := c.ClientIP()
 
-		err := c.Next()
+		c.Next()
 
 		zap.L().Debug(
 			"incoming request",
@@ -23,6 +23,5 @@ func ZapLogger() fiber.Handler {
 			zap.String("path", path),
 			zap.String("method", method),
 		)
-		return err
 	}
 }

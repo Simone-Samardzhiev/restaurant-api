@@ -6,29 +6,27 @@ import (
 	"restaurant/internal/core/domain"
 	"restaurant/internal/core/port"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 // OrderHandler handler order related http requests.
 type OrderHandler struct {
 	orderService port.OrderService
-	validator    *validator.Validate
 }
 
 // NewOrderHandler creates a new OrderHandler instance
-func NewOrderHandler(orderService port.OrderService, validator *validator.Validate) *OrderHandler {
+func NewOrderHandler(orderService port.OrderService) *OrderHandler {
 	return &OrderHandler{
 		orderService: orderService,
-		validator:    validator,
 	}
 }
 
-func (h *OrderHandler) GetSessions(c *fiber.Ctx) error {
-	sessions, err := h.orderService.GetSessions(c.Context())
+func (h *OrderHandler) GetSessions(c *gin.Context) {
+	sessions, err := h.orderService.GetSessions(c)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
 	res := make([]response.OrderSessionResponse, 0, len(sessions))
@@ -36,54 +34,61 @@ func (h *OrderHandler) GetSessions(c *fiber.Ctx) error {
 		res = append(res, response.NewOrderSessionResponse(&session))
 	}
 
-	return c.Status(http.StatusOK).JSON(res)
+	c.JSON(http.StatusOK, res)
 }
 
-func (h *OrderHandler) CreateSession(c *fiber.Ctx) error {
-	order, err := h.orderService.CreateSession(c.Context())
+func (h *OrderHandler) CreateSession(c *gin.Context) {
+	order, err := h.orderService.CreateSession(c)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.NewOrderSessionResponse(order))
+	c.JSON(http.StatusOK, response.NewOrderSessionResponse(order))
 }
 
-func (h *OrderHandler) DeleteSession(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *OrderHandler) DeleteSession(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	err = h.orderService.DeleteSession(c.Context(), id)
+	err = h.orderService.DeleteSession(c, id)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.SendStatus(fiber.StatusOK)
+	c.Status(http.StatusOK)
 }
 
-func (h *OrderHandler) GetOrderedProducts(c *fiber.Ctx) error {
-	products, err := h.orderService.GetOrderedProducts(c.Context())
+func (h *OrderHandler) GetOrderedProducts(c *gin.Context) {
+	products, err := h.orderService.GetOrderedProducts(c)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 	res := make([]response.OrderedProductResponse, 0, len(products))
 	for _, product := range products {
 		res = append(res, response.NewOrderedProductResponse(&product))
 	}
-	return c.Status(http.StatusOK).JSON(res)
+
+	c.JSON(http.StatusOK, res)
 }
 
-func (h *OrderHandler) GetBill(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func (h *OrderHandler) GetBill(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return domain.ErrInvalidUUID
+		c.Error(domain.NewBadRequestError(domain.InvalidUUID)).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	bill, err := h.orderService.GetBill(c.Context(), id)
+	bill, err := h.orderService.GetBill(c, id)
 	if err != nil {
-		return err
+		c.Error(err).SetType(gin.ErrorTypePublic)
+		return
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.NewBillResponse(bill))
+	c.JSON(http.StatusOK, response.NewBillResponse(bill))
 }
