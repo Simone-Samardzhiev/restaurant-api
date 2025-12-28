@@ -8,6 +8,8 @@ import (
 
 	"restaurant/internal/adapter/handler/http/validator"
 
+	"restaurant/internal/adapter/handler/websocket"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"golang.org/x/net/context"
@@ -24,6 +26,7 @@ func NewRouter(
 	validator *validator.Validator,
 	productHandler *http.ProductHandler,
 	orderHandler *http.OrderHandler,
+	websocketHandler *websocket.Handler,
 ) *Router {
 	switch container.AppConfig.Environment {
 	case config.Development:
@@ -69,6 +72,7 @@ func NewRouter(
 				order.DELETE("/sessions/:id", orderHandler.DeleteSession)
 
 				order.GET("/ordered-products", orderHandler.GetOrderedProducts)
+				order.GET("/connect", websocketHandler.ConnectAsAdmin)
 			}
 		}
 		{

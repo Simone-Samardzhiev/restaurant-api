@@ -5,6 +5,7 @@ import (
 	"restaurant/internal/adapter/handler"
 	"restaurant/internal/adapter/handler/http"
 	"restaurant/internal/adapter/handler/http/validator"
+	"restaurant/internal/adapter/handler/websocket"
 	"restaurant/internal/adapter/logger"
 	"restaurant/internal/adapter/storage"
 	"restaurant/internal/core/service"
@@ -22,6 +23,7 @@ func main() {
 		service.Module,
 		validator.Module,
 		http.Module,
+		websocket.Module,
 		handler.Module,
 	).Run()
 }
