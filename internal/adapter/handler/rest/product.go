@@ -50,3 +50,29 @@ func (h *ProductHandler) AddCategory(ctx *gin.Context) {
 		Name: category.RawName(),
 	})
 }
+
+type updateCategoryRequest struct {
+	NewName *string `json:"newName,omitempty"`
+}
+
+func (h *ProductHandler) UpdateCategory(ctx *gin.Context) {
+	id := ctx.Param("id")
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	var req updateCategoryRequest
+	if err = ctx.BindJSON(&req); err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid request body")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	if err = h.service.UpdateCategory(ctx, product.NewCategoryUpdateRequest(parsedId, req.NewName)); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}

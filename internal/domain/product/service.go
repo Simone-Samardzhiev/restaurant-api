@@ -27,3 +27,12 @@ func (s *DefaultService) AddCategory(ctx context.Context, request *AddCategoryRe
 
 	return category, s.repository.AddCategory(ctx, category)
 }
+
+func (s *DefaultService) UpdateCategory(ctx context.Context, request *CategoryUpdateRequest) error {
+	update, err := NewCategoryUpdate(request.Id, request.NewName)
+	if err != nil {
+		return err
+	}
+
+	return s.repository.UpdateCategory(ctx, update)
+}

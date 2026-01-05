@@ -74,3 +74,49 @@ func NewCategory(id uuid.UUID, name string) (*Category, error) {
 func (c *Category) RawName() string {
 	return c.Name.raw
 }
+
+// CategoryUpdateRequest represents a request for updating an existing category.
+type CategoryUpdateRequest struct {
+	Id      uuid.UUID
+	NewName *string
+}
+
+// NewCategoryUpdateRequest creates a new CategoryUpdateRequest.
+func NewCategoryUpdateRequest(id uuid.UUID, newName *string) *CategoryUpdateRequest {
+	return &CategoryUpdateRequest{Id: id, NewName: newName}
+}
+
+// CategoryUpdate represents a category update.
+type CategoryUpdate struct {
+	Id      uuid.UUID
+	NewName *CategoryName
+}
+
+// NewCategoryUpdate creates a new CategoryUpdate by parsing fields and validation at least one field is provided.
+func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
+	validationErrors := domain.NewValidationErrors("invalid category update")
+	hasData := false
+	var parsedName *CategoryName
+
+	if newName != nil {
+		val, err := NewCategoryName(*newName)
+
+		if err != nil {
+			validationErrors.Add("newName", err)
+		} else {
+			hasData = true
+			parsedName = &val
+		}
+	}
+
+	if validationErrors.HasErrors() {
+		return nil, validationErrors
+	}
+
+	if !hasData {
+		return nil, domain.NewBadRequestError("category update does not have data")
+	}
+
+	return &CategoryUpdate{id, parsedName}, nil
+
+}

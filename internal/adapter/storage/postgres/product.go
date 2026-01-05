@@ -48,3 +48,44 @@ func (r *ProductRepository) AddCategory(ctx context.Context, category *product.C
 		domain.F("name", category.RawName()),
 	)
 }
+
+func (r *ProductRepository) UpdateCategory(ctx context.Context, update *product.CategoryUpdate) error {
+	var name sql.NullString
+	if update.NewName != nil {
+		name = sql.NullString{
+			Valid:  true,
+			String: update.NewName.Raw(),
+		}
+	}
+
+	result, err := r.db.ExecContext(
+		ctx,
+		"UPDATE product_categories SET name = $1 WHERE id = $2",
+		name,
+		update.Id,
+	)
+
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
+			return domain.NewConflictError("product category with this name already exists")
+		}
+
+		return domain.NewInternalError(
+			"error updating product category",
+			err,
+			domain.F("id", update.Id),
+			domain.F("name", update.NewName),
+		)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting rows affected", err)
+	}
+
+	if rowsAffected == 0 {
+		return domain.NewNotFoundError("product category not found")
+	}
+	return nil
+}
