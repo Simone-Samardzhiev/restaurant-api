@@ -6,8 +6,8 @@ import (
 )
 
 // New establishes connection to postgres database.
-func New(dbConfig *config.StorageConfig) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dbConfig.DbUrl)
+func New(storageConfig *config.StorageConfig) (*sql.DB, error) {
+	db, err := sql.Open("postgres", storageConfig.DbUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -15,5 +15,8 @@ func New(dbConfig *config.StorageConfig) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	db.SetMaxIdleConns(storageConfig.DbMaxIdleConnections)
+	db.SetMaxOpenConns(storageConfig.DbMaxOpenConnections)
 	return db, nil
 }

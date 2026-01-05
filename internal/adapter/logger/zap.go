@@ -9,8 +9,8 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// setZapLogger sets global zap global logger.
-func setZapLogger(appConfig *config.AppConfig) error {
+// SetZapLogger sets global zap logger.
+func SetZapLogger(appConfig *config.AppConfig) error {
 	switch appConfig.Environment {
 	case config.Production:
 		lumberLogger := &lumberjack.Logger{
