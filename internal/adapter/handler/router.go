@@ -15,17 +15,17 @@ type Router struct {
 }
 
 func NewRouter(container *config.Container, productHandler *rest.ProductHandler) *Router {
-	g := gin.New()
-	g.Use(gin.Recovery())
-	g.Use(middleware.ErrorMiddleware())
-	g.Use(middleware.ZapLogger())
-
 	switch container.AppConfig.Environment {
 	case config.Production:
 		gin.SetMode(gin.ReleaseMode)
 	default:
 		gin.SetMode(gin.DebugMode)
 	}
+
+	g := gin.New()
+	g.Use(gin.Recovery())
+	g.Use(middleware.ZapLogger())
+	g.Use(middleware.ErrorMiddleware())
 
 	v1 := g.Group("/api/v1")
 	{
@@ -40,6 +40,7 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 		{
 			menu := admin.Group("/menu")
 			menu.POST("/categories", productHandler.AddCategory)
+			menu.PATCH("/categories/:id", productHandler.UpdateCategory)
 		}
 	}
 
