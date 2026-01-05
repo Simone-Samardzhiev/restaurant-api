@@ -15,7 +15,7 @@ func SetZapLogger(appConfig *config.AppConfig) error {
 	case config.Production:
 		lumberLogger := &lumberjack.Logger{
 			Filename:   "./logs",
-			MaxSize:    30,
+			MaxSize:    1,
 			MaxBackups: 3,
 			MaxAge:     2,
 			Compress:   true,
@@ -23,6 +23,7 @@ func SetZapLogger(appConfig *config.AppConfig) error {
 
 		loggerConfig := zap.NewProductionConfig()
 		loggerConfig.DisableStacktrace = true
+		loggerConfig.Level = zap.NewAtomicLevelAt(zap.WarnLevel)
 
 		writeSyncer := zapcore.AddSync(lumberLogger)
 		encoder := zapcore.NewJSONEncoder(loggerConfig.EncoderConfig)
