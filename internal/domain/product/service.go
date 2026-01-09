@@ -36,3 +36,7 @@ func (s *DefaultService) UpdateCategory(ctx context.Context, request *CategoryUp
 
 	return s.repository.UpdateCategory(ctx, update)
 }
+
+func (s *DefaultService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	return s.repository.DeleteCategory(ctx, id)
+}

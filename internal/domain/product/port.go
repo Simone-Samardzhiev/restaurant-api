@@ -1,6 +1,9 @@
 package product
 
-import "golang.org/x/net/context"
+import (
+	"github.com/google/uuid"
+	"golang.org/x/net/context"
+)
 
 // Repository describes how product data is stored and managed.
 type Repository interface {
@@ -9,6 +12,9 @@ type Repository interface {
 
 	// UpdateCategory updates an existing Category.
 	UpdateCategory(ctx context.Context, update *CategoryUpdate) error
+
+	// DeleteCategory deletes an existing Category by id.
+	DeleteCategory(ctx context.Context, id uuid.UUID) error
 }
 
 // Service describes product-related business logic.
@@ -18,4 +24,7 @@ type Service interface {
 
 	// UpdateCategory updates an existing Category.
 	UpdateCategory(ctx context.Context, request *CategoryUpdateRequest) error
+
+	// DeleteCategory deletes an existing Category by id.
+	DeleteCategory(ctx context.Context, id uuid.UUID) error
 }

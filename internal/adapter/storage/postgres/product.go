@@ -6,6 +6,7 @@ import (
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/product"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"golang.org/x/net/context"
 )
@@ -87,5 +88,24 @@ func (r *ProductRepository) UpdateCategory(ctx context.Context, update *product.
 	if rowsAffected == 0 {
 		return domain.NewNotFoundError("product category not found")
 	}
+	return nil
+}
+
+func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.ExecContext(ctx, "DELETE FROM product_categories WHERE id = $1", id)
+
+	if err != nil {
+		return domain.NewInternalError("error deleting product category", err, domain.F("id", id))
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting rows affected", err)
+	}
+
+	if rowsAffected == 0 {
+		return domain.NewNotFoundError("product category not found")
+	}
+
 	return nil
 }

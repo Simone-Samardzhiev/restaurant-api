@@ -76,3 +76,19 @@ func (h *ProductHandler) UpdateCategory(ctx *gin.Context) {
 
 	ctx.Status(http.StatusNoContent)
 }
+
+func (h *ProductHandler) DeleteCategory(ctx *gin.Context) {
+	id := ctx.Param("id")
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	if err = h.service.DeleteCategory(ctx, parsedId); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
