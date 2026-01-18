@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"restaurant/internal/domain"
-	"restaurant/internal/domain/product"
+	"restaurant/internal/domain/menu"
 	"strings"
 
 	"github.com/google/uuid"
@@ -12,21 +12,21 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ProductRepository is the implementation of product.Service using postgres/
-type ProductRepository struct {
+// MenuRepository is the implementation of menu.Service using postgres/
+type MenuRepository struct {
 	db *sql.DB
 }
 
-var _ product.Repository = (*ProductRepository)(nil)
+var _ menu.Repository = (*MenuRepository)(nil)
 
-// NewProductRepository creates a new ProductRepository with database connection.
-func NewProductRepository(db *sql.DB) *ProductRepository {
-	return &ProductRepository{
+// NewProductRepository creates a new MenuRepository with database connection.
+func NewProductRepository(db *sql.DB) *MenuRepository {
+	return &MenuRepository{
 		db: db,
 	}
 }
 
-func (r *ProductRepository) AddCategory(ctx context.Context, category *product.Category) error {
+func (r *MenuRepository) AddCategory(ctx context.Context, category *menu.Category) error {
 	_, err := r.db.ExecContext(
 		ctx,
 		"INSERT INTO product_categories (id, name) VALUES ($1, $2)",
@@ -40,18 +40,18 @@ func (r *ProductRepository) AddCategory(ctx context.Context, category *product.C
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
-		return domain.NewConflictError("product category with this name already exists")
+		return domain.NewConflictError("menu category with this name already exists")
 	}
 
 	return domain.NewInternalError(
-		"error inserting product category",
+		"error inserting menu category",
 		err,
 		domain.F("id", category.Id),
 		domain.F("name", category.RawName()),
 	)
 }
 
-func (r *ProductRepository) UpdateCategory(ctx context.Context, update *product.CategoryUpdate) error {
+func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.CategoryUpdate) error {
 	var name sql.NullString
 	if update.NewName != nil {
 		name = sql.NullString{
@@ -70,11 +70,11 @@ func (r *ProductRepository) UpdateCategory(ctx context.Context, update *product.
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
-			return domain.NewConflictError("product category with this name already exists")
+			return domain.NewConflictError("menu category with this name already exists")
 		}
 
 		return domain.NewInternalError(
-			"error updating product category",
+			"error updating menu category",
 			err,
 			domain.F("id", update.Id),
 			domain.F("name", update.NewName),
@@ -87,16 +87,16 @@ func (r *ProductRepository) UpdateCategory(ctx context.Context, update *product.
 	}
 
 	if rowsAffected == 0 {
-		return domain.NewNotFoundError("product category not found")
+		return domain.NewNotFoundError("menu category not found")
 	}
 	return nil
 }
 
-func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+func (r *MenuRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM product_categories WHERE id = $1", id)
 
 	if err != nil {
-		return domain.NewInternalError("error deleting product category", err, domain.F("id", id))
+		return domain.NewInternalError("error deleting menu category", err, domain.F("id", id))
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -105,13 +105,13 @@ func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) er
 	}
 
 	if rowsAffected == 0 {
-		return domain.NewNotFoundError("product category not found")
+		return domain.NewNotFoundError("menu category not found")
 	}
 
 	return nil
 }
 
-func (r *ProductRepository) GetCategories(ctx context.Context, filter *product.CategoryFilter) ([]product.Category, error) {
+func (r *MenuRepository) GetCategories(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
 	query := `SELECT id, name FROM product_categories`
 	conditions := make([]string, 0)
 	args := make([]interface{}, 0)
@@ -127,11 +127,11 @@ func (r *ProductRepository) GetCategories(ctx context.Context, filter *product.C
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, domain.NewInternalError("error fetching product categories", err)
+		return nil, domain.NewInternalError("error fetching menu categories", err)
 	}
 
 	defer rows.Close()
-	var categories []product.Category
+	var categories []menu.Category
 	for rows.Next() {
 		var id uuid.UUID
 		var name string
@@ -140,7 +140,7 @@ func (r *ProductRepository) GetCategories(ctx context.Context, filter *product.C
 			return nil, domain.NewInternalError("error scanning row", err)
 		}
 
-		category, err := product.NewCategory(id, name)
+		category, err := menu.NewCategory(id, name)
 		if err != nil {
 			return nil, domain.NewInternalError("error creating category", err)
 		}

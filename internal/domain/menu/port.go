@@ -1,11 +1,11 @@
-package product
+package menu
 
 import (
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
 )
 
-// Repository describes how product data is stored and managed.
+// Repository describes how menu data is stored and managed.
 type Repository interface {
 	// AddCategory stores a new Category.
 	AddCategory(ctx context.Context, category *Category) error
@@ -20,7 +20,7 @@ type Repository interface {
 	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 }
 
-// Service describes product-related business logic.
+// Service describes menu-related business logic.
 type Service interface {
 	// AddCategory creates and stores a new Category from AddCategoryRequest.
 	AddCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error)

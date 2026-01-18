@@ -11,7 +11,7 @@ import (
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/logger"
 	"restaurant/internal/adapter/storage/postgres"
-	"restaurant/internal/domain/product"
+	"restaurant/internal/domain/menu"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -38,7 +38,7 @@ func main() {
 
 	// Product
 	productRepository := postgres.NewProductRepository(db)
-	productService := product.NewService(productRepository)
+	productService := menu.NewService(productRepository)
 	productHandler := rest.NewProductHandler(productService)
 
 	router := handler.NewRouter(container, productHandler)

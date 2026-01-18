@@ -3,19 +3,19 @@ package rest
 import (
 	"net/http"
 	"restaurant/internal/domain"
-	"restaurant/internal/domain/product"
+	"restaurant/internal/domain/menu"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-// ProductHandler handles product related requests.
+// ProductHandler handles menu related requests.
 type ProductHandler struct {
-	service product.Service
+	service menu.Service
 }
 
 // NewProductHandler creates a new ProductHandler.
-func NewProductHandler(service product.Service) *ProductHandler {
+func NewProductHandler(service menu.Service) *ProductHandler {
 	return &ProductHandler{
 		service: service,
 	}
@@ -38,7 +38,7 @@ func (h *ProductHandler) AddCategory(ctx *gin.Context) {
 		return
 	}
 
-	category, err := h.service.AddCategory(ctx, product.NewAddCategoryRequest(req.Name))
+	category, err := h.service.AddCategory(ctx, menu.NewAddCategoryRequest(req.Name))
 
 	if err != nil {
 		ctx.Error(err).SetType(gin.ErrorTypePublic)
@@ -69,7 +69,7 @@ func (h *ProductHandler) UpdateCategory(ctx *gin.Context) {
 		return
 	}
 
-	if err = h.service.UpdateCategory(ctx, product.NewCategoryUpdateRequest(parsedId, req.NewName)); err != nil {
+	if err = h.service.UpdateCategory(ctx, menu.NewCategoryUpdateRequest(parsedId, req.NewName)); err != nil {
 		ctx.Error(err).SetType(gin.ErrorTypePublic)
 		return
 	}
@@ -99,7 +99,7 @@ type getCategoriesResponse struct {
 }
 
 func (h *ProductHandler) GetCategories(ctx *gin.Context) {
-	var categoryFilter product.CategoryFilter
+	var categoryFilter menu.CategoryFilter
 
 	if id, ok := ctx.GetQuery("id"); ok {
 		paredId, err := uuid.Parse(id)
