@@ -40,3 +40,7 @@ func (s *DefaultService) UpdateCategory(ctx context.Context, request *CategoryUp
 func (s *DefaultService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	return s.repository.DeleteCategory(ctx, id)
 }
+
+func (s *DefaultService) GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error) {
+	return s.repository.GetCategories(ctx, filter)
+}

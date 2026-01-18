@@ -15,6 +15,9 @@ type Repository interface {
 
 	// DeleteCategory deletes an existing Category by id.
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
+
+	// GetCategories fetches categories by applying the filter.
+	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 }
 
 // Service describes product-related business logic.
@@ -27,4 +30,7 @@ type Service interface {
 
 	// DeleteCategory deletes an existing Category by id.
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
+
+	// GetCategories fetches categories by applying the filter.
+	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 }

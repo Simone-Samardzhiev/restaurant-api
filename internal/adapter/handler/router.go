@@ -44,6 +44,10 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 			menu.DELETE("/categories/:id", productHandler.DeleteCategory)
 		}
 	}
+	{
+		public := v1.Group("/public")
+		public.GET("/categories", productHandler.GetCategories)
+	}
 
 	return &Router{
 		server: &http.Server{

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/product"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -108,4 +109,44 @@ func (r *ProductRepository) DeleteCategory(ctx context.Context, id uuid.UUID) er
 	}
 
 	return nil
+}
+
+func (r *ProductRepository) GetCategories(ctx context.Context, filter *product.CategoryFilter) ([]product.Category, error) {
+	query := `SELECT id, name FROM product_categories`
+	conditions := make([]string, 0)
+	args := make([]interface{}, 0)
+
+	if filter.Id != nil {
+		conditions = append(conditions, "id = $1")
+		args = append(args, *filter.Id)
+	}
+
+	if len(conditions) > 0 {
+		query = query + " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, domain.NewInternalError("error fetching product categories", err)
+	}
+
+	defer rows.Close()
+	var categories []product.Category
+	for rows.Next() {
+		var id uuid.UUID
+		var name string
+
+		if err = rows.Scan(&id, &name); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		category, err := product.NewCategory(id, name)
+		if err != nil {
+			return nil, domain.NewInternalError("error creating category", err)
+		}
+
+		categories = append(categories, *category)
+	}
+
+	return categories, nil
 }

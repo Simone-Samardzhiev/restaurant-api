@@ -118,5 +118,12 @@ func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
 	}
 
 	return &CategoryUpdate{id, parsedName}, nil
+}
 
+type CategoryFilter struct {
+	Id *uuid.UUID
+}
+
+func NewCategoryFilter(id *uuid.UUID) *CategoryFilter {
+	return &CategoryFilter{id}
 }

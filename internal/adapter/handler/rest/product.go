@@ -92,3 +92,40 @@ func (h *ProductHandler) DeleteCategory(ctx *gin.Context) {
 
 	ctx.Status(http.StatusNoContent)
 }
+
+type getCategoriesResponse struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
+func (h *ProductHandler) GetCategories(ctx *gin.Context) {
+	var categoryFilter product.CategoryFilter
+
+	if id, ok := ctx.GetQuery("id"); ok {
+		paredId, err := uuid.Parse(id)
+		if err != nil {
+			ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+			return
+		}
+		categoryFilter.Id = &paredId
+	}
+
+	result, err := h.service.GetCategories(
+		ctx,
+		&categoryFilter,
+	)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	response := make([]getCategoriesResponse, 0, len(result))
+	for _, category := range result {
+		response = append(response, getCategoriesResponse{
+			Id:   category.Id,
+			Name: category.RawName(),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
