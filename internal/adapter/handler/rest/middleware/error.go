@@ -37,7 +37,7 @@ func handleInternalError(ctx *gin.Context, err *domain.InternalError) {
 
 	ctx.JSON(http.StatusInternalServerError, internalErrorResponse{
 		Code:    http.StatusInternalServerError,
-		Message: err.Message,
+		Message: "internal server error",
 	})
 }
 
