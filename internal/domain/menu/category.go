@@ -88,7 +88,7 @@ type CategoryUpdate struct {
 	NewName *CategoryName
 }
 
-// NewCategoryUpdate creates a new CategoryUpdate by parsing fields and validation at least one field is provided.
+// NewCategoryUpdate creates a new CategoryUpdate by parsing all the fields and validate at least one field is provided.
 func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
 	validationErrors := domain.NewValidationErrors("invalid category update")
 	hasData := false
@@ -105,12 +105,12 @@ func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
 		}
 	}
 
-	if validationErrors.HasErrors() {
-		return nil, validationErrors
-	}
-
 	if !hasData {
 		return nil, domain.NewBadRequestError("category update does not have data")
+	}
+
+	if validationErrors.HasErrors() {
+		return nil, validationErrors
 	}
 
 	return &CategoryUpdate{id, parsedName}, nil

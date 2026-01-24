@@ -48,6 +48,7 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 
 			// Products
 			menu.POST("/products", productHandler.AddProduct)
+			menu.PATCH("/products/:id", productHandler.UpdateProduct)
 		}
 	}
 	{

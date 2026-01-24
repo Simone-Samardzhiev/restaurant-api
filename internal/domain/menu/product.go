@@ -180,3 +180,98 @@ func NewProductWithValidFields(
 		ImagePath:   imagePath,
 	}
 }
+
+// UpdateProductRequest represents a request for updating an existing product..
+type UpdateProductRequest struct {
+	Id             uuid.UUID
+	NewName        *string
+	NewDescription *string
+	NewCategoryId  *uuid.UUID
+	NewPrice       *decimal.Decimal
+}
+
+// NewUpdateProductRequest creates a new UpdateProductRequest.
+func NewUpdateProductRequest(
+	id uuid.UUID,
+	newName, newDescription *string,
+	newCategoryId *uuid.UUID,
+	newPrice *decimal.Decimal,
+) *UpdateProductRequest {
+	return &UpdateProductRequest{
+		Id:             id,
+		NewName:        newName,
+		NewDescription: newDescription,
+		NewCategoryId:  newCategoryId,
+		NewPrice:       newPrice,
+	}
+}
+
+// ProductUpdate represents a product update.
+type ProductUpdate struct {
+	Id             uuid.UUID
+	NewName        *ProductName
+	NewDescription *ProductDescription
+	NewCategoryId  *uuid.UUID
+	NewPrice       *ProductPrice
+}
+
+// NewProductUpdate creates a new ProductUpdate by parsing all the fields and validate at least one field is provided.
+func NewProductUpdate(
+	id uuid.UUID,
+	newName, newDescription *string,
+	newCategoryId *uuid.UUID,
+	newPrice *decimal.Decimal,
+) (*ProductUpdate, error) {
+	validationErrors := domain.NewValidationErrors("invalid product update")
+	hasData := false
+
+	var parsedName *ProductName
+	if newName != nil {
+		val, err := NewProductName(*newName)
+
+		if err != nil {
+			validationErrors.Add("name", err)
+		} else {
+			parsedName = &val
+			hasData = true
+		}
+	}
+
+	var parsedDescription *ProductDescription
+	if newDescription != nil {
+		val, err := NewProductDescription(*newDescription)
+		if err != nil {
+			validationErrors.Add("newDescription", err)
+		} else {
+			parsedDescription = &val
+			hasData = true
+		}
+	}
+
+	var parsedPrice *ProductPrice
+	if newPrice != nil {
+		val, err := NewProductPrice(*newPrice)
+		if err != nil {
+			validationErrors.Add("newPrice", err)
+		} else {
+			parsedPrice = &val
+			hasData = true
+		}
+	}
+
+	if !hasData {
+		return nil, domain.NewBadRequestError("product update does not have data")
+	}
+
+	if validationErrors.HasErrors() {
+		return nil, validationErrors
+	}
+
+	return &ProductUpdate{
+		Id:             id,
+		NewName:        parsedName,
+		NewDescription: parsedDescription,
+		NewCategoryId:  newCategoryId,
+		NewPrice:       parsedPrice,
+	}, nil
+}

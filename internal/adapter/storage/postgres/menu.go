@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"github.com/shopspring/decimal"
 )
 
 // MenuRepository is the implementation of menu.Service using postgres/
@@ -189,6 +190,75 @@ func (r *MenuRepository) AddProduct(ctx context.Context, product *menu.Product) 
 		domain.F("categoryId", product.CategoryId),
 		domain.F("price", product.Price.Value()),
 		domain.F("imagePath", product.ImagePath),
+	)
+}
+
+func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.ProductUpdate) error {
+	var (
+		name        sql.NullString
+		description sql.NullString
+		categoryId  sql.Null[uuid.UUID]
+		price       sql.Null[decimal.Decimal]
+	)
+
+	if update.NewName != nil {
+		name.String = update.NewName.String()
+		name.Valid = true
+	}
+
+	if update.NewDescription != nil {
+		description.String = update.NewDescription.String()
+		description.Valid = true
+	}
+
+	if update.NewCategoryId != nil {
+		categoryId.Valid = true
+		categoryId.V = *update.NewCategoryId
+	}
+
+	if update.NewPrice != nil {
+		price.Valid = true
+		price.V = update.NewPrice.Value()
+	}
+
+	_, err := r.db.ExecContext(
+		ctx,
+		`UPDATE products
+					SET name    = COALESCE($1, name),
+    				description = COALESCE($2, description),
+    				category    = COALESCE($3, category),
+    				price       = COALESCE($4, price)
+				WHERE id = $5`,
+		name,
+		description,
+		categoryId,
+		price,
+		update.Id,
+	)
+
+	if err == nil {
+		return nil
+	}
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" {
+			return domain.NewNotFoundError("category with id: " + update.NewCategoryId.String() + " not found")
+		}
+
+		if pqErr.Code == "23505" && pqErr.Constraint == "products_name_key" {
+			return domain.NewConflictError("product with name: " + update.NewName.String() + " already exists")
+		}
+	}
+
+	return domain.NewInternalError(
+		"error updating product",
+		err,
+		domain.F("id", update.Id),
+		domain.F("name", update.NewName),
+		domain.F("description", update.NewDescription),
+		domain.F("categoryId", update.NewCategoryId),
+		domain.F("price", update.NewPrice),
 	)
 }
 

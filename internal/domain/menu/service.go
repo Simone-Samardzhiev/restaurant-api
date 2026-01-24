@@ -96,6 +96,15 @@ func (s *DefaultService) AddProduct(ctx context.Context, request *AddProductRequ
 	return product, nil
 }
 
+func (s *DefaultService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
+	update, err := NewProductUpdate(request.Id, request.NewName, request.NewDescription, request.NewCategoryId, request.NewPrice)
+	if err != nil {
+		return err
+	}
+
+	return s.menuRepository.UpdateProduct(ctx, update)
+}
+
 func (s *DefaultService) DeleteOrphanImages(ctx context.Context) {
 	productsFilePaths, err := s.menuRepository.GetProductImagePaths(ctx)
 	if err != nil {

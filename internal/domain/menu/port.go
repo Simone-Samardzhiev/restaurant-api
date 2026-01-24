@@ -25,6 +25,8 @@ type Repository interface {
 	// AddProduct stores a new Product.
 	AddProduct(ctx context.Context, product *Product) error
 
+	UpdateProduct(ctx context.Context, update *ProductUpdate) error
+
 	// GetProductImagePaths fetches paths for all images used by products in a map/set.
 	GetProductImagePaths(ctx context.Context) (map[string]struct{}, error)
 }
@@ -57,6 +59,8 @@ type Service interface {
 
 	// AddProduct creates and stores a new Product and image from AddProductRequest.
 	AddProduct(ctx context.Context, request *AddProductRequest) (*Product, error)
+
+	UpdateProduct(ctx context.Context, update *UpdateProductRequest) error
 
 	// DeleteOrphanImages deletes all orphan images than aren't used by any products.
 	DeleteOrphanImages(ctx context.Context)

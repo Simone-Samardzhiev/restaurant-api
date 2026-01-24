@@ -213,3 +213,32 @@ func (h *ProductHandler) AddProduct(ctx *gin.Context) {
 		ImageUrl:    path.Join(h.imagesServingPath, product.ImagePath),
 	})
 }
+
+type updateProductRequest struct {
+	NewName        *string          `json:"newName"`
+	NewDescription *string          `json:"newDescription"`
+	NewCategoryId  *uuid.UUID       `json:"newCategoryId"`
+	NewPrice       *decimal.Decimal `json:"newPrice"`
+}
+
+func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	var req updateProductRequest
+	if err = ctx.BindJSON(&req); err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid request body")).SetType(gin.ErrorTypeBind)
+	}
+
+	if err = h.service.UpdateProduct(
+		ctx,
+		menu.NewUpdateProductRequest(id, req.NewName, req.NewDescription, req.NewCategoryId, req.NewPrice)); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
