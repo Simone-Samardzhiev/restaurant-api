@@ -62,7 +62,7 @@ func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.Catego
 
 	result, err := r.db.ExecContext(
 		ctx,
-		"UPDATE product_categories SET name = $1 WHERE id = $2",
+		"UPDATE product_categories SET name = COALESCE($1, name) WHERE id = $2",
 		name,
 		update.Id,
 	)
