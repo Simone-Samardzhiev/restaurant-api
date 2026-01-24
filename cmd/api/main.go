@@ -22,7 +22,7 @@ import (
 // startTasks creates a goroutine that executes set of functions periodically.
 func startTasks(menuService menu.Service) {
 	go func() {
-		ticker24 := time.NewTicker(30 * time.Second)
+		ticker24 := time.NewTicker(24 * time.Hour)
 
 		for {
 			select {
