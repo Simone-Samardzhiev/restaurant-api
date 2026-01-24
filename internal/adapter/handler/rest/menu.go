@@ -1,23 +1,30 @@
 package rest
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
+	"path"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // ProductHandler handles menu related requests.
 type ProductHandler struct {
-	service menu.Service
+	service           menu.Service
+	imagesServingPath string
 }
 
 // NewProductHandler creates a new ProductHandler.
-func NewProductHandler(service menu.Service) *ProductHandler {
+func NewProductHandler(service menu.Service, imagesServingPath string) *ProductHandler {
 	return &ProductHandler{
-		service: service,
+		service:           service,
+		imagesServingPath: imagesServingPath,
 	}
 }
 
@@ -47,7 +54,7 @@ func (h *ProductHandler) AddCategory(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, addCategoryResponse{
 		Id:   category.Id,
-		Name: category.RawName(),
+		Name: category.Name.String(),
 	})
 }
 
@@ -123,9 +130,86 @@ func (h *ProductHandler) GetCategories(ctx *gin.Context) {
 	for _, category := range result {
 		response = append(response, getCategoriesResponse{
 			Id:   category.Id,
-			Name: category.RawName(),
+			Name: category.Name.String(),
 		})
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+type productMetadata struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	CategoryId  uuid.UUID       `json:"categoryId"`
+	Price       decimal.Decimal `json:"price"`
+}
+
+type addProductResponse struct {
+	Id          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	CategoryId  uuid.UUID       `json:"categoryId"`
+	Price       decimal.Decimal `json:"price"`
+	ImageUrl    string          `json:"imageUrl"`
+}
+
+func (h *ProductHandler) AddProduct(ctx *gin.Context) {
+	imageHeader, err := ctx.FormFile("image")
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid image")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	imageFile, err := imageHeader.Open()
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid image")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	defer imageFile.Close()
+
+	buffer := make([]byte, 512)
+	_, err = io.ReadFull(imageFile, buffer)
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid image")).SetType(gin.ErrorTypeBind)
+	}
+
+	contentType := strings.Split(http.DetectContentType(buffer), "/")[1]
+
+	if _, err := imageFile.Seek(0, io.SeekStart); err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid image")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	var metadata productMetadata
+	if err = json.NewDecoder(strings.NewReader(ctx.PostForm("metadata"))).Decode(&metadata); err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid metadata")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	product, err := h.service.AddProduct(
+		ctx,
+		menu.NewAddProductRequest(
+			metadata.Name,
+			metadata.Description,
+			metadata.CategoryId,
+			metadata.Price,
+			imageFile,
+			contentType,
+		),
+	)
+
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, addProductResponse{
+		Id:          product.Id,
+		Name:        product.Name.String(),
+		Description: product.Description.String(),
+		CategoryId:  product.CategoryId,
+		Price:       product.Price.Value(),
+		ImageUrl:    path.Join(h.imagesServingPath, product.ImagePath),
+	})
 }

@@ -69,14 +69,3 @@ tasks:
     cmds:
       - go build -o bin/api ./cmd/api
       - ./bin/http
-
-  mockgen:
-    desc: "Generates mock implementation from specific file."
-    summary: |
-      Generates mock implementation from specific file.
-      
-      Please make sure you have set FILE before starting.
-
-    cmd: mockgen -source=internal/core/port/{{.FILE}}.go -destination=internal/core/port/mock/{{.FILE}}.go -package=mock -typed=true
-    requires:
-      vars: [ FILE ]

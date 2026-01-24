@@ -22,8 +22,10 @@ type (
 
 	// AppConfig holds all environment variable for the application.
 	AppConfig struct {
-		Environment Environment `envconfig:"ENVIRONMENT" required:"true"`
-		Port        string      `envconfig:"PORT" default:":8080"`
+		Environment      Environment `envconfig:"ENVIRONMENT" required:"true"`
+		ImageSavePath    string      `envconfig:"IMAGE_SAVE_PATH" required:"true"`
+		ImageServingPath string      `envconfig:"IMAGE_SERVING_PATH" required:"true"`
+		Port             string      `envconfig:"PORT" default:":8080"`
 	}
 
 	// StorageConfig holds all environment variable for the database.

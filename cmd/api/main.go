@@ -10,6 +10,7 @@ import (
 	"restaurant/internal/adapter/handler"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/logger"
+	"restaurant/internal/adapter/storage/local"
 	"restaurant/internal/adapter/storage/postgres"
 	"restaurant/internal/domain/menu"
 	"time"
@@ -17,6 +18,20 @@ import (
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 )
+
+// startTasks creates a goroutine that executes set of functions periodically.
+func startTasks(menuService menu.Service) {
+	go func() {
+		ticker24 := time.NewTicker(30 * time.Second)
+
+		for {
+			select {
+			case <-ticker24.C:
+				menuService.DeleteOrphanImages(context.Background())
+			}
+		}
+	}()
+}
 
 func main() {
 	container, err := config.New()
@@ -36,10 +51,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Product
+	// Menu
 	productRepository := postgres.NewProductRepository(db)
-	productService := menu.NewService(productRepository)
-	productHandler := rest.NewProductHandler(productService)
+	imageRepository := local.NewImageRepository(container.AppConfig.ImageSavePath)
+	productService := menu.NewService(productRepository, imageRepository)
+	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
+
+	// Invoke startup functions
+	err = imageRepository.CreateSavePath()
+	if err != nil {
+		log.Printf("error creating save path: %v", err)
+	}
+	startTasks(productService)
 
 	router := handler.NewRouter(container, productHandler)
 	go func() {

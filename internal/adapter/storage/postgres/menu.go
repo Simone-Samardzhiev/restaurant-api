@@ -7,9 +7,10 @@ import (
 	"restaurant/internal/domain/menu"
 	"strings"
 
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"golang.org/x/net/context"
 )
 
 // MenuRepository is the implementation of menu.Service using postgres/
@@ -31,7 +32,7 @@ func (r *MenuRepository) AddCategory(ctx context.Context, category *menu.Categor
 		ctx,
 		"INSERT INTO product_categories (id, name) VALUES ($1, $2)",
 		category.Id,
-		category.RawName(),
+		category.Name.String(),
 	)
 
 	if err == nil {
@@ -40,14 +41,14 @@ func (r *MenuRepository) AddCategory(ctx context.Context, category *menu.Categor
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
-		return domain.NewConflictError("menu category with this name already exists")
+		return domain.NewConflictError("category with name: " + category.Name.String() + " already exists")
 	}
 
 	return domain.NewInternalError(
 		"error inserting menu category",
 		err,
 		domain.F("id", category.Id),
-		domain.F("name", category.RawName()),
+		domain.F("name", category.Name.String()),
 	)
 }
 
@@ -56,7 +57,7 @@ func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.Catego
 	if update.NewName != nil {
 		name = sql.NullString{
 			Valid:  true,
-			String: update.NewName.Raw(),
+			String: update.NewName.String(),
 		}
 	}
 
@@ -70,7 +71,7 @@ func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.Catego
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
-			return domain.NewConflictError("menu category with this name already exists")
+			return domain.NewConflictError("category with name: " + update.NewName.String() + " already exists")
 		}
 
 		return domain.NewInternalError(
@@ -87,7 +88,7 @@ func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.Catego
 	}
 
 	if rowsAffected == 0 {
-		return domain.NewNotFoundError("menu category not found")
+		return domain.NewNotFoundError("category with id " + update.Id.String() + " not found")
 	}
 	return nil
 }
@@ -105,7 +106,7 @@ func (r *MenuRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error
 	}
 
 	if rowsAffected == 0 {
-		return domain.NewNotFoundError("menu category not found")
+		return domain.NewNotFoundError("category with id: " + id.String() + " not found")
 	}
 
 	return nil
@@ -149,4 +150,62 @@ func (r *MenuRepository) GetCategories(ctx context.Context, filter *menu.Categor
 	}
 
 	return categories, nil
+}
+
+func (r *MenuRepository) AddProduct(ctx context.Context, product *menu.Product) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO products (id, name, description, category, price, image_path) 
+		VALUES ($1, $2, $3, $4, $5, $6)`,
+		product.Id,
+		product.Name.String(),
+		product.Description.String(),
+		product.CategoryId,
+		product.Price.Value(),
+		product.ImagePath,
+	)
+
+	if err == nil {
+		return nil
+	}
+
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" {
+			return domain.NewNotFoundError("category with id: " + product.CategoryId.String() + " not found")
+		}
+
+		if pqErr.Code == "23505" && pqErr.Constraint == "products_name_key" {
+			return domain.NewConflictError("product with name: " + product.Name.String() + " already exists")
+		}
+	}
+
+	return domain.NewInternalError(
+		"error inserting product",
+		err,
+		domain.F("id", product.Id),
+		domain.F("name", product.Name.String()),
+		domain.F("description", product.Description.String()),
+		domain.F("categoryId", product.CategoryId),
+		domain.F("price", product.Price.Value()),
+		domain.F("imagePath", product.ImagePath),
+	)
+}
+
+func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]struct{}, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT image_path FROM products`)
+	if err != nil {
+		return nil, domain.NewInternalError("error fetching product image paths", err)
+	}
+	defer rows.Close()
+
+	imagePaths := make(map[string]struct{})
+	for rows.Next() {
+		var imagePath string
+		if err = rows.Scan(&imagePath); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+		imagePaths[imagePath] = struct{}{}
+	}
+	return imagePaths, nil
 }

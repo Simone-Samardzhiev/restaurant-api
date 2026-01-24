@@ -2,6 +2,7 @@ package domain
 
 import (
 	"runtime"
+	"strconv"
 )
 
 // Field holds the name and value.
@@ -46,7 +47,7 @@ func NewInternalError(message string, cause error, metadata ...Field) *InternalE
 }
 
 func (e *InternalError) Error() string {
-	return e.Message
+	return e.Message + " line: " + strconv.Itoa(e.Line) + " file path: " + e.Filepath
 }
 
 func (e *InternalError) Unwrap() error {

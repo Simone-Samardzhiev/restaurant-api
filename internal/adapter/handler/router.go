@@ -6,8 +6,9 @@ import (
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
 
+	"context"
+
 	"github.com/gin-gonic/gin"
-	"golang.org/x/net/context"
 )
 
 type Router struct {
@@ -39,14 +40,20 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 
 		{
 			menu := admin.Group("/menu")
+
+			// Categories
 			menu.POST("/categories", productHandler.AddCategory)
 			menu.PATCH("/categories/:id", productHandler.UpdateCategory)
 			menu.DELETE("/categories/:id", productHandler.DeleteCategory)
+
+			// Products
+			menu.POST("/products", productHandler.AddProduct)
 		}
 	}
 	{
 		public := v1.Group("/public")
 		public.GET("/categories", productHandler.GetCategories)
+		public.Static("/images", container.AppConfig.ImageSavePath)
 	}
 
 	return &Router{

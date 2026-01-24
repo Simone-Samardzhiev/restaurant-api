@@ -20,9 +20,9 @@ type CategoryName struct {
 }
 
 // NewCategoryName parses a CategoryName from string.
-func NewCategoryName(raw string) (CategoryName, error) {
-	raw = strings.TrimSpace(raw)
-	count := utf8.RuneCountInString(raw)
+func NewCategoryName(name string) (CategoryName, error) {
+	name = strings.TrimSpace(name)
+	count := utf8.RuneCountInString(name)
 
 	if count < MinCategoryNameLength {
 		return CategoryName{}, fmt.Errorf("category name must be at least %d characters", MinCategoryNameLength)
@@ -32,10 +32,10 @@ func NewCategoryName(raw string) (CategoryName, error) {
 		return CategoryName{}, fmt.Errorf("category name must be at most %d characters", MaxCategoryNameLength)
 	}
 
-	return CategoryName{raw}, nil
+	return CategoryName{name}, nil
 }
 
-func (c CategoryName) Raw() string {
+func (c CategoryName) String() string {
 	return c.raw
 }
 
@@ -69,10 +69,6 @@ func NewCategory(id uuid.UUID, name string) (*Category, error) {
 	}
 
 	return &Category{id, parsedName}, nil
-}
-
-func (c *Category) RawName() string {
-	return c.Name.raw
 }
 
 // CategoryUpdateRequest represents a request for updating an existing category.
@@ -120,6 +116,7 @@ func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
 	return &CategoryUpdate{id, parsedName}, nil
 }
 
+// CategoryFilter represent a filter for fetching categories.
 type CategoryFilter struct {
 	Id *uuid.UUID
 }
