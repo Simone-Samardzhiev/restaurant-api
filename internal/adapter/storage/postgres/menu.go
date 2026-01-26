@@ -292,12 +292,7 @@ func (r *MenuRepository) UpdateProductImagePath(ctx context.Context, id uuid.UUI
 }
 
 func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]struct{}, error) {
-	rows, err := r.db.QueryContext(ctx, `
-	SELECT
-	image_path
-	FROM
-	products
-	`)
+	rows, err := r.db.QueryContext(ctx, `SELECT image_path FROM products`)
 	if err != nil {
 		return nil, domain.NewInternalError("error fetching product image paths", err)
 	}
@@ -315,14 +310,12 @@ func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]s
 }
 
 func (r *MenuRepository) GetProductImagePathById(ctx context.Context, id uuid.UUID) (string, error) {
-	row := r.db.QueryRowContext(ctx, `
-	SELECT
-	image_path
-	FROM
-	products
-	WHERE
-	id = $1
-	`, id)
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT image_path FROM products 
+        WHERE id = $1`,
+		id,
+	)
 	var path string
 
 	err := row.Scan(&path)
