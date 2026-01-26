@@ -221,7 +221,7 @@ func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.Product
 		price.V = update.NewPrice.Value()
 	}
 
-	_, err := r.db.ExecContext(
+	result, err := r.db.ExecContext(
 		ctx,
 		`UPDATE products
 					SET name    = COALESCE($1, name),
@@ -236,10 +236,6 @@ func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.Product
 		update.Id,
 	)
 
-	if err == nil {
-		return nil
-	}
-
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) {
 		if pqErr.Code == "23503" {
@@ -249,17 +245,28 @@ func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.Product
 		if pqErr.Code == "23505" && pqErr.Constraint == "products_name_key" {
 			return domain.NewConflictError("product with name: " + update.NewName.String() + " already exists")
 		}
+	} else if err != nil {
+		return domain.NewInternalError(
+			"error updating product",
+			err,
+			domain.F("id", update.Id),
+			domain.F("name", update.NewName),
+			domain.F("description", update.NewDescription),
+			domain.F("categoryId", update.NewCategoryId),
+			domain.F("price", update.NewPrice),
+		)
 	}
 
-	return domain.NewInternalError(
-		"error updating product",
-		err,
-		domain.F("id", update.Id),
-		domain.F("name", update.NewName),
-		domain.F("description", update.NewDescription),
-		domain.F("categoryId", update.NewCategoryId),
-		domain.F("price", update.NewPrice),
-	)
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting rows affected", err)
+	}
+
+	if rows == 0 {
+		return domain.NewNotFoundError("product with id: " + update.NewCategoryId.String() + " not found")
+	}
+
+	return nil
 }
 
 func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]struct{}, error) {
