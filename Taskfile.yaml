@@ -13,41 +13,74 @@ tasks:
     summary: |
       Applies all pending migrations.
       
-      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+      Make sure MIGRATIONS_PATH and DB_URL are set.
 
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" up
     requires:
       vars: [ MIGRATIONS_PATH, DB_URL ]
 
+  migrate-up-test:
+    desc: "Applies all pending migrations to the test database."
+    summary: |
+      Applies all pending migrations.
+      
+      Make sure MIGRATIONS_PATH and TEST_DB_URL are set.
+
+    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.TEST_DB_URL}}" up
+    requires:
+      vars: [ MIGRATIONS_PATH, TEST_DB_URL ]
+
+
   migrate-down:
     desc: "Reverts the last applied migration."
-
     summary: |
       Reverts the last applied migration.
 
-      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+      Make sure MIGRATIONS_PATH and DB_URL are set.
 
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" down 1
     requires:
       vars: [ MIGRATIONS_PATH, DB_URL ]
+
+  migrate-down-test:
+    desc: "Reverts the last applied migration to the test database."
+    summary: |
+      Reverts the last applied migration.
+
+      Make sure MIGRATIONS_PATH and TEST_DB_URL are set.
+
+    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.TEST_DB_URL}}" down 1
+    requires:
+      vars: [ MIGRATIONS_PATH, TEST_DB_URL ]
 
   migrate-down-all:
     desc: "Reverts all migrations."
     summary: |
       Reverts all applied migration.
       
-      Please make sure you have set MIGRATIONS_PATH and DB_URL before starting.
+      Make sure MIGRATIONS_PATH and DB_URL are set.
 
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" down
     requires:
       vars: [ MIGRATIONS_PATH, DB_URL ]
+
+  migrate-down-all-test:
+    desc: "Reverts all migrations to the test database."
+    summary: |
+      Reverts all applied migration.
+
+      Make sure MIGRATIONS_PATH and TEST_DB_URL are set.
+
+    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.TEST_DB_URL}}" down
+    requires:
+      vars: [ MIGRATIONS_PATH, TEST_DB_URL ]
 
   migrate-create:
     desc: "Creates a new up/down migration file with specific name."
     summary: |
       Creates a new up/down migration file with specific name.
       
-      Please make sure you have set MIGRATIONS_PATH and NAME before starting.
+      Make sure MIGRATIONS_PATH and NAME are set.
 
     cmd: migrate create -ext sql -dir {{.MIGRATIONS_PATH}} -seq {{.NAME}}
     requires:
@@ -58,11 +91,46 @@ tasks:
     summary: |
       Forces the database version to a specific version.
       
-      Please make sure you have set MIGRATIONS_PATH, DB_URL and VERSION before starting.
+      Make sure MIGRATIONS_PATH, DB_URL and VERSION are set.
 
     cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.DB_URL}}" force {{.VERSION}}
     requires:
       vars: [ MIGRATIONS_PATH, VERSION ]
+
+  migrate-force-test:
+    desc: "Forces the database version to a specific version to the test database."
+    summary: |
+      Forces the database version to a specific version.
+
+      Make sure  MIGRATIONS_PATH, TEST_DB_URL and VERSION are set.
+
+    cmd: migrate -path {{.MIGRATIONS_PATH}} -database "{{.TEST_DB_URL}}" force {{.VERSION}}
+    requires:
+      vars: [ MIGRATIONS_PATH, TEST_DB_URL , VERSION ]
+
+
+  apply-seed:
+    desc: "Applies a seed to the database with specific name"
+    summary: |
+      Applies a sql seed script to the database.
+      
+      Make sure DB_URL, SEEDS_PATH and NAME are set.
+
+    cmd: psql {{.DB_URL}} -f {{.SEEDS_PATH}}/{{.NAME}}
+    requires:
+      vars: [ DB_URL, SEEDS_PATH, NAME ]
+
+  apply-seed-test:
+    desc: "Applies a seed to the test database with specific name"
+    summary: |
+      Applies a sql seed script to the database.
+
+      Make sure TEST_DB_URL, SEEDS_PATH and NAME are set.
+
+    cmd: psql {{.TEST_DB_URL}} -f {{.SEEDS_PATH}}/{{.NAME}}
+    requires:
+      vars: [ TEST_DB_URL ,SEEDS_PATH, NAME ]
+
 
   run-api:
     desc: "Starts the API"
