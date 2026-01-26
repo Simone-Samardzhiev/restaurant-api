@@ -57,6 +57,7 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 		public := v1.Group("/public")
 		public.GET("/categories", productHandler.GetCategories)
 		public.Static("/images", container.AppConfig.ImageSavePath)
+		public.GET("/products", productHandler.GetProducts)
 	}
 
 	return &Router{

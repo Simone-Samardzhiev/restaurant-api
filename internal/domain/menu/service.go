@@ -175,3 +175,7 @@ func (s *DefaultService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 
 	return nil
 }
+
+func (s *DefaultService) GetProducts(ctx context.Context) ([]Product, error) {
+	return s.menuRepository.GetProducts(ctx)
+}

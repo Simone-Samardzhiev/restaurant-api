@@ -37,6 +37,9 @@ type Repository interface {
 	// GetProductImagePathById fetches a product image path by id.
 	GetProductImagePathById(ctx context.Context, id uuid.UUID) (string, error)
 
+	// GetProducts fetches all products.
+	GetProducts(ctx context.Context) ([]Product, error)
+
 	// DeleteProduct deletes an existing Product by id and returns the image path linked with it.
 	DeleteProduct(ctx context.Context, id uuid.UUID) (string, error)
 }
@@ -81,4 +84,7 @@ type Service interface {
 
 	// DeleteProduct deletes an existing Product by id.
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
+
+	// GetProducts fetches all products.
+	GetProducts(ctx context.Context) ([]Product, error)
 }

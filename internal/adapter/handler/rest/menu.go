@@ -289,3 +289,34 @@ func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
 
 	ctx.Status(http.StatusNoContent)
 }
+
+type getProductResponse struct {
+	Id          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	CategoryId  uuid.UUID       `json:"categoryId"`
+	Price       decimal.Decimal `json:"price"`
+	ImageUrl    string          `json:"imageUrl"`
+}
+
+func (h *ProductHandler) GetProducts(ctx *gin.Context) {
+	products, err := h.service.GetProducts(ctx)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	response := make([]getProductResponse, 0, len(products))
+	for _, product := range products {
+		response = append(response, getProductResponse{
+			Id:          product.Id,
+			Name:        product.Name.String(),
+			Description: product.Description.String(),
+			CategoryId:  product.CategoryId,
+			Price:       product.Price.Value(),
+			ImageUrl:    path.Join(h.imagesServingPath, product.ImagePath),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}

@@ -328,6 +328,41 @@ func (r *MenuRepository) GetProductImagePathById(ctx context.Context, id uuid.UU
 	return path, nil
 }
 
+func (r *MenuRepository) GetProducts(ctx context.Context) ([]menu.Product, error) {
+	var products []menu.Product
+
+	rows, err := r.db.QueryContext(ctx, `SELECT id, name, description, category, price, image_path FROM products`)
+	if err != nil {
+		return nil, domain.NewInternalError("error fetching products", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			id          uuid.UUID
+			name        string
+			description string
+			categoryId  uuid.UUID
+			price       decimal.Decimal
+			imagePath   string
+		)
+
+		err = rows.Scan(&id, &name, &description, &categoryId, &price, &imagePath)
+		if err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		product, err := menu.NewProduct(id, name, description, categoryId, price, imagePath)
+		if err != nil {
+			return nil, domain.NewInternalError("error creating product", err)
+		}
+		products = append(products, *product)
+	}
+
+	return products, nil
+}
+
 func (r *MenuRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (string, error) {
 	row := r.db.QueryRowContext(
 		ctx,
