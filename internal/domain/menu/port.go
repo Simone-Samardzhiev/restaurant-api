@@ -36,6 +36,9 @@ type Repository interface {
 
 	// GetProductImagePathById fetches a product image path by id.
 	GetProductImagePathById(ctx context.Context, id uuid.UUID) (string, error)
+
+	// DeleteProduct deletes an existing Product by id and returns the image path linked with it.
+	DeleteProduct(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 // ImageRepository describes how image data is stored and managed.
@@ -75,4 +78,7 @@ type Service interface {
 
 	// DeleteOrphanImages deletes all orphan images than aren't used by any products.
 	DeleteOrphanImages(ctx context.Context)
+
+	// DeleteProduct deletes an existing Product by id.
+	DeleteProduct(ctx context.Context, id uuid.UUID) error
 }

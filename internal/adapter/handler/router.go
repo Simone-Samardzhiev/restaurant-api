@@ -50,6 +50,7 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 			menu.POST("/products", productHandler.AddProduct)
 			menu.PATCH("/products/:id", productHandler.UpdateProduct)
 			menu.PUT("/products/:id/image", productHandler.ReplaceProductImage)
+			menu.DELETE("/products/:id", productHandler.DeleteProduct)
 		}
 	}
 	{

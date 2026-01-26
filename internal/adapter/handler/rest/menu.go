@@ -274,3 +274,18 @@ func (h *ProductHandler) ReplaceProductImage(ctx *gin.Context) {
 		ImageUrl: path.Join(h.imagesServingPath, newPath),
 	})
 }
+
+func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	if err = h.service.DeleteProduct(ctx, id); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}

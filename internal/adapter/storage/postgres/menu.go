@@ -327,3 +327,23 @@ func (r *MenuRepository) GetProductImagePathById(ctx context.Context, id uuid.UU
 
 	return path, nil
 }
+
+func (r *MenuRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (string, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`DELETE FROM products 
+       WHERE id = $1
+       RETURNING image_path`,
+		id,
+	)
+
+	var path string
+	err := row.Scan(&path)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", domain.NewNotFoundError("product with id: " + id.String() + " not found")
+	} else if err != nil {
+		return "", domain.NewInternalError("error scanning row", err)
+	}
+
+	return path, nil
+}

@@ -162,3 +162,16 @@ func (s *DefaultService) ReplaceProductImage(ctx context.Context, request *Repla
 
 	return newPath, nil
 }
+
+func (s *DefaultService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	path, err := s.menuRepository.DeleteProduct(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err = s.imageRepository.DeleteImage(ctx, path); err != nil {
+		return domain.NewInternalError("error cleaning up image", err)
+	}
+
+	return nil
+}
