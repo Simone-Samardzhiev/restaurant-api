@@ -22,13 +22,20 @@ type Repository interface {
 	// GetCategories fetches categories by applying the filter.
 	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 
-	// AddProduct stores a new Product.
+	// AddProduct stores a new product.
 	AddProduct(ctx context.Context, product *Product) error
 
+	// UpdateProduct updates an existing Product.
 	UpdateProduct(ctx context.Context, update *ProductUpdate) error
+
+	// UpdateProductImagePath updates the image path of an existing Product.
+	UpdateProductImagePath(ctx context.Context, id uuid.UUID, path string) error
 
 	// GetProductImagePaths fetches paths for all images used by products in a map/set.
 	GetProductImagePaths(ctx context.Context) (map[string]struct{}, error)
+
+	// GetProductImagePathById fetches a product image path by id.
+	GetProductImagePathById(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 // ImageRepository describes how image data is stored and managed.
@@ -60,7 +67,11 @@ type Service interface {
 	// AddProduct creates and stores a new Product and image from AddProductRequest.
 	AddProduct(ctx context.Context, request *AddProductRequest) (*Product, error)
 
+	// UpdateProduct updates an existing Product.
 	UpdateProduct(ctx context.Context, update *UpdateProductRequest) error
+
+	// ReplaceProductImage replaces the image of an existing Product.
+	ReplaceProductImage(ctx context.Context, request *ReplaceProductImageRequest) (string, error)
 
 	// DeleteOrphanImages deletes all orphan images than aren't used by any products.
 	DeleteOrphanImages(ctx context.Context)

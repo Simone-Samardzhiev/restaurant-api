@@ -129,3 +129,36 @@ func (s *DefaultService) DeleteOrphanImages(ctx context.Context) {
 		}
 	}
 }
+
+func (s *DefaultService) ReplaceProductImage(ctx context.Context, request *ReplaceProductImageRequest) (string, error) {
+	imageType, err := NewImageType(request.ImageType)
+	if err != nil {
+		errors := domain.NewValidationErrors("invalid image")
+		errors.Add("imageType", err)
+		return "", errors
+	}
+
+	oldPath, err := s.menuRepository.GetProductImagePathById(ctx, request.Id)
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.imageRepository.DeleteImage(ctx, oldPath); err != nil {
+		return "", domain.NewInternalError("error deleting old image", err)
+	}
+
+	newPath, err := s.imageRepository.AddImage(ctx, request.ImageData, imageType)
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.menuRepository.UpdateProductImagePath(ctx, request.Id, newPath); err != nil {
+		if err = s.imageRepository.DeleteImage(ctx, newPath); err != nil {
+			zap.L().Error("error cleaning up image", zap.String("path", newPath), zap.Error(err))
+		}
+
+		return "", domain.NewInternalError("error updating product image", err)
+	}
+
+	return newPath, nil
+}

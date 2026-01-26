@@ -269,8 +269,35 @@ func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.Product
 	return nil
 }
 
+func (r *MenuRepository) UpdateProductImagePath(ctx context.Context, id uuid.UUID, path string) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE products SET image_path = $1 WHERE id = $2`,
+		path, id,
+	)
+
+	if err != nil {
+		return domain.NewInternalError("error updating product image path", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting rows affected", err)
+	}
+	if rows == 0 {
+		return domain.NewNotFoundError("product with id: " + id.String() + " not found")
+	}
+
+	return nil
+}
+
 func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]struct{}, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT image_path FROM products`)
+	rows, err := r.db.QueryContext(ctx, `
+	SELECT
+	image_path
+	FROM
+	products
+	`)
 	if err != nil {
 		return nil, domain.NewInternalError("error fetching product image paths", err)
 	}
@@ -285,4 +312,25 @@ func (r *MenuRepository) GetProductImagePaths(ctx context.Context) (map[string]s
 		imagePaths[imagePath] = struct{}{}
 	}
 	return imagePaths, nil
+}
+
+func (r *MenuRepository) GetProductImagePathById(ctx context.Context, id uuid.UUID) (string, error) {
+	row := r.db.QueryRowContext(ctx, `
+	SELECT
+	image_path
+	FROM
+	products
+	WHERE
+	id = $1
+	`, id)
+	var path string
+
+	err := row.Scan(&path)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", domain.NewNotFoundError("product with id: " + id.String() + " not found")
+	} else if err != nil {
+		return "", domain.NewInternalError("error scanning row", err)
+	}
+
+	return path, nil
 }

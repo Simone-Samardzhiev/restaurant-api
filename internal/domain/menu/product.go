@@ -275,3 +275,19 @@ func NewProductUpdate(
 		NewPrice:       parsedPrice,
 	}, nil
 }
+
+// ReplaceProductImageRequest represents a request for replacing the image of the product.
+type ReplaceProductImageRequest struct {
+	Id        uuid.UUID
+	ImageData io.Reader
+	ImageType string
+}
+
+// NewReplaceProductImageRequest creates a new ReplaceProductImageRequest.
+func NewReplaceProductImageRequest(id uuid.UUID, imageData io.Reader, imageType string) *ReplaceProductImageRequest {
+	return &ReplaceProductImageRequest{
+		Id:        id,
+		ImageData: imageData,
+		ImageType: imageType,
+	}
+}

@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -241,4 +242,35 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+type replaceProductImageResponse struct {
+	ImageUrl string `json:"imageUrl"`
+}
+
+func (h *ProductHandler) ReplaceProductImage(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid")).SetType(gin.ErrorTypeBind)
+	}
+
+	image := ctx.Request.Body
+	buffer := make([]byte, 512)
+	_, err = io.ReadFull(image, buffer)
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid image")).SetType(gin.ErrorTypeBind)
+	}
+
+	contentType := strings.Split(http.DetectContentType(buffer), "/")[1]
+	fullBody := io.MultiReader(bytes.NewReader(buffer), image)
+
+	newPath, err := h.service.ReplaceProductImage(ctx, menu.NewReplaceProductImageRequest(id, fullBody, contentType))
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, replaceProductImageResponse{
+		ImageUrl: path.Join(h.imagesServingPath, newPath),
+	})
 }
