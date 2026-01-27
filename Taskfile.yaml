@@ -2,7 +2,7 @@ version: '3'
 
 vars:
   MIGRATIONS_PATH: "./internal/adapter/storage/postgres/migrations"
-  SEEDS_PATH: "./internal/adapter/storage/postgres/seeds"
+  SEEDS_PATH: "./internal/adapter/storage/postgres/testdata/seeds"
 
 dotenv:
   - .env
