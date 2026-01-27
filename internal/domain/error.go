@@ -9,6 +9,19 @@ const (
 	NotFound
 )
 
+func (e ErrorType) String() string {
+	switch e {
+	case Conflict:
+		return "conflict"
+	case BadRequest:
+		return "bad request"
+	case NotFound:
+		return "not found"
+	default:
+		return "unknown error"
+	}
+}
+
 // Error represent a generic error.
 type Error struct {
 	Type    ErrorType
