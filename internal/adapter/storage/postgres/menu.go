@@ -263,7 +263,7 @@ func (r *MenuRepository) UpdateProduct(ctx context.Context, update *menu.Product
 	}
 
 	if rows == 0 {
-		return domain.NewNotFoundError("product with id: " + update.NewCategoryId.String() + " not found")
+		return domain.NewNotFoundError("product with id: " + update.Id.String() + " not found")
 	}
 
 	return nil
