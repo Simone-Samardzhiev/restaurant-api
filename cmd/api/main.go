@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// Menu
-	productRepository := postgres.NewProductRepository(db)
+	productRepository := postgres.NewMenuRepository(db)
 	imageRepository := local.NewImageRepository(container.AppConfig.ImageSavePath)
 	productService := menu.NewService(productRepository, imageRepository)
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)

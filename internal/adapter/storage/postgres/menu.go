@@ -21,8 +21,8 @@ type MenuRepository struct {
 
 var _ menu.Repository = (*MenuRepository)(nil)
 
-// NewProductRepository creates a new MenuRepository with database connection.
-func NewProductRepository(db *sql.DB) *MenuRepository {
+// NewMenuRepository creates a new MenuRepository with database connection.
+func NewMenuRepository(db *sql.DB) *MenuRepository {
 	return &MenuRepository{
 		db: db,
 	}
