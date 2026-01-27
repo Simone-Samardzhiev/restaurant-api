@@ -97,7 +97,12 @@ func (r *MenuRepository) UpdateCategory(ctx context.Context, update *menu.Catego
 func (r *MenuRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM product_categories WHERE id = $1", id)
 
-	if err != nil {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" && pqErr.Constraint == "products_category_fkey" {
+			return domain.NewBadRequestError("category with id " + id.String() + " is used by products")
+		}
+	} else if err != nil {
 		return domain.NewInternalError("error deleting menu category", err, domain.F("id", id))
 	}
 
