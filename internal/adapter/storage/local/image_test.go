@@ -14,7 +14,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestImageRepository_AddImage(t *testing.T) {
+func TestImageRepositoryAddImage(t *testing.T) {
 	dir := t.TempDir()
 	repository := local.NewImageRepository(dir)
 
@@ -35,7 +35,7 @@ func TestImageRepository_AddImage(t *testing.T) {
 	}
 }
 
-func TestImageRepository_DeleteImage(t *testing.T) {
+func TestImageRepositoryDeleteImage(t *testing.T) {
 	dir := t.TempDir()
 	repository := local.NewImageRepository(dir)
 	imageData := bytes.NewBuffer([]byte("Test data"))
@@ -69,7 +69,7 @@ func TestImageRepository_DeleteImage(t *testing.T) {
 	}
 }
 
-func TestImageRepository_GetAllImagePaths(t *testing.T) {
+func TestImageRepositoryGetAllImagePaths(t *testing.T) {
 	dir := t.TempDir()
 	repository := local.NewImageRepository(dir)
 	imageData := bytes.NewBuffer([]byte("Test data"))
