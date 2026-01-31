@@ -15,7 +15,11 @@ type Router struct {
 	server *http.Server
 }
 
-func NewRouter(container *config.Container, productHandler *rest.ProductHandler) *Router {
+func NewRouter(
+	container *config.Container,
+	categoryHandler *rest.CategoryHandler,
+	productHandler *rest.ProductHandler,
+) *Router {
 	switch container.AppConfig.Environment {
 	case config.Production:
 		gin.SetMode(gin.ReleaseMode)
@@ -42,9 +46,9 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 			menu := admin.Group("/menu")
 
 			// Categories
-			menu.POST("/categories", productHandler.AddCategory)
-			menu.PATCH("/categories/:id", productHandler.UpdateCategory)
-			menu.DELETE("/categories/:id", productHandler.DeleteCategory)
+			menu.POST("/categories", categoryHandler.AddCategory)
+			menu.PATCH("/categories/:id", categoryHandler.UpdateCategory)
+			menu.DELETE("/categories/:id", categoryHandler.DeleteCategory)
 
 			// Products
 			menu.POST("/products", productHandler.AddProduct)
@@ -55,7 +59,7 @@ func NewRouter(container *config.Container, productHandler *rest.ProductHandler)
 	}
 	{
 		public := v1.Group("/public")
-		public.GET("/categories", productHandler.GetCategories)
+		public.GET("/categories", categoryHandler.GetCategories)
 		public.Static("/images", container.AppConfig.ImageSavePath)
 		public.GET("/products", productHandler.GetProducts)
 	}

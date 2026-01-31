@@ -11,7 +11,7 @@ import (
 	"restaurant/internal/domain/menu"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func TestImageRepositoryAddImage(t *testing.T) {

@@ -15,12 +15,13 @@ import (
 	"restaurant/internal/domain/menu"
 	"time"
 
+	"context"
+
 	_ "github.com/lib/pq"
-	"golang.org/x/net/context"
 )
 
 // startTasks creates a goroutine that executes set of functions periodically.
-func startTasks(menuService menu.Service) {
+func startTasks(menuService menu.ProductService) {
 	go func() {
 		ticker24 := time.NewTicker(24 * time.Hour)
 
@@ -52,9 +53,17 @@ func main() {
 	}
 
 	// Menu
-	productRepository := postgres.NewMenuRepository(db)
+	// Repositories
+	categoryRepository := postgres.NewCategoryRepository(db)
+	productRepository := postgres.NewProductRepository(db)
 	imageRepository := local.NewImageRepository(container.AppConfig.ImageSavePath)
-	productService := menu.NewService(productRepository, imageRepository)
+
+	// Services
+	categoryService := menu.NewDefaultCategoryService(categoryRepository)
+	productService := menu.NewDefaultProductService(productRepository, imageRepository)
+
+	// Handlers
+	categoryHandler := rest.NewCategoryHandler(categoryService)
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
 	// Invoke startup functions
@@ -64,7 +73,7 @@ func main() {
 	}
 	startTasks(productService)
 
-	router := handler.NewRouter(container, productHandler)
+	router := handler.NewRouter(container, categoryHandler, productHandler)
 	go func() {
 		err = router.Start()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
