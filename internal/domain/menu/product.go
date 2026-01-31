@@ -228,34 +228,36 @@ func NewProductUpdate(
 	var parsedName *ProductName
 	if newName != nil {
 		val, err := NewProductName(*newName)
+		hasData = true
 
 		if err != nil {
 			validationErrors.Add("name", err)
 		} else {
 			parsedName = &val
-			hasData = true
 		}
 	}
 
 	var parsedDescription *ProductDescription
 	if newDescription != nil {
 		val, err := NewProductDescription(*newDescription)
+		hasData = true
+
 		if err != nil {
 			validationErrors.Add("newDescription", err)
 		} else {
 			parsedDescription = &val
-			hasData = true
 		}
 	}
 
 	var parsedPrice *ProductPrice
 	if newPrice != nil {
 		val, err := NewProductPrice(*newPrice)
+		hasData = true
+
 		if err != nil {
 			validationErrors.Add("newPrice", err)
 		} else {
 			parsedPrice = &val
-			hasData = true
 		}
 	}
 

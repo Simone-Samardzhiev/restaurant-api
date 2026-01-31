@@ -96,11 +96,11 @@ func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
 
 	if newName != nil {
 		val, err := NewCategoryName(*newName)
+		hasData = true
 
 		if err != nil {
 			validationErrors.Add("newName", err)
 		} else {
-			hasData = true
 			parsedName = &val
 		}
 	}
