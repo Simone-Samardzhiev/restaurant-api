@@ -76,6 +76,7 @@ func asPointer[T any](val T) *T {
 	return &val
 }
 
+// seedMenuTables is a helper function for seeding the tables.
 func seedMenuTables(t *testing.T) {
 	_, err := database.Exec(productsSeedQuery)
 	if err != nil {

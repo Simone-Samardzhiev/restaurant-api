@@ -1,8 +1,9 @@
 package menu
 
 import (
+	"context"
+
 	"github.com/google/uuid"
-	"golang.org/x/net/context"
 )
 
 // DefaultCategoryService is the default implementation of CategoryService.

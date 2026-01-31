@@ -7,9 +7,10 @@ import (
 	"restaurant/internal/domain/menu"
 	"strings"
 
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"golang.org/x/net/context"
 )
 
 type CategoryRepository struct {

@@ -10,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"golang.org/x/net/context"
 )
 
 // newProduct is a helper function for creating a valid menu.Product.

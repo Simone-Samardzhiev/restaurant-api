@@ -5,8 +5,9 @@ import (
 	"restaurant/internal/domain/menu"
 	"testing"
 
+	"context"
+
 	"github.com/google/uuid"
-	"golang.org/x/net/context"
 )
 
 // newCategory is a helper function for creating valid menu.Category.

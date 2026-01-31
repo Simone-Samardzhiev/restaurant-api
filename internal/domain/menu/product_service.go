@@ -3,9 +3,10 @@ package menu
 import (
 	"restaurant/internal/domain"
 
+	"context"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"golang.org/x/net/context"
 )
 
 // DefaultProductService is the default implementation of CategoryService.
