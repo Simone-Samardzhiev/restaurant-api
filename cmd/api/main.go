@@ -1,101 +1,65 @@
 package main
 
 import (
-	"errors"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"restaurant/internal/adapter/config"
 	"restaurant/internal/adapter/handler"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/logger"
-	"restaurant/internal/adapter/storage/local"
 	"restaurant/internal/adapter/storage/postgres"
 	"restaurant/internal/domain/menu"
+	"syscall"
 	"time"
 
 	"context"
-
-	_ "github.com/lib/pq"
 )
-
-// startTasks creates a goroutine that executes set of functions periodically.
-func startTasks(menuService menu.ProductService) {
-	go func() {
-		ticker24 := time.NewTicker(24 * time.Hour)
-
-		for {
-			select {
-			case <-ticker24.C:
-				menuService.DeleteOrphanImages(context.Background())
-			}
-		}
-	}()
-}
 
 func main() {
 	container, err := config.New()
 	if err != nil {
-		log.Printf("error loading config: %v", err)
-		os.Exit(1)
+		log.Fatalf("error loading config: %v", err)
 	}
 
 	if err = logger.SetZapLogger(&container.AppConfig); err != nil {
-		log.Printf("error setting zap logger: %v", err)
-		os.Exit(1)
+		log.Fatalf("error setting logger: %v", err)
 	}
 
 	db, err := postgres.New(&container.DbConfig)
 	if err != nil {
-		log.Printf("error connecting to database: %v", err)
-		os.Exit(1)
+		log.Fatalf("error connecting to database: %v", err)
 	}
 
 	// Menu
-	// Repositories
+	// Categories
 	categoryRepository := postgres.NewCategoryRepository(db)
-	productRepository := postgres.NewProductRepository(db)
-	imageRepository := local.NewImageRepository(container.AppConfig.ImageSavePath)
-
-	// Services
 	categoryService := menu.NewDefaultCategoryService(categoryRepository)
-	productService := menu.NewDefaultProductService(productRepository, imageRepository)
-
-	// Handlers
 	categoryHandler := rest.NewCategoryHandler(categoryService)
-	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
-	// Invoke startup functions
-	err = imageRepository.CreateSavePath()
-	if err != nil {
-		log.Printf("error creating save path: %v", err)
-	}
-	startTasks(productService)
+	router := handler.NewRouter(container, handler.Handlers{
+		CategoryHandler: categoryHandler,
+	})
 
-	router := handler.NewRouter(container, categoryHandler, productHandler)
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT)
+
 	go func() {
-		err = router.Start()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("error starting http server: %v", err)
-			os.Exit(1)
-		}
+		router.Run()
 	}()
 
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, os.Interrupt)
+	<-signalChan
 
-	<-stopChan
+	log.Println("shutting down server...")
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	if err = router.Shutdown(ctx); err != nil {
+		log.Fatalf("error shutting down server gracefully: %v", err)
+	}
+
+	log.Println("server shutdown gracefully")
 
 	if err = db.Close(); err != nil {
-		log.Printf("error closing db: %v", err)
-		os.Exit(1)
+		log.Fatalf("error closing database connection: %v", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	if err = router.Stop(ctx); err != nil {
-		log.Printf("error shutting down http server: %v", err)
-		os.Exit(1)
-	}
+	log.Println("database close gracefully")
 }

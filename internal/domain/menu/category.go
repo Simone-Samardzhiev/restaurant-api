@@ -1,7 +1,7 @@
 package menu
 
 import (
-	"fmt"
+	"errors"
 	"restaurant/internal/domain"
 	"strings"
 	"unicode/utf8"
@@ -9,9 +9,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// Constants for [CategoryName] length requirements.
 const (
-	MinCategoryNameLength = 4
-	MaxCategoryNameLength = 100
+	minCategoryNameLength = 4
+	maxCategoryNameLength = 100
 )
 
 // CategoryName represents a valid category name.
@@ -19,108 +20,123 @@ type CategoryName struct {
 	raw string
 }
 
-// NewCategoryName parses a CategoryName from string.
-func NewCategoryName(name string) (CategoryName, error) {
-	name = strings.TrimSpace(name)
-	count := utf8.RuneCountInString(name)
-
-	if count < MinCategoryNameLength {
-		return CategoryName{}, fmt.Errorf("category name must be at least %d characters", MinCategoryNameLength)
-	}
-
-	if count > MaxCategoryNameLength {
-		return CategoryName{}, fmt.Errorf("category name must be at most %d characters", MaxCategoryNameLength)
-	}
-
-	return CategoryName{name}, nil
-}
-
-func (c CategoryName) String() string {
+func (c *CategoryName) String() string {
 	return c.raw
 }
 
-// AddCategoryRequest represents a request for adding a category.
-type AddCategoryRequest struct {
-	Name string
+// ParseCategoryName parses a [CategoryName] from string.
+//
+// If the name is invalid the returned error will be of type [domain.ErrorDetail].
+func ParseCategoryName(name string) (CategoryName, error) {
+	name = strings.TrimSpace(name)
+	length := utf8.RuneCountInString(name)
+	if length < minCategoryNameLength {
+		return CategoryName{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeCategoryNameTooShort,
+			Message: "category name too short",
+			Metadata: map[string]any{
+				"actual": length,
+				"min":    minCategoryNameLength,
+				"max":    maxCategoryNameLength,
+			},
+		}
+	}
+
+	if length > maxCategoryNameLength {
+		return CategoryName{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeCategoryNameTooLong,
+			Message: "category name too long",
+			Metadata: map[string]any{
+				"actual": length,
+				"max":    maxCategoryNameLength,
+				"min":    minCategoryNameLength,
+			},
+		}
+	}
+
+	return CategoryName{raw: name}, nil
 }
 
-// NewAddCategoryRequest creates a new AddCategoryRequest.
-func NewAddCategoryRequest(name string) *AddCategoryRequest {
-	return &AddCategoryRequest{Name: name}
-}
-
-// Category represents a category entity.
+// Category represents a valid category of the menu.
 type Category struct {
 	Id   uuid.UUID
 	Name CategoryName
 }
 
-// NewCategory creates a Category by parsing the name.
-func NewCategory(id uuid.UUID, name string) (*Category, error) {
-	validationErrors := domain.NewValidationErrors("invalid category")
+// ParseCategory parses a [Category] from id and name.
+//
+// If the name is invalid the returned error will be of type [domain.Error].
+func ParseCategory(id uuid.UUID, name string) (*Category, error) {
+	errs := make([]domain.ErrorDetail, 0)
 
-	parsedName, err := NewCategoryName(name)
+	parsedName, err := ParseCategoryName(name)
 	if err != nil {
-		validationErrors.Add("name", err)
-	}
-
-	if validationErrors.HasErrors() {
-		return nil, validationErrors
-	}
-
-	return &Category{id, parsedName}, nil
-}
-
-// CategoryUpdateRequest represents a request for updating an existing category.
-type CategoryUpdateRequest struct {
-	Id      uuid.UUID
-	NewName *string
-}
-
-// NewCategoryUpdateRequest creates a new CategoryUpdateRequest.
-func NewCategoryUpdateRequest(id uuid.UUID, newName *string) *CategoryUpdateRequest {
-	return &CategoryUpdateRequest{Id: id, NewName: newName}
-}
-
-// CategoryUpdate represents a category update.
-type CategoryUpdate struct {
-	Id      uuid.UUID
-	NewName *CategoryName
-}
-
-// NewCategoryUpdate creates a new CategoryUpdate by parsing all the fields and validate at least one field is provided.
-func NewCategoryUpdate(id uuid.UUID, newName *string) (*CategoryUpdate, error) {
-	validationErrors := domain.NewValidationErrors("invalid category update")
-	hasData := false
-	var parsedName *CategoryName
-
-	if newName != nil {
-		val, err := NewCategoryName(*newName)
-		hasData = true
-
-		if err != nil {
-			validationErrors.Add("newName", err)
+		if errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *errorDetail)
 		} else {
-			parsedName = &val
+			return nil, err
 		}
 	}
 
-	if !hasData {
-		return nil, domain.NewBadRequestError("category update does not have data")
+	if len(errs) > 0 {
+		return nil, &domain.ErrorDetail{}
 	}
 
-	if validationErrors.HasErrors() {
-		return nil, validationErrors
+	return &Category{
+		Id:   id,
+		Name: parsedName,
+	}, nil
+}
+
+// MustParseCategory is like [ParseCategory], but instead
+// of returning the error it panics.
+func MustParseCategory(id uuid.UUID, name string) *Category {
+	category, err := ParseCategory(id, name)
+	if err != nil {
+		panic(err)
+	}
+	return category
+}
+
+// AddCategoryRequest represents a request for adding a new category.
+type AddCategoryRequest struct {
+	Name CategoryName
+}
+
+// ParseAddCategoryRequest parses an [AddCategoryRequest] from name.
+//
+// If the name is invalid the returned error will be of type [domain.Error].
+func ParseAddCategoryRequest(name string) (*AddCategoryRequest, error) {
+	errs := make([]domain.ErrorDetail, 0)
+
+	parsedName, err := ParseCategoryName(name)
+	if err != nil {
+		if errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *errorDetail)
+		} else {
+			return nil, err
+		}
 	}
 
-	return &CategoryUpdate{id, parsedName}, nil
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError(
+			"invalid category",
+			domain.ErrorCodeInvalidCategory,
+			errs...,
+		)
+	}
+
+	return &AddCategoryRequest{
+		Name: parsedName,
+	}, nil
 }
 
-// CategoryFilter represent a filter for fetching categories.
-type CategoryFilter struct {
-	Id *uuid.UUID
-}
-
-func NewCategoryFilter(id *uuid.UUID) *CategoryFilter {
-	return &CategoryFilter{id}
+// MustParseAddCategoryRequest is like [ParseAddCategoryRequest], but instead
+// of returning the error it panics.
+func MustParseAddCategoryRequest(name string) *AddCategoryRequest {
+	request, err := ParseAddCategoryRequest(name)
+	if err != nil {
+		panic(err)
+	}
+	return request
 }

@@ -5,7 +5,7 @@ import (
 	"restaurant/internal/adapter/config"
 )
 
-// New establishes connection to postgres database.
+// New establishes and checks connection to postgres database.
 func New(storageConfig *config.StorageConfig) (*sql.DB, error) {
 	db, err := sql.Open("postgres", storageConfig.DbUrl)
 	if err != nil {

@@ -34,8 +34,7 @@ func SetZapLogger(appConfig *config.AppConfig) error {
 			loggerConfig.Level,
 		)
 
-		logger := zap.New(core, zap.AddCaller())
-		zap.ReplaceGlobals(logger)
+		zap.ReplaceGlobals(zap.New(core))
 
 	case config.Development:
 		loggerConfig := zap.NewDevelopmentConfig()
@@ -48,7 +47,7 @@ func SetZapLogger(appConfig *config.AppConfig) error {
 		zap.ReplaceGlobals(logger)
 
 	default:
-		return fmt.Errorf("unknown environment %s", appConfig.Environment)
+		return fmt.Errorf("unknown environment: %s", appConfig.Environment)
 	}
 
 	return nil

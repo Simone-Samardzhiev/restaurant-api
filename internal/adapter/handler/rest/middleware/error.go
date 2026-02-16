@@ -9,131 +9,114 @@ import (
 	"go.uber.org/zap"
 )
 
-type internalErrorResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+// mapErrorCode is used to map [domain.ErrorCode] to user message.
+var mapErrorCode = map[domain.ErrorCode]string{
+	domain.ErrorCodeInternal:             "Internal server error.",
+	domain.ErrorCodeInvalidCategory:      "Provided category contains invalid data.",
+	domain.ErrorCodeCategoryNameTooShort: "Category name is too short.",
+	domain.ErrorCodeCategoryNameTooLong:  "Category name is too long.",
+	domain.ErrorCodeCategoryNameConflict: "Category name is already used.",
 }
 
-func handleInternalError(ctx *gin.Context, err *domain.InternalError) {
-	fields := make([]zap.Field, 0, len(err.Metadata)+6)
-	fields = append(
-		fields,
-		zap.String("method", ctx.Request.Method),
-		zap.String("path", ctx.Request.URL.Path),
-		zap.String("query", ctx.Request.URL.RawQuery),
-		zap.String("filePath", err.Filepath),
-		zap.Int("line", err.Line),
-		zap.Error(err.Cause),
-	)
-
-	for _, el := range err.Metadata {
-		fields = append(fields, zap.Any(el.Name, el.Value))
+// mapErrorCodeToMessage maps error codes to user message.
+// If the code is not found the function returns `Internal server error.`.
+func mapErrorCodeToMessage(code domain.ErrorCode) string {
+	result, ok := mapErrorCode[code]
+	if !ok {
+		return "Internal server error."
 	}
 
-	zap.L().Error(
-		err.Message,
-		fields...,
-	)
-
-	ctx.JSON(http.StatusInternalServerError, internalErrorResponse{
-		Code:    http.StatusInternalServerError,
-		Message: "internal server error",
-	})
+	return result
 }
 
-type validationErrorResponse struct {
-	Code    int                     `json:"code"`
-	Message string                  `json:"message"`
-	Details []validationErrorDetail `json:"details"`
+// mapErrorKind is used to map [domain.ErrorKind] to http status codes.
+var mapErrorKind = map[domain.ErrorKind]int{
+	domain.ErrorKindInternal:   http.StatusInternalServerError,
+	domain.ErrorKindValidation: http.StatusUnprocessableEntity,
+	domain.ErrorKindConflict:   http.StatusConflict,
+	domain.ErrorKindBadRequest: http.StatusBadRequest,
 }
 
-type validationErrorDetail struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+// mapErrorKindHttpCode maps [domain.ErrorKind] to http status codes.
+// If the kind is not found [http.StatusInternalServerError] is returned.
+func mapErrorKindHttpCode(kind domain.ErrorKind) int {
+	result, ok := mapErrorKind[kind]
+	if !ok {
+		return http.StatusInternalServerError
+	}
+	return result
 }
 
-func handleValidationErrors(ctx *gin.Context, err *domain.ValidationErrors) {
-	validationErrors := make([]validationErrorDetail, 0, len(err.Errors))
-	for _, el := range err.Errors {
-		validationErrors = append(validationErrors, validationErrorDetail{
-			Field:   el.Field,
-			Message: el.Error(),
+// ErrorResponse represents an api error response.
+type ErrorResponse struct {
+	Status  int                    `json:"status"`
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	Details []ErrorDetailsResponse `json:"details,omitempty"`
+}
+
+// ErrorDetailsResponse represents more details about an error.
+type ErrorDetailsResponse struct {
+	Code     string         `json:"code"`
+	Message  string         `json:"message"`
+	Metadata map[string]any `json:"metadata"`
+}
+
+// handleDomainError responses with appropriate [ErrorResponse], from [domain.Error].
+func handleDomainError(c *gin.Context, err *domain.Error) {
+	if err.Kind == domain.ErrorKindInternal {
+		zap.L().Error(
+			"internal server error",
+			zap.NamedError("cause", err.Cause),
+			zap.Error(err),
+		)
+	}
+
+	response := ErrorResponse{
+		Status:  mapErrorKindHttpCode(err.Kind),
+		Code:    err.Code.String(),
+		Message: mapErrorCodeToMessage(err.Code),
+		Details: []ErrorDetailsResponse{},
+	}
+
+	for _, detail := range err.Details {
+		response.Details = append(response.Details, ErrorDetailsResponse{
+			Code:     detail.Code.String(),
+			Message:  mapErrorCodeToMessage(detail.Code),
+			Metadata: detail.Metadata,
 		})
 	}
 
-	ctx.JSON(http.StatusUnprocessableEntity,
-		validationErrorResponse{
-			Code:    http.StatusUnprocessableEntity,
-			Message: err.Message,
-			Details: validationErrors,
-		},
-	)
+	c.AbortWithStatusJSON(response.Status, response)
 }
 
-type genericErrorResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-func handleError(ctx *gin.Context, err *domain.Error) {
-	var statusCode int
-
-	switch err.Type {
-	case domain.Conflict:
-		statusCode = http.StatusConflict
-	case domain.BadRequest:
-		statusCode = http.StatusBadRequest
-	case domain.NotFound:
-		statusCode = http.StatusNotFound
-	default:
-		statusCode = http.StatusInternalServerError
-	}
-
-	var message string
-	if statusCode == http.StatusInternalServerError {
-		message = "internal server error"
-	} else {
-		message = err.Message
-	}
-
-	ctx.JSON(statusCode, genericErrorResponse{
-		Code:    statusCode,
-		Message: message,
-	})
-}
-
-func handleUnknownError(ctx *gin.Context, err error) {
+// handleUnknownError  responses with appropriate [ErrorResponse], from any errors and logs it.
+func handleUnknownError(c *gin.Context, err error) {
 	zap.L().Error("unknown error", zap.Error(err))
-	ctx.JSON(http.StatusInternalServerError, internalErrorResponse{
-		Code:    http.StatusInternalServerError,
-		Message: "internal server error",
-	})
+	response := ErrorResponse{
+		Status:  http.StatusInternalServerError,
+		Code:    domain.ErrorCodeInternal.String(),
+		Message: mapErrorCodeToMessage(domain.ErrorCodeInternal),
+	}
+
+	c.AbortWithStatusJSON(response.Status, response)
 }
 
-// ErrorMiddleware returns a Gin middleware that converts errors in the context into JSON responses.
-func ErrorMiddleware() gin.HandlerFunc {
+// Error returns a middleware handles all stored errors in [gin.Context].
+func Error() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
 
-		if len(ctx.Errors) == 0 {
+		lastError := ctx.Errors.Last()
+		if lastError == nil {
 			return
 		}
 
-		lstErr := ctx.Errors.Last().Err
-
-		var internalErr *domain.InternalError
-		var validationErr *domain.ValidationErrors
-		var err *domain.Error
-
-		switch {
-		case errors.As(lstErr, &internalErr):
-			handleInternalError(ctx, internalErr)
-		case errors.As(lstErr, &validationErr):
-			handleValidationErrors(ctx, validationErr)
-		case errors.As(lstErr, &err):
-			handleError(ctx, err)
-		default:
-			handleUnknownError(ctx, lstErr)
+		if domainErr, ok := errors.AsType[*domain.Error](lastError.Err); ok {
+			handleDomainError(ctx, domainErr)
+			return
 		}
+
+		handleUnknownError(ctx, lastError)
 	}
 }

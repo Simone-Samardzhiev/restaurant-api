@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"go.uber.org/zap"
 )
 
 type (
@@ -59,15 +59,18 @@ func (e *Environment) Decode(value string) error {
 	return nil
 }
 
+// New maps environment variables into [Container].
+//
+// If the data environment variables contains invalid data an error will be returned.
 func New() (*Container, error) {
 	if err := godotenv.Load(); err != nil {
-		zap.L().Warn("error loading .env file", zap.Error(err))
+		log.Printf("error loading .env file: %v", err)
 	}
 
 	var container Container
 
 	if err := envconfig.Process("", &container); err != nil {
-		return nil, fmt.Errorf("error mapping environemnt variables: %w", err)
+		return nil, fmt.Errorf("error mapping environment variables: %w", err)
 	}
 
 	return &container, nil

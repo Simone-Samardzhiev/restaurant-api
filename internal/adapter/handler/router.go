@@ -11,15 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Handlers holds all rest handlers.
+type Handlers struct {
+	CategoryHandler *rest.CategoryHandler
+}
+
+// Router routes all http request to the specific handler function.
 type Router struct {
 	server *http.Server
 }
 
-func NewRouter(
-	container *config.Container,
-	categoryHandler *rest.CategoryHandler,
-	productHandler *rest.ProductHandler,
-) *Router {
+// NewRouter allocates and creates a new [Router] with set up router.
+func NewRouter(container *config.Container, handlers Handlers) *Router {
 	switch container.AppConfig.Environment {
 	case config.Production:
 		gin.SetMode(gin.ReleaseMode)
@@ -27,55 +30,40 @@ func NewRouter(
 		gin.SetMode(gin.DebugMode)
 	}
 
-	g := gin.New()
-	g.Use(gin.Recovery())
-	g.Use(middleware.ZapLogger())
-	g.Use(middleware.ErrorMiddleware())
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(middleware.ZapLogger())
+	router.Use(middleware.Error())
 
-	v1 := g.Group("/api/v1")
+	api := router.Group("/api/v1")
 	{
-		admin := v1.Group("/admin")
+		admin := api.Group("/admin")
 		admin.Use(gin.BasicAuth(gin.Accounts{
 			container.AuthConfig.Username: container.AuthConfig.Password,
 		}))
-		admin.POST("/login", func(ctx *gin.Context) {
-			ctx.Status(http.StatusOK)
-		})
 
 		{
 			menu := admin.Group("/menu")
-
-			// Categories
-			menu.POST("/categories", categoryHandler.AddCategory)
-			menu.PATCH("/categories/:id", categoryHandler.UpdateCategory)
-			menu.DELETE("/categories/:id", categoryHandler.DeleteCategory)
-
-			// Products
-			menu.POST("/products", productHandler.AddProduct)
-			menu.PATCH("/products/:id", productHandler.UpdateProduct)
-			menu.PUT("/products/:id/image", productHandler.ReplaceProductImage)
-			menu.DELETE("/products/:id", productHandler.DeleteProduct)
+			{
+				categories := menu.Group("/categories")
+				categories.POST("", handlers.CategoryHandler.AddCategory)
+			}
 		}
 	}
-	{
-		public := v1.Group("/public")
-		public.GET("/categories", categoryHandler.GetCategories)
-		public.Static("/images", container.AppConfig.ImageSavePath)
-		public.GET("/products", productHandler.GetProducts)
-	}
 
-	return &Router{
-		server: &http.Server{
-			Handler: g,
-			Addr:    container.AppConfig.Port,
-		},
+	server := &http.Server{
+		Addr:    container.AppConfig.Port,
+		Handler: router,
 	}
+	return &Router{server: server}
 }
 
-func (r *Router) Start() error {
+// Run listens to the provided port by [NewRouter].
+func (r *Router) Run() error {
 	return r.server.ListenAndServe()
 }
 
-func (r *Router) Stop(ctx context.Context) error {
+// Shutdown gracefully shuts down the server.
+func (r *Router) Shutdown(ctx context.Context) error {
 	return r.server.Shutdown(ctx)
 }

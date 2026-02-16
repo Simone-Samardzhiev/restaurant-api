@@ -1,198 +1,89 @@
 package postgres_test
 
 import (
+	"errors"
 	"restaurant/internal/adapter/storage/postgres"
+	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
 	"testing"
 
 	"context"
-
-	"github.com/google/uuid"
+	_ "embed"
 )
 
-// newCategory is a helper function for creating valid menu.Category.
-func newCategory(t *testing.T, name string) *menu.Category {
+//go:embed testdata/seeds/menu.sql
+var seedMenuTablesQuery string
+
+func seedMenuTables(t *testing.T) {
 	t.Helper()
-	category, err := menu.NewCategory(uuid.New(), name)
-	if err != nil {
-		t.Fatalf("error creating category: %v", err)
+
+	if _, err := database.Exec(seedMenuTablesQuery); err != nil {
+		t.Fatalf("error seeding menu tables: %v", err)
 	}
-	return category
+
+	t.Cleanup(func() {
+		if _, err := database.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE `); err != nil {
+			t.Fatalf("error truncating tables: %v", err)
+		}
+	})
 }
 
 func TestCategoryRepositoryAddCategory(t *testing.T) {
 	tests := []struct {
-		name     string
-		category *menu.Category
-		checkErr func(t *testing.T, err error)
+		name              string
+		request           *menu.AddCategoryRequest
+		wantErr           bool
+		expectedErrorKind domain.ErrorKind
+		expectedErrorCode domain.ErrorCode
 	}{
 		{
-			name:     "success",
-			category: newCategory(t, "newName"),
-			checkErr: assertNoErr,
+			name:    "success",
+			request: menu.MustParseAddCategoryRequest("New category"),
 		},
 		{
-			name:     "duplicate category name",
-			category: newCategory(t, "Appetizers"),
-			checkErr: assertConflictErr,
+			name:              "error name already exists",
+			request:           menu.MustParseAddCategoryRequest("Appetizers"),
+			wantErr:           true,
+			expectedErrorKind: domain.ErrorKindConflict,
+			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			truncateMenuTables(t)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			seedMenuTables(t)
 
-			repository := postgres.NewCategoryRepository(database)
-			err := repository.AddCategory(context.Background(), tt.category)
-			tt.checkErr(t, err)
-		})
-	}
-}
+			repo := postgres.NewCategoryRepository(database)
+			result, err := repo.AddCategory(context.Background(), test.request)
 
-// newCategoryUpdate is a helper function for creating a valid menu.CategoryUpdate.
-func newCategoryUpdate(t *testing.T, id uuid.UUID, newName *string) *menu.CategoryUpdate {
-	update, err := menu.NewCategoryUpdate(id, newName)
-	if err != nil {
-		t.Fatalf("error creating category update: %v", err)
-	}
-
-	return update
-}
-
-func TestCategoryRepositoryUpdateCategory(t *testing.T) {
-	tests := []struct {
-		name     string
-		update   *menu.CategoryUpdate
-		checkErr func(t *testing.T, err error)
-	}{
-		{
-			name:     "success",
-			update:   newCategoryUpdate(t, parseUUID(t, "11111111-1111-1111-1111-111111111111"), asPointer("New name")),
-			checkErr: assertNoErr,
-		},
-		{
-			name:     "duplicate category name",
-			update:   newCategoryUpdate(t, parseUUID(t, "11111111-1111-1111-1111-111111111111"), asPointer("Drinks")),
-			checkErr: assertConflictErr,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			truncateMenuTables(t)
-			seedMenuTables(t)
-
-			repository := postgres.NewCategoryRepository(database)
-			err := repository.UpdateCategory(context.Background(), tt.update)
-			tt.checkErr(t, err)
-		})
-	}
-}
-
-func TestCategoryRepositoryDeleteCategory(t *testing.T) {
-	tests := []struct {
-		name     string
-		id       uuid.UUID
-		checkErr func(t *testing.T, err error)
-	}{
-		{
-			name:     "success",
-			id:       parseUUID(t, "66666666-6666-6666-6666-666666666666"),
-			checkErr: assertNoErr,
-		},
-		{
-			name:     "delete used category",
-			id:       parseUUID(t, "11111111-1111-1111-1111-111111111111"),
-			checkErr: assertBadRequestErr,
-		},
-		{
-			name:     "category not found",
-			id:       uuid.New(),
-			checkErr: assertNotFoundErr,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			truncateMenuTables(t)
-			seedMenuTables(t)
-
-			repository := postgres.NewCategoryRepository(database)
-			err := repository.DeleteCategory(context.Background(), tt.id)
-			tt.checkErr(t, err)
-		})
-	}
-}
-
-func TestCategoryRepositoryGetCategories(t *testing.T) {
-	tests := []struct {
-		name        string
-		filter      *menu.CategoryFilter
-		checkErr    func(t *testing.T, err error)
-		checkResult func(t *testing.T, categories []menu.Category)
-	}{
-		{
-			name:     "success all",
-			filter:   menu.NewCategoryFilter(nil),
-			checkErr: assertNoErr,
-			checkResult: func(t *testing.T, categories []menu.Category) {
-				t.Helper()
-
-				expectedNames := []string{"Appetizers", "Main Dishes", "Desserts", "Drinks", "Sides", "Salads"}
-				if len(categories) != len(expectedNames) {
-					t.Fatalf("expected %d categories, got %d", len(expectedNames), len(categories))
+			if test.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got none")
 				}
 
-				returnedNames := make([]string, 0, len(categories))
-				for _, category := range categories {
-					returnedNames = append(returnedNames, category.Name.String())
+				domainErr, ok := errors.AsType[*domain.Error](err)
+				if !ok {
+					t.Fatalf("expected domain error, got %T", err)
 				}
 
-				for i := range returnedNames {
-					if expectedNames[i] != categories[i].Name.String() {
-						t.Fatalf("expected category name %s, got %s", expectedNames[i], categories[i].Name.String())
-					}
+				if domainErr.Kind != test.expectedErrorKind {
+					t.Errorf("expected error kind %v, got %v", test.expectedErrorKind, domainErr.Kind)
 				}
-			},
-		},
-		{
-			name:     "success filter with id",
-			filter:   menu.NewCategoryFilter(asPointer(parseUUID(t, "11111111-1111-1111-1111-111111111111"))),
-			checkErr: assertNoErr,
-			checkResult: func(t *testing.T, categories []menu.Category) {
-				t.Helper()
 
-				if len(categories) != 1 {
-					t.Fatalf("expected 1 category, got %d", len(categories))
+				if test.expectedErrorCode != domainErr.Code {
+					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
 				}
-				if categories[0].Name.String() != "Appetizers" {
-					t.Fatalf("expected category name %s, got %s", "Appetizers", categories[0].Name.String())
-				}
-			},
-		},
-		{
-			name:     "success filter with non existing id",
-			filter:   menu.NewCategoryFilter(asPointer(uuid.New())),
-			checkErr: assertNoErr,
-			checkResult: func(t *testing.T, categories []menu.Category) {
-				t.Helper()
-				if len(categories) != 0 {
-					t.Fatalf("expected 0 categories, got %d", len(categories))
-				}
-			},
-		},
-	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			truncateMenuTables(t)
-			seedMenuTables(t)
+				return
+			}
 
-			repository := postgres.NewCategoryRepository(database)
-			result, err := repository.GetCategories(context.Background(), tt.filter)
-			tt.checkErr(t, err)
-			tt.checkResult(t, result)
+			if err != nil {
+				t.Fatalf("expected no err, got : %v", err)
+			}
+
+			if test.request.Name.String() != result.Name.String() {
+				t.Errorf("expected name %v, got %v", test.request.Name.String(), result.Name.String())
+			}
 		})
 	}
 }
