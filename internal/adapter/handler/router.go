@@ -52,6 +52,10 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 			}
 		}
 	}
+	{
+		public := api.Group("/public")
+		public.GET("/categories", handlers.CategoryHandler.GetCategories)
+	}
 
 	server := &http.Server{
 		Addr:    container.AppConfig.Port,

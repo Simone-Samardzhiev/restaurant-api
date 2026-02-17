@@ -16,6 +16,9 @@ type CategoryRepository interface {
 
 	// DeleteCategory deletes a category by id.
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
+
+	// GetCategories fetches categories by applying a filter.
+	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 }
 
 // CategoryService describes how category business logic is accessed.
@@ -28,4 +31,7 @@ type CategoryService interface {
 
 	// DeleteCategory deletes a category by id.
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
+
+	// GetCategories fetches categories by applying a filter.
+	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
 }

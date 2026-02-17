@@ -19,14 +19,14 @@ type AddCategoryRequest struct {
 	Name string `json:"name"`
 }
 
-// AddCategoryResponse represents JSON response for successfully adding a category.
-type AddCategoryResponse struct {
+// CategoryResponse represents JSON response of a category.
+type CategoryResponse struct {
 	Id   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
 
 // AddCategory decodes [AddCategoryRequest] and attempts to add the category.
-// If the category is added successfully the response is [AddCategoryResponse].
+// If the category is added successfully the response is [CategoryResponse].
 func (h *CategoryHandler) AddCategory(ctx *gin.Context) {
 	var req AddCategoryRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -48,7 +48,7 @@ func (h *CategoryHandler) AddCategory(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, AddCategoryResponse{
+	ctx.JSON(http.StatusCreated, CategoryResponse{
 		Id:   result.Id,
 		Name: result.Name.String(),
 	})
@@ -109,6 +109,36 @@ func (h *CategoryHandler) DeleteCategory(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusOK)
+}
+
+func (h *CategoryHandler) GetCategories(ctx *gin.Context) {
+	filter := menu.CategoryFilter{}
+
+	if val, ok := ctx.GetQuery("id"); ok {
+		id, err := uuid.Parse(val)
+		if err != nil {
+			ctx.Error(
+				domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+			).SetType(gin.ErrorTypePublic)
+			return
+		}
+		filter.Id = &id
+	}
+
+	categories, err := h.service.GetCategories(ctx, &filter)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+	}
+
+	response := make([]CategoryResponse, 0, len(categories))
+	for _, category := range categories {
+		response = append(response, CategoryResponse{
+			Id:   category.Id,
+			Name: category.Name.String(),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 // NewCategoryHandler allocates and returns a new CategoryHandler.

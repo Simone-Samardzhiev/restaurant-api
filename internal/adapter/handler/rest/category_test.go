@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
@@ -20,6 +21,7 @@ type fakeCategoryService struct {
 	onAddCategory    func(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error)
 	onUpdateCategory func(ctx context.Context, request *menu.UpdateCategoryRequest) error
 	onDeleteCategory func(ctx context.Context, id uuid.UUID) error
+	onGetCategories  func(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error)
 }
 
 var _ menu.CategoryService = (*fakeCategoryService)(nil)
@@ -43,6 +45,13 @@ func (s *fakeCategoryService) DeleteCategory(ctx context.Context, id uuid.UUID) 
 		panic("onDeleteCategory function is not defined")
 	}
 	return s.onDeleteCategory(ctx, id)
+}
+
+func (s *fakeCategoryService) GetCategories(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
+	if s.onGetCategories == nil {
+		panic("onGetCategories function is not defined")
+	}
+	return s.onGetCategories(ctx, filter)
 }
 
 func TestCategoryHandlerAddCategory(t *testing.T) {
@@ -126,7 +135,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			}
 
 			if test.expectedHttpStatus == http.StatusCreated {
-				var response rest.AddCategoryResponse
+				var response rest.CategoryResponse
 				err = json.Unmarshal(recorder.Body.Bytes(), &response)
 				if err != nil {
 					t.Fatalf("failed to unmarshal response body: %v", err)
@@ -390,6 +399,108 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 
 			if test.expectedErrorCodes != nil {
 				matchErrorCodes(t, test.expectedErrorCodes, response.Details)
+			}
+		})
+	}
+}
+
+func TestCategoryHandlerGetCategories(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name        string
+		service     *fakeCategoryService
+		id          *uuid.UUID
+		expectedIds []uuid.UUID
+	}{
+		{
+			name: "success all",
+			service: &fakeCategoryService{
+				onGetCategories: func(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
+					return []menu.Category{
+						*menu.MustParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1"),
+						*menu.MustParseCategory(uuid.MustParse("22222222-2222-2222-2222-222222222222"), "Category 2"),
+					}, nil
+				},
+			},
+			expectedIds: []uuid.UUID{
+				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+				uuid.MustParse("22222222-2222-2222-2222-222222222222"),
+			},
+		},
+		{
+			name: "success one",
+			service: &fakeCategoryService{
+				onGetCategories: func(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
+					if filter.Id == nil {
+						panic("filter.Id should not be nil")
+					}
+
+					if *filter.Id != uuid.MustParse("11111111-1111-1111-1111-111111111111") {
+						panic("filter.Id should be: 11111111-1111-1111-1111-111111111111")
+					}
+
+					return []menu.Category{
+						*menu.MustParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1"),
+					}, nil
+				},
+			},
+			id: new(uuid.MustParse("11111111-1111-1111-1111-111111111111")),
+			expectedIds: []uuid.UUID{
+				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			handler := rest.NewCategoryHandler(test.service)
+			router := gin.New()
+			router.Use(middleware.Error())
+			router.GET("/categories", handler.GetCategories)
+
+			query := url.Values{}
+			if test.id != nil {
+				query.Set("id", test.id.String())
+			}
+
+			recorder := httptest.NewRecorder()
+			req, err := http.NewRequest(http.MethodGet, "/categories?"+query.Encode(), nil)
+			if err != nil {
+				t.Fatalf("failed to create request: %v", err)
+			}
+
+			router.ServeHTTP(recorder, req)
+
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("expect http status %d, got %d", http.StatusOK, recorder.Code)
+			}
+
+			var response []rest.CategoryResponse
+			err = json.Unmarshal(recorder.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("failed to unmarshal response body: %v", err)
+			}
+
+			counter := map[uuid.UUID]int{}
+			for _, id := range test.expectedIds {
+				counter[id]++
+			}
+
+			for _, category := range response {
+				if counter[category.Id] == 0 {
+					t.Errorf("unexpected category id: %s", category.Id)
+					continue
+				}
+				counter[category.Id]--
+			}
+
+			for id, count := range counter {
+				if count != 0 {
+					t.Errorf("missing category id: %s", id)
+				}
 			}
 		})
 	}

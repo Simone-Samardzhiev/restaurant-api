@@ -189,3 +189,8 @@ func MustParseUpdateCategoryRequest(id uuid.UUID, name *string) *UpdateCategoryR
 	}
 	return request
 }
+
+// CategoryFilter represents a filter used for fetching categories.
+type CategoryFilter struct {
+	Id *uuid.UUID
+}
