@@ -22,14 +22,15 @@ func matchErrorCodes(t *testing.T, expectedCodes []domain.ErrorCode, details []m
 
 	for _, detail := range details {
 		if counter[detail.Code] == 0 {
-			t.Fatalf("unexpected error code %s", detail.Code)
+			t.Errorf("unexpected error code %s", detail.Code)
+			continue
 		}
 		counter[detail.Code]--
 	}
 
 	for code, count := range counter {
 		if count != 0 {
-			t.Fatalf("missing error code %s", code)
+			t.Errorf("missing error code %s", code)
 		}
 	}
 }

@@ -22,6 +22,7 @@ func matchErrorCodes(t *testing.T, expectedCodes []domain.ErrorCode, details []d
 	for _, detail := range details {
 		if counter[detail.Code] == 0 {
 			t.Errorf("unexpected error code: %s", detail.Code)
+			continue
 		}
 		counter[detail.Code]--
 	}
