@@ -8,6 +8,7 @@ const (
 	ErrorKindValidation
 	ErrorKindConflict
 	ErrorKindBadRequest
+	ErrorKindNotFound
 )
 
 var mapErrorKind = map[ErrorKind]string{
@@ -15,6 +16,7 @@ var mapErrorKind = map[ErrorKind]string{
 	ErrorKindValidation: "validation",
 	ErrorKindConflict:   "conflict",
 	ErrorKindBadRequest: "bad_request",
+	ErrorKindNotFound:   "not_found",
 }
 
 func (e ErrorKind) String() string {
@@ -36,18 +38,29 @@ const (
 	ErrorCodeCategoryNameTooShort
 	ErrorCodeCategoryNameTooLong
 	ErrorCodeCategoryNameConflict
+	ErrorCodeInvalidCategoryUpdate
+	ErrorCodeCategoryNotFound
+	ErrorCodeCategoryNotFoundByID
 
+	ErrorCodeMalformedRequest
+	ErrorCodeNoData
 	ErrorCodeInvalidUUID
 )
 
 var mapErrorCode = map[ErrorCode]string{
-	ErrorCodeInternal:             "INTERNAL",
-	ErrorCodeInvalidCategory:      "INVALID_CATEGORY",
-	ErrorCodeCategoryNameTooShort: "CATEGORY_NAME_TOO_SHORT",
-	ErrorCodeCategoryNameTooLong:  "CATEGORY_NAME_TOO_LONG",
-	ErrorCodeCategoryNameConflict: "CATEGORY_NAME_CONFLICT",
+	ErrorCodeInternal: "INTERNAL",
 
-	ErrorCodeInvalidUUID: "INVALID_UUID",
+	ErrorCodeInvalidCategory:       "INVALID_CATEGORY",
+	ErrorCodeCategoryNameTooShort:  "CATEGORY_NAME_TOO_SHORT",
+	ErrorCodeCategoryNameTooLong:   "CATEGORY_NAME_TOO_LONG",
+	ErrorCodeCategoryNameConflict:  "CATEGORY_NAME_CONFLICT",
+	ErrorCodeInvalidCategoryUpdate: "INVALID_CATEGORY_UPDATE",
+	ErrorCodeCategoryNotFound:      "CATEGORY_NOT_FOUND",
+	ErrorCodeCategoryNotFoundByID:  "CATEGORY_NOT_FOUND_BY_ID",
+
+	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
+	ErrorCodeNoData:           "NO_DATA",
+	ErrorCodeInvalidUUID:      "INVALID_UUID",
 }
 
 func (e ErrorCode) String() string {
@@ -129,5 +142,16 @@ func NewBadRequestError(message string, code ErrorCode, cause error) *Error {
 		Code:    code,
 		Message: message,
 		Cause:   cause,
+	}
+}
+
+// NewNotFoundError creates and allocates a new Error.
+// It sets the [Error.Kind] tp [ErrorKindNotFound].
+func NewNotFoundError(message string, code ErrorCode, details ...ErrorDetail) *Error {
+	return &Error{
+		Kind:    ErrorKindNotFound,
+		Code:    code,
+		Message: message,
+		Details: details,
 	}
 }

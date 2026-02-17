@@ -120,7 +120,7 @@ func ParseAddCategoryRequest(name string) (*AddCategoryRequest, error) {
 
 	if len(errs) > 0 {
 		return nil, domain.NewValidationError(
-			"invalid category",
+			"invalid add request for category",
 			domain.ErrorCodeInvalidCategory,
 			errs...,
 		)
@@ -135,6 +135,55 @@ func ParseAddCategoryRequest(name string) (*AddCategoryRequest, error) {
 // of returning the error it panics.
 func MustParseAddCategoryRequest(name string) *AddCategoryRequest {
 	request, err := ParseAddCategoryRequest(name)
+	if err != nil {
+		panic(err)
+	}
+	return request
+}
+
+// UpdateCategoryRequest represents a request for updating a category.
+type UpdateCategoryRequest struct {
+	Id   uuid.UUID
+	Name *CategoryName
+}
+
+// ParseUpdateCategoryRequest parses [UpdateCategoryRequest] from id and name.
+//
+// If the name is invalid or the request update data is empty the error will be of type [domain.Error].
+func ParseUpdateCategoryRequest(id uuid.UUID, name *string) (*UpdateCategoryRequest, error) {
+	hasData := false
+	if name != nil {
+		hasData = true
+	}
+
+	if !hasData {
+		return nil, domain.NewBadRequestError("update does not have data", domain.ErrorCodeNoData, nil)
+	}
+
+	errs := make([]domain.ErrorDetail, 0)
+	parsedName, err := ParseCategoryName(*name)
+	if err != nil {
+		if errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *errorDetail)
+		} else {
+			return nil, err
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid update request for category", domain.ErrorCodeInvalidCategoryUpdate, errs...)
+	}
+
+	return &UpdateCategoryRequest{
+		Id:   id,
+		Name: &parsedName,
+	}, nil
+}
+
+// MustParseUpdateCategoryRequest is like [ParseUpdateCategoryRequest], but instead of
+// returning the error it panics.
+func MustParseUpdateCategoryRequest(id uuid.UUID, name *string) *UpdateCategoryRequest {
+	request, err := ParseUpdateCategoryRequest(id, name)
 	if err != nil {
 		panic(err)
 	}

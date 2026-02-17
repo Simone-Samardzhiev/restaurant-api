@@ -16,6 +16,12 @@ type CategoryRepository struct {
 	db *sql.DB
 }
 
+var _ menu.CategoryRepository = (*CategoryRepository)(nil)
+
+func NewCategoryRepository(db *sql.DB) *CategoryRepository {
+	return &CategoryRepository{db: db}
+}
+
 func (r *CategoryRepository) AddCategory(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
 	category := &menu.Category{
 		Id:   uuid.New(),
@@ -37,15 +43,55 @@ func (r *CategoryRepository) AddCategory(ctx context.Context, request *menu.AddC
 			)
 		}
 
-	} else if err != nil {
-		return nil, domain.NewInternalError("inserting category", err)
+	}
+	if err != nil {
+		return nil, domain.NewInternalError("error inserting inserting category", err)
 	}
 
 	return category, nil
 }
 
-var _ menu.CategoryRepository = (*CategoryRepository)(nil)
+func (r *CategoryRepository) UpdateCategory(ctx context.Context, request *menu.UpdateCategoryRequest) error {
+	var name sql.NullString
+	if request.Name != nil {
+		name.String = request.Name.String()
+		name.Valid = true
+	}
 
-func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{db: db}
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE product_categories SET name = COALESCE($1, name) WHERE id = $2`,
+		name, request.Id,
+	)
+
+	if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+		if pqErr.Code == "23505" && pqErr.Constraint == "product_categories_name_key" {
+			return domain.NewConflictError(
+				"duplicate category name",
+				domain.ErrorCodeCategoryNameConflict,
+				err,
+			)
+		}
+	}
+
+	if err != nil {
+		return domain.NewInternalError("error updating category", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting affected rows", err)
+	}
+
+	if rows == 0 {
+		return domain.NewNotFoundError(
+			"category not found",
+			domain.ErrorCodeCategoryNotFound,
+			domain.ErrorDetail{
+				Code:     domain.ErrorCodeCategoryNotFoundByID,
+				Message:  "category not found by id",
+				Metadata: map[string]interface{}{"id": request.Id},
+			})
+	}
+	return nil
 }

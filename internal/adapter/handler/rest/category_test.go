@@ -17,8 +17,11 @@ import (
 )
 
 type fakeCategoryService struct {
-	onAddCategory func(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error)
+	onAddCategory    func(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error)
+	onUpdateCategory func(ctx context.Context, request *menu.UpdateCategoryRequest) error
 }
+
+var _ menu.CategoryService = (*fakeCategoryService)(nil)
 
 func (s *fakeCategoryService) AddCategory(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
 	if s.onAddCategory == nil {
@@ -27,7 +30,12 @@ func (s *fakeCategoryService) AddCategory(ctx context.Context, request *menu.Add
 	return s.onAddCategory(ctx, request)
 }
 
-var _ menu.CategoryService = (*fakeCategoryService)(nil)
+func (s *fakeCategoryService) UpdateCategory(ctx context.Context, request *menu.UpdateCategoryRequest) error {
+	if s.onUpdateCategory == nil {
+		panic("onUpdateCategory function is not defined")
+	}
+	return s.onUpdateCategory(ctx, request)
+}
 
 func TestCategoryHandlerAddCategory(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -36,7 +44,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 		name               string
 		service            *fakeCategoryService
 		request            rest.AddCategoryRequest
-		expectHttpStatus   int
+		expectedHttpStatus int
 		expectedErrorCode  domain.ErrorCode
 		expectedErrorCodes []domain.ErrorCode
 	}{
@@ -47,22 +55,22 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 					return menu.MustParseCategory(uuid.New(), "New Category"), nil
 				},
 			},
-			request:          rest.AddCategoryRequest{Name: "New Category"},
-			expectHttpStatus: http.StatusCreated,
+			request:            rest.AddCategoryRequest{Name: "New Category"},
+			expectedHttpStatus: http.StatusCreated,
 		},
 		{
 			name: "name too short",
 			request: rest.AddCategoryRequest{
 				Name: "Ne",
 			},
-			expectHttpStatus:   http.StatusUnprocessableEntity,
+			expectedHttpStatus: http.StatusUnprocessableEntity,
 			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
 			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
 			name:               "name too long",
 			request:            rest.AddCategoryRequest{Name: "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"},
-			expectHttpStatus:   http.StatusUnprocessableEntity,
+			expectedHttpStatus: http.StatusUnprocessableEntity,
 			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
 			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
@@ -74,8 +82,8 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 					return nil, domain.NewConflictError("category name already used", domain.ErrorCodeCategoryNameConflict, nil)
 				},
 			},
-			expectHttpStatus:  http.StatusConflict,
-			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
+			expectedHttpStatus: http.StatusConflict,
+			expectedErrorCode:  domain.ErrorCodeCategoryNameConflict,
 		},
 	}
 
@@ -101,11 +109,15 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			}
 
 			router.ServeHTTP(recorder, req)
-			if test.expectHttpStatus != recorder.Code {
-				t.Fatalf("expect http status %d, got %d", test.expectHttpStatus, recorder.Code)
+			if test.expectedHttpStatus != recorder.Code {
+				t.Fatalf("expect http status %d, got %d", test.expectedHttpStatus, recorder.Code)
 			}
 
-			if test.expectHttpStatus == http.StatusCreated {
+			if test.expectedHttpStatus != recorder.Code {
+				t.Fatalf("expect http status %d, got %d", test.expectedHttpStatus, recorder.Code)
+			}
+
+			if test.expectedHttpStatus == http.StatusCreated {
 				var response rest.AddCategoryResponse
 				err = json.Unmarshal(recorder.Body.Bytes(), &response)
 				if err != nil {
@@ -129,6 +141,120 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 				if test.expectedErrorCodes != nil {
 					matchErrorCodes(t, test.expectedErrorCodes, response.Details)
 				}
+			}
+		})
+	}
+}
+
+func TestCategoryHandlerUpdateCategory(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name               string
+		service            *fakeCategoryService
+		id                 uuid.UUID
+		request            rest.UpdateCategoryRequest
+		expectedHttpStatus int
+		expectedErrorCode  domain.ErrorCode
+		expectedErrorCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			service: &fakeCategoryService{
+				onUpdateCategory: func(ctx context.Context, request *menu.UpdateCategoryRequest) error {
+					return nil
+				},
+			},
+			id: uuid.New(),
+			request: rest.UpdateCategoryRequest{
+				Name: new("New Name"),
+			},
+			expectedHttpStatus: http.StatusNoContent,
+		},
+		{
+			name: "name too short",
+			request: rest.UpdateCategoryRequest{
+				Name: new("na"),
+			},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusUnprocessableEntity,
+			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+		},
+		{
+			name: "name too long",
+			request: rest.UpdateCategoryRequest{
+				Name: new("CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"),
+			},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusUnprocessableEntity,
+			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+		},
+		{
+			name:               "update has not data",
+			request:            rest.UpdateCategoryRequest{},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusBadRequest,
+			expectedErrorCode:  domain.ErrorCodeNoData,
+		},
+		{
+			name: "category already exists",
+			service: &fakeCategoryService{
+				onUpdateCategory: func(ctx context.Context, request *menu.UpdateCategoryRequest) error {
+					return domain.NewConflictError("category name already used", domain.ErrorCodeCategoryNameConflict, nil)
+				},
+			},
+			request: rest.UpdateCategoryRequest{
+				Name: new("Used name"),
+			},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusConflict,
+			expectedErrorCode:  domain.ErrorCodeCategoryNameConflict,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			handler := rest.NewCategoryHandler(test.service)
+			router := gin.New()
+			router.Use(middleware.Error())
+			router.PATCH("/category/:id", handler.UpdateCategory)
+
+			body, err := json.Marshal(test.request)
+			if err != nil {
+				t.Fatalf("failed to marshal request body: %v", err)
+			}
+
+			recorder := httptest.NewRecorder()
+			req, err := http.NewRequest(http.MethodPatch, "/category/"+test.id.String(), bytes.NewBuffer(body))
+			if err != nil {
+				t.Fatalf("failed to create request: %v", err)
+			}
+
+			router.ServeHTTP(recorder, req)
+
+			if test.expectedHttpStatus != recorder.Code {
+				t.Fatalf("expect http status %d, got %d", test.expectedHttpStatus, recorder.Code)
+			}
+
+			if test.expectedHttpStatus == http.StatusNoContent {
+				return
+			}
+
+			var response middleware.ErrorResponse
+			err = json.Unmarshal(recorder.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("failed to unmarshal response body: %v", err)
+			}
+
+			if test.expectedErrorCode.String() != response.Code {
+				t.Fatalf("expect code %s, got %s", test.expectedErrorCode, response.Code)
+			}
+
+			if test.expectedErrorCodes != nil {
+				matchErrorCodes(t, test.expectedErrorCodes, response.Details)
 			}
 		})
 	}

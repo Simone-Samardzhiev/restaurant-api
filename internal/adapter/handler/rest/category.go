@@ -31,8 +31,7 @@ func (h *CategoryHandler) AddCategory(ctx *gin.Context) {
 	var req AddCategoryRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(
-			domain.NewBadRequestError(
-				"invalid uuid", domain.ErrorCodeInvalidUUID, err),
+			domain.NewBadRequestError("invalid json", domain.ErrorCodeMalformedRequest, err),
 		).SetType(gin.ErrorTypePublic)
 		return
 	}
@@ -53,6 +52,44 @@ func (h *CategoryHandler) AddCategory(ctx *gin.Context) {
 		Id:   result.Id,
 		Name: result.Name.String(),
 	})
+}
+
+// UpdateCategoryRequest represents JSON request for updating a category.
+type UpdateCategoryRequest struct {
+	Name *string `json:"name"`
+}
+
+// UpdateCategory decodes [UpdateCategoryRequest] and attempts to update the category.
+// If the category is updates successfully the response is [http.StatusNoContent].
+func (h *CategoryHandler) UpdateCategory(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	var req UpdateCategoryRequest
+	if err = ctx.BindJSON(&req); err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid json", domain.ErrorCodeMalformedRequest, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	domainRequest, err := menu.ParseUpdateCategoryRequest(id, req.Name)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	if err = h.service.UpdateCategory(ctx, domainRequest); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // NewCategoryHandler allocates and returns a new CategoryHandler.

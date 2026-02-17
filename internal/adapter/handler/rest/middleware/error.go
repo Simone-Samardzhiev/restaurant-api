@@ -11,11 +11,19 @@ import (
 
 // mapErrorCode is used to map [domain.ErrorCode] to user message.
 var mapErrorCode = map[domain.ErrorCode]string{
-	domain.ErrorCodeInternal:             "Internal server error.",
-	domain.ErrorCodeInvalidCategory:      "Provided category contains invalid data.",
-	domain.ErrorCodeCategoryNameTooShort: "Category name is too short.",
-	domain.ErrorCodeCategoryNameTooLong:  "Category name is too long.",
-	domain.ErrorCodeCategoryNameConflict: "Category name is already used.",
+	domain.ErrorCodeInternal: "Internal server error.",
+
+	domain.ErrorCodeInvalidCategory:       "Provided category contains invalid data.",
+	domain.ErrorCodeCategoryNameTooShort:  "Category name is too short.",
+	domain.ErrorCodeCategoryNameTooLong:   "Category name is too long.",
+	domain.ErrorCodeCategoryNameConflict:  "Category name is already used.",
+	domain.ErrorCodeInvalidCategoryUpdate: "Provided category update contains invalid data.",
+	domain.ErrorCodeCategoryNotFound:      "Category not found.",
+	domain.ErrorCodeCategoryNotFoundByID:  "Category with provided id not found.",
+
+	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
+	domain.ErrorCodeNoData:           "Request does not have any data.",
+	domain.ErrorCodeInvalidUUID:      "Invalid UUID.",
 }
 
 // mapErrorCodeToMessage maps error codes to user message.
@@ -35,6 +43,7 @@ var mapErrorKind = map[domain.ErrorKind]int{
 	domain.ErrorKindValidation: http.StatusUnprocessableEntity,
 	domain.ErrorKindConflict:   http.StatusConflict,
 	domain.ErrorKindBadRequest: http.StatusBadRequest,
+	domain.ErrorKindNotFound:   http.StatusNotFound,
 }
 
 // mapErrorKindHttpCode maps [domain.ErrorKind] to http status codes.
