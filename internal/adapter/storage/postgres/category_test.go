@@ -156,3 +156,71 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 		})
 	}
 }
+
+func TestCategoryRepositoryDeleteCategory(t *testing.T) {
+	tests := []struct {
+		name               string
+		id                 uuid.UUID
+		wantErr            bool
+		expectedErrorKind  domain.ErrorKind
+		expectedErrorCode  domain.ErrorCode
+		expectedErrorCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			id:   uuid.MustParse("66666666-6666-6666-6666-666666666666"),
+		},
+		{
+			name:               "not found",
+			id:                 uuid.New(),
+			wantErr:            true,
+			expectedErrorKind:  domain.ErrorKindNotFound,
+			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+		},
+		{
+			name:              "category has linked products",
+			id:                uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+			wantErr:           true,
+			expectedErrorKind: domain.ErrorKindConflict,
+			expectedErrorCode: domain.ErrorCodeCategoryHasLinkedProducts,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			seedMenuTables(t)
+
+			repo := postgres.NewCategoryRepository(database)
+			err := repo.DeleteCategory(context.Background(), test.id)
+			if test.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got none")
+				}
+
+				domainErr, ok := errors.AsType[*domain.Error](err)
+				if !ok {
+					t.Fatalf("expected domain error, got %T", err)
+				}
+
+				if domainErr.Kind != test.expectedErrorKind {
+					t.Errorf("expected error kind %v, got %v", test.expectedErrorKind, domainErr.Kind)
+				}
+
+				if test.expectedErrorCode != domainErr.Code {
+					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
+				}
+
+				if test.expectedErrorCodes != nil {
+					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no err, got : %v", err)
+			}
+		})
+	}
+}

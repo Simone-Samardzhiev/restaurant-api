@@ -1,6 +1,10 @@
 package menu
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // CategoryRepository describes how categories are stored.
 type CategoryRepository interface {
@@ -9,6 +13,9 @@ type CategoryRepository interface {
 
 	// UpdateCategory applies updates to category.
 	UpdateCategory(ctx context.Context, request *UpdateCategoryRequest) error
+
+	// DeleteCategory deletes a category by id.
+	DeleteCategory(ctx context.Context, id uuid.UUID) error
 }
 
 // CategoryService describes how category business logic is accessed.
@@ -18,4 +25,7 @@ type CategoryService interface {
 
 	// UpdateCategory applies updates to category.
 	UpdateCategory(ctx context.Context, request *UpdateCategoryRequest) error
+
+	// DeleteCategory deletes a category by id.
+	DeleteCategory(ctx context.Context, id uuid.UUID) error
 }

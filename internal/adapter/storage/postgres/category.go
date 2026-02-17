@@ -91,7 +91,48 @@ func (r *CategoryRepository) UpdateCategory(ctx context.Context, request *menu.U
 				Code:     domain.ErrorCodeCategoryNotFoundByID,
 				Message:  "category not found by id",
 				Metadata: map[string]interface{}{"id": request.Id},
-			})
+			},
+		)
+	}
+	return nil
+}
+
+func (r *CategoryRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`DELETE FROM product_categories WHERE id = $1`,
+		id,
+	)
+
+	if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+		if pqErr.Code == "23503" && pqErr.Constraint == "products_category_fkey" {
+			return domain.NewConflictError(
+				"cannot delete category with linked products",
+				domain.ErrorCodeCategoryHasLinkedProducts,
+				err,
+			)
+		}
+	}
+
+	if err != nil {
+		return domain.NewInternalError("error deleting category", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting affected rows", err)
+	}
+
+	if rows == 0 {
+		return domain.NewNotFoundError(
+			"category not found",
+			domain.ErrorCodeCategoryNotFound,
+			domain.ErrorDetail{
+				Code:     domain.ErrorCodeCategoryNotFoundByID,
+				Message:  "category not found by id",
+				Metadata: map[string]interface{}{"id": id},
+			},
+		)
 	}
 	return nil
 }

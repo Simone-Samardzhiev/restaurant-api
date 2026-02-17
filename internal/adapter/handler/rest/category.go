@@ -92,6 +92,25 @@ func (h *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
+// DeleteCategory parsed the id from the path parameter and attempts to delete it.
+// If the category is deleted successfully the response is [http.StatusOK].
+func (h *CategoryHandler) DeleteCategory(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	if err = h.service.DeleteCategory(ctx, id); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusOK)
+}
+
 // NewCategoryHandler allocates and returns a new CategoryHandler.
 func NewCategoryHandler(service menu.CategoryService) *CategoryHandler {
 	return &CategoryHandler{

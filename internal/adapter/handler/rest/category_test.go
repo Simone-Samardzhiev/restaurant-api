@@ -19,6 +19,7 @@ import (
 type fakeCategoryService struct {
 	onAddCategory    func(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error)
 	onUpdateCategory func(ctx context.Context, request *menu.UpdateCategoryRequest) error
+	onDeleteCategory func(ctx context.Context, id uuid.UUID) error
 }
 
 var _ menu.CategoryService = (*fakeCategoryService)(nil)
@@ -35,6 +36,13 @@ func (s *fakeCategoryService) UpdateCategory(ctx context.Context, request *menu.
 		panic("onUpdateCategory function is not defined")
 	}
 	return s.onUpdateCategory(ctx, request)
+}
+
+func (s *fakeCategoryService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+	if s.onDeleteCategory == nil {
+		panic("onDeleteCategory function is not defined")
+	}
+	return s.onDeleteCategory(ctx, id)
 }
 
 func TestCategoryHandlerAddCategory(t *testing.T) {
@@ -211,6 +219,28 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			expectedHttpStatus: http.StatusConflict,
 			expectedErrorCode:  domain.ErrorCodeCategoryNameConflict,
 		},
+		{
+			name: "category not found",
+			service: &fakeCategoryService{
+				onUpdateCategory: func(ctx context.Context, request *menu.UpdateCategoryRequest) error {
+					return domain.NewNotFoundError(
+						"category not found",
+						domain.ErrorCodeCategoryNotFound,
+						domain.ErrorDetail{
+							Code:    domain.ErrorCodeCategoryNotFoundByID,
+							Message: "category not found by id",
+						},
+					)
+				},
+			},
+			id: uuid.New(),
+			request: rest.UpdateCategoryRequest{
+				Name: new("New Name"),
+			},
+			expectedHttpStatus: http.StatusNotFound,
+			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+		},
 	}
 
 	for _, test := range tests {
@@ -245,6 +275,111 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 
 			var response middleware.ErrorResponse
 			err = json.Unmarshal(recorder.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatalf("failed to unmarshal response body: %v", err)
+			}
+
+			if test.expectedErrorCode.String() != response.Code {
+				t.Fatalf("expect code %s, got %s", test.expectedErrorCode, response.Code)
+			}
+
+			if test.expectedErrorCodes != nil {
+				matchErrorCodes(t, test.expectedErrorCodes, response.Details)
+			}
+		})
+	}
+}
+
+func TestCategoryHandlerDeleteCategory(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name               string
+		service            *fakeCategoryService
+		id                 uuid.UUID
+		expectedHttpStatus int
+		expectedErrorCode  domain.ErrorCode
+		expectedErrorCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			service: &fakeCategoryService{
+				onDeleteCategory: func(ctx context.Context, categoryID uuid.UUID) error {
+					return nil
+				},
+			},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusOK,
+		},
+		{
+			name: "category not found",
+			service: &fakeCategoryService{
+				onDeleteCategory: func(ctx context.Context, categoryID uuid.UUID) error {
+					return domain.NewNotFoundError(
+						"category not found",
+						domain.ErrorCodeCategoryNotFound,
+						domain.ErrorDetail{
+							Code:    domain.ErrorCodeCategoryNotFoundByID,
+							Message: "category not found by id",
+						},
+					)
+				},
+			},
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusNotFound,
+			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+		},
+		{
+			name: "category has linked products",
+			service: &fakeCategoryService{
+				onDeleteCategory: func(ctx context.Context, categoryID uuid.UUID) error {
+					return domain.NewConflictError(
+						"cannot delete category with linked products",
+						domain.ErrorCodeCategoryHasLinkedProducts,
+						nil,
+					)
+				},
+			},
+
+			id:                 uuid.New(),
+			expectedHttpStatus: http.StatusConflict,
+			expectedErrorCode:  domain.ErrorCodeCategoryHasLinkedProducts,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			handler := rest.NewCategoryHandler(test.service)
+			router := gin.New()
+			router.Use(middleware.Error())
+			router.DELETE("/category/:id", handler.DeleteCategory)
+
+			body, err := json.Marshal(test.id)
+			if err != nil {
+				t.Fatalf("failed to marshal request body: %v", err)
+			}
+
+			recorder := httptest.NewRecorder()
+			req, err := http.NewRequest(http.MethodDelete, "/category/"+test.id.String(), bytes.NewBuffer(body))
+			if err != nil {
+				t.Fatalf("failed to create request: %v", err)
+			}
+
+			router.ServeHTTP(recorder, req)
+
+			if test.expectedHttpStatus != recorder.Code {
+				t.Fatalf("expect http status %d, got %d", test.expectedHttpStatus, recorder.Code)
+			}
+
+			if test.expectedHttpStatus == http.StatusOK {
+				return
+			}
+
+			var response middleware.ErrorResponse
+			err = json.Unmarshal(recorder.Body.Bytes(), &response)
+
 			if err != nil {
 				t.Fatalf("failed to unmarshal response body: %v", err)
 			}

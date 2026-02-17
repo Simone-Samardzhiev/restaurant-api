@@ -13,13 +13,14 @@ import (
 var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInternal: "Internal server error.",
 
-	domain.ErrorCodeInvalidCategory:       "Provided category contains invalid data.",
-	domain.ErrorCodeCategoryNameTooShort:  "Category name is too short.",
-	domain.ErrorCodeCategoryNameTooLong:   "Category name is too long.",
-	domain.ErrorCodeCategoryNameConflict:  "Category name is already used.",
-	domain.ErrorCodeInvalidCategoryUpdate: "Provided category update contains invalid data.",
-	domain.ErrorCodeCategoryNotFound:      "Category not found.",
-	domain.ErrorCodeCategoryNotFoundByID:  "Category with provided id not found.",
+	domain.ErrorCodeInvalidCategory:           "Provided category contains invalid data.",
+	domain.ErrorCodeCategoryNameTooShort:      "Category name is too short.",
+	domain.ErrorCodeCategoryNameTooLong:       "Category name is too long.",
+	domain.ErrorCodeCategoryNameConflict:      "Category name is already used.",
+	domain.ErrorCodeInvalidCategoryUpdate:     "Provided category update contains invalid data.",
+	domain.ErrorCodeCategoryNotFound:          "Category not found.",
+	domain.ErrorCodeCategoryNotFoundByID:      "Category with provided id not found.",
+	domain.ErrorCodeCategoryHasLinkedProducts: "Category cannot be deleted as it has linked products.",
 
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",

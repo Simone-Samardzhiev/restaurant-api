@@ -48,6 +48,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 				categories := menu.Group("/categories")
 				categories.POST("", handlers.CategoryHandler.AddCategory)
 				categories.PATCH("/:id", handlers.CategoryHandler.UpdateCategory)
+				categories.DELETE("/:id", handlers.CategoryHandler.DeleteCategory)
 			}
 		}
 	}

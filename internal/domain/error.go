@@ -41,6 +41,7 @@ const (
 	ErrorCodeInvalidCategoryUpdate
 	ErrorCodeCategoryNotFound
 	ErrorCodeCategoryNotFoundByID
+	ErrorCodeCategoryHasLinkedProducts
 
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
@@ -50,13 +51,14 @@ const (
 var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInternal: "INTERNAL",
 
-	ErrorCodeInvalidCategory:       "INVALID_CATEGORY",
-	ErrorCodeCategoryNameTooShort:  "CATEGORY_NAME_TOO_SHORT",
-	ErrorCodeCategoryNameTooLong:   "CATEGORY_NAME_TOO_LONG",
-	ErrorCodeCategoryNameConflict:  "CATEGORY_NAME_CONFLICT",
-	ErrorCodeInvalidCategoryUpdate: "INVALID_CATEGORY_UPDATE",
-	ErrorCodeCategoryNotFound:      "CATEGORY_NOT_FOUND",
-	ErrorCodeCategoryNotFoundByID:  "CATEGORY_NOT_FOUND_BY_ID",
+	ErrorCodeInvalidCategory:           "INVALID_CATEGORY",
+	ErrorCodeCategoryNameTooShort:      "CATEGORY_NAME_TOO_SHORT",
+	ErrorCodeCategoryNameTooLong:       "CATEGORY_NAME_TOO_LONG",
+	ErrorCodeCategoryNameConflict:      "CATEGORY_NAME_CONFLICT",
+	ErrorCodeInvalidCategoryUpdate:     "INVALID_CATEGORY_UPDATE",
+	ErrorCodeCategoryNotFound:          "CATEGORY_NOT_FOUND",
+	ErrorCodeCategoryNotFoundByID:      "CATEGORY_NOT_FOUND_BY_ID",
+	ErrorCodeCategoryHasLinkedProducts: "CATEGORY_HAS_LINKED_PRODUCTS",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",
