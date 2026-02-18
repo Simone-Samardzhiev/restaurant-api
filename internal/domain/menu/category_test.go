@@ -65,6 +65,78 @@ func TestParseCategoryName(t *testing.T) {
 	}
 }
 
+func TestParseCategory(t *testing.T) {
+	tests := []struct {
+		name               string
+		categoryName       string
+		wantErr            bool
+		expectedErrorKind  domain.ErrorKind
+		expectedErrorCode  domain.ErrorCode
+		expectedErrorCodes []domain.ErrorCode
+	}{
+		{
+			name:         "valid request",
+			categoryName: "New Category",
+		},
+		{
+			name:               "short name",
+			categoryName:       "ca",
+			wantErr:            true,
+			expectedErrorKind:  domain.ErrorKindValidation,
+			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+		},
+		{
+			name:               "long name",
+			categoryName:       "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
+			wantErr:            true,
+			expectedErrorKind:  domain.ErrorKindValidation,
+			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
+			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			parsed, err := menu.ParseCategory(uuid.New(), test.categoryName)
+
+			if test.wantErr {
+				if err == nil {
+					t.Fatalf("expected err, got nil")
+				}
+
+				domainErr, ok := errors.AsType[*domain.Error](err)
+				if !ok {
+					t.Fatalf("expected domain error, got %T", err)
+				}
+
+				if test.expectedErrorKind != domainErr.Kind {
+					t.Errorf("expected kind %s, got %s", test.expectedErrorKind, domainErr.Kind)
+				}
+				if test.expectedErrorCode != domainErr.Code {
+					t.Errorf("expected error code %s, got %s", test.expectedErrorCode, domainErr.Code)
+				}
+
+				if test.expectedErrorCodes != nil {
+					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no err, got : %v", err)
+			}
+
+			if parsed.Name.String() != test.categoryName {
+				t.Fatalf("expected name %s, got %s", test.categoryName, parsed.Name.String())
+			}
+		})
+	}
+}
+
 func TestParseAddCategoryRequest(t *testing.T) {
 	tests := []struct {
 		name               string

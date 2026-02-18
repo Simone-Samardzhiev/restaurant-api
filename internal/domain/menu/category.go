@@ -79,7 +79,10 @@ func ParseCategory(id uuid.UUID, name string) (*Category, error) {
 	}
 
 	if len(errs) > 0 {
-		return nil, &domain.ErrorDetail{}
+		return nil, domain.NewValidationError(
+			"invalid category",
+			domain.ErrorCodeInvalidCategory, errs...,
+		)
 	}
 
 	return &Category{
