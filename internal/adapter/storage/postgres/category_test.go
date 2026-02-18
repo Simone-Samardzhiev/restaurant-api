@@ -60,7 +60,7 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 
 			if test.wantErr {
 				if err == nil {
-					t.Fatal("expected error, got none")
+					t.Fatal("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -92,12 +92,12 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 
 func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 	tests := []struct {
-		name               string
-		request            *menu.UpdateCategoryRequest
-		wantErr            bool
-		expectedErrorKind  domain.ErrorKind
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		request              *menu.UpdateCategoryRequest
+		wantErr              bool
+		expectedErrorKind    domain.ErrorKind
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name:    "success",
@@ -112,12 +112,12 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 		{
-			name:               "not found",
-			request:            menu.MustParseUpdateCategoryRequest(uuid.New(), new("New name")),
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindNotFound,
-			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+			name:                 "not found",
+			request:              menu.MustParseUpdateCategoryRequest(uuid.New(), new("New name")),
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindNotFound,
+			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
 		},
 	}
 
@@ -129,7 +129,7 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 			err := repo.UpdateCategory(context.Background(), test.request)
 			if test.wantErr {
 				if err == nil {
-					t.Fatal("expected error, got none")
+					t.Fatal("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -144,8 +144,8 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				if test.expectedDetailsCodes != nil {
+					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
 				}
 				return
 			}
@@ -159,24 +159,24 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 
 func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 	tests := []struct {
-		name               string
-		id                 uuid.UUID
-		wantErr            bool
-		expectedErrorKind  domain.ErrorKind
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		id                   uuid.UUID
+		wantErr              bool
+		expectedErrorKind    domain.ErrorKind
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name: "success",
 			id:   uuid.MustParse("66666666-6666-6666-6666-666666666666"),
 		},
 		{
-			name:               "not found",
-			id:                 uuid.New(),
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindNotFound,
-			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+			name:                 "not found",
+			id:                   uuid.New(),
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindNotFound,
+			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
 		},
 		{
 			name:              "category has linked products",
@@ -195,7 +195,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 			err := repo.DeleteCategory(context.Background(), test.id)
 			if test.wantErr {
 				if err == nil {
-					t.Fatal("expected error, got none")
+					t.Fatal("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -211,8 +211,8 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				if test.expectedDetailsCodes != nil {
+					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
 				}
 
 				return
@@ -229,12 +229,12 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 	tests := []struct {
 		name        string
 		filter      *menu.CategoryFilter
-		expectedIDs []uuid.UUID
+		expectedIds []uuid.UUID
 	}{
 		{
 			name:   "success all",
 			filter: &menu.CategoryFilter{},
-			expectedIDs: []uuid.UUID{
+			expectedIds: []uuid.UUID{
 				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 				uuid.MustParse("33333333-3333-3333-3333-333333333333"),
@@ -248,7 +248,7 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 			filter: &menu.CategoryFilter{
 				Id: new(uuid.MustParse("11111111-1111-1111-1111-111111111111")),
 			},
-			expectedIDs: []uuid.UUID{
+			expectedIds: []uuid.UUID{
 				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			},
 		},
@@ -264,12 +264,12 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 				t.Fatalf("expected no err, got : %v", err)
 			}
 
-			if len(categories) != len(test.expectedIDs) {
-				t.Errorf("expected %d categories, got %d", len(test.expectedIDs), len(categories))
+			if len(categories) != len(test.expectedIds) {
+				t.Errorf("expected %d categories, got %d", len(test.expectedIds), len(categories))
 			}
 
 			counter := map[uuid.UUID]int{}
-			for _, category := range test.expectedIDs {
+			for _, category := range test.expectedIds {
 				counter[category]++
 			}
 

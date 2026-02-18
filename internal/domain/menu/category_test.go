@@ -41,16 +41,16 @@ func TestParseCategoryName(t *testing.T) {
 			parsed, err := menu.ParseCategoryName(test.categoryName)
 			if test.wantErr {
 				if err == nil {
-					t.Fatalf("expected err, got nil")
+					t.Fatalf("expected error, got nil")
 				}
 
-				domainErr, ok := errors.AsType[*domain.ErrorDetail](err)
+				detailErr, ok := errors.AsType[*domain.ErrorDetail](err)
 				if !ok {
-					t.Fatalf("expected domain error, got %T", err)
+					t.Fatalf("expected error details, got %T", err)
 				}
 
-				if test.expectedErrorCode != domainErr.Code {
-					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
+				if test.expectedErrorCode != detailErr.Code {
+					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, detailErr.Code)
 				}
 				return
 			}
@@ -67,32 +67,32 @@ func TestParseCategoryName(t *testing.T) {
 
 func TestParseCategory(t *testing.T) {
 	tests := []struct {
-		name               string
-		categoryName       string
-		wantErr            bool
-		expectedErrorKind  domain.ErrorKind
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		categoryName         string
+		wantErr              bool
+		expectedErrorKind    domain.ErrorKind
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name:         "valid request",
 			categoryName: "New Category",
 		},
 		{
-			name:               "short name",
-			categoryName:       "ca",
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+			name:                 "short name",
+			categoryName:         "ca",
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategory,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
-			name:               "long name",
-			categoryName:       "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+			name:                 "long name",
+			categoryName:         "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategory,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
 	}
 
@@ -104,7 +104,7 @@ func TestParseCategory(t *testing.T) {
 
 			if test.wantErr {
 				if err == nil {
-					t.Fatalf("expected err, got nil")
+					t.Fatalf("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -119,8 +119,8 @@ func TestParseCategory(t *testing.T) {
 					t.Errorf("expected error code %s, got %s", test.expectedErrorCode, domainErr.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				if test.expectedDetailsCodes != nil {
+					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
 				}
 
 				return
@@ -139,32 +139,32 @@ func TestParseCategory(t *testing.T) {
 
 func TestParseAddCategoryRequest(t *testing.T) {
 	tests := []struct {
-		name               string
-		categoryName       string
-		wantErr            bool
-		expectedErrorKind  domain.ErrorKind
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		categoryName         string
+		wantErr              bool
+		expectedErrorKind    domain.ErrorKind
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name:         "valid request",
 			categoryName: "New Category",
 		},
 		{
-			name:               "short name",
-			categoryName:       "ca",
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+			name:                 "short name",
+			categoryName:         "ca",
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategory,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
-			name:               "long name",
-			categoryName:       "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+			name:                 "long name",
+			categoryName:         "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategory,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
 	}
 
@@ -176,7 +176,7 @@ func TestParseAddCategoryRequest(t *testing.T) {
 
 			if test.wantErr {
 				if err == nil {
-					t.Fatalf("expected err, got nil")
+					t.Fatalf("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -191,8 +191,8 @@ func TestParseAddCategoryRequest(t *testing.T) {
 					t.Errorf("expected error code %s, got %s", test.expectedErrorCode, domainErr.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				if test.expectedDetailsCodes != nil {
+					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
 				}
 
 				return
@@ -211,32 +211,32 @@ func TestParseAddCategoryRequest(t *testing.T) {
 
 func TestParseUpdateCategoryRequest(t *testing.T) {
 	tests := []struct {
-		name               string
-		categoryName       *string
-		wantErr            bool
-		expectedErrorKind  domain.ErrorKind
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		categoryName         *string
+		wantErr              bool
+		expectedErrorKind    domain.ErrorKind
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name:         "valid request",
 			categoryName: new("New Category"),
 		},
 		{
-			name:               "short name",
-			categoryName:       new("na"),
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+			name:                 "short name",
+			categoryName:         new("na"),
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
-			name:               "long name",
-			categoryName:       new("CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"),
-			wantErr:            true,
-			expectedErrorKind:  domain.ErrorKindValidation,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+			name:                 "long name",
+			categoryName:         new("CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"),
+			wantErr:              true,
+			expectedErrorKind:    domain.ErrorKindValidation,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
 		{
 			name:              "no data in update",
@@ -254,7 +254,7 @@ func TestParseUpdateCategoryRequest(t *testing.T) {
 			result, err := menu.ParseUpdateCategoryRequest(uuid.New(), test.categoryName)
 			if test.wantErr {
 				if err == nil {
-					t.Fatalf("expected err, got none")
+					t.Fatalf("expected error, got nil")
 				}
 
 				domainErr, ok := errors.AsType[*domain.Error](err)
@@ -269,8 +269,8 @@ func TestParseUpdateCategoryRequest(t *testing.T) {
 					t.Errorf("expected error code %s, got %s", test.expectedErrorCode, domainErr.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, domainErr.Details)
+				if test.expectedDetailsCodes != nil {
+					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
 
 				}
 				return

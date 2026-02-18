@@ -58,12 +58,12 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name               string
-		service            *fakeCategoryService
-		request            rest.AddCategoryRequest
-		expectedHttpStatus int
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                string
+		service             *fakeCategoryService
+		request             rest.AddCategoryRequest
+		expectedHttpStatus  int
+		expectedErrorCode   domain.ErrorCode
+		expectedDetailCodes []domain.ErrorCode
 	}{
 		{
 			name: "success",
@@ -80,16 +80,16 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			request: rest.AddCategoryRequest{
 				Name: "Ne",
 			},
-			expectedHttpStatus: http.StatusUnprocessableEntity,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+			expectedHttpStatus:  http.StatusUnprocessableEntity,
+			expectedErrorCode:   domain.ErrorCodeInvalidCategory,
+			expectedDetailCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
-			name:               "name too long",
-			request:            rest.AddCategoryRequest{Name: "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"},
-			expectedHttpStatus: http.StatusUnprocessableEntity,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategory,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+			name:                "name too long",
+			request:             rest.AddCategoryRequest{Name: "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"},
+			expectedHttpStatus:  http.StatusUnprocessableEntity,
+			expectedErrorCode:   domain.ErrorCodeInvalidCategory,
+			expectedDetailCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
 		{
 			name:    "category already exists",
@@ -155,8 +155,8 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 					t.Fatalf("expect code %s, got %s", test.expectedErrorCode, response.Code)
 				}
 
-				if test.expectedErrorCodes != nil {
-					matchErrorCodes(t, test.expectedErrorCodes, response.Details)
+				if test.expectedDetailCodes != nil {
+					matchErrorCodes(t, test.expectedDetailCodes, response.Details)
 				}
 			}
 		})
@@ -166,13 +166,13 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 func TestCategoryHandlerUpdateCategory(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	tests := []struct {
-		name               string
-		service            *fakeCategoryService
-		id                 uuid.UUID
-		request            rest.UpdateCategoryRequest
-		expectedHttpStatus int
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		service              *fakeCategoryService
+		id                   uuid.UUID
+		request              rest.UpdateCategoryRequest
+		expectedHttpStatus   int
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name: "success",
@@ -192,20 +192,20 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			request: rest.UpdateCategoryRequest{
 				Name: new("na"),
 			},
-			id:                 uuid.New(),
-			expectedHttpStatus: http.StatusUnprocessableEntity,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
+			id:                   uuid.New(),
+			expectedHttpStatus:   http.StatusUnprocessableEntity,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
 		{
 			name: "name too long",
 			request: rest.UpdateCategoryRequest{
 				Name: new("CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"),
 			},
-			id:                 uuid.New(),
-			expectedHttpStatus: http.StatusUnprocessableEntity,
-			expectedErrorCode:  domain.ErrorCodeInvalidCategoryUpdate,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
+			id:                   uuid.New(),
+			expectedHttpStatus:   http.StatusUnprocessableEntity,
+			expectedErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
 		{
 			name:               "update has not data",
@@ -246,9 +246,9 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			request: rest.UpdateCategoryRequest{
 				Name: new("New Name"),
 			},
-			expectedHttpStatus: http.StatusNotFound,
-			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+			expectedHttpStatus:   http.StatusNotFound,
+			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
 		},
 	}
 
@@ -292,8 +292,8 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 				t.Fatalf("expect code %s, got %s", test.expectedErrorCode, response.Code)
 			}
 
-			if test.expectedErrorCodes != nil {
-				matchErrorCodes(t, test.expectedErrorCodes, response.Details)
+			if test.expectedDetailsCodes != nil {
+				matchErrorCodes(t, test.expectedDetailsCodes, response.Details)
 			}
 		})
 	}
@@ -302,12 +302,12 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 func TestCategoryHandlerDeleteCategory(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	tests := []struct {
-		name               string
-		service            *fakeCategoryService
-		id                 uuid.UUID
-		expectedHttpStatus int
-		expectedErrorCode  domain.ErrorCode
-		expectedErrorCodes []domain.ErrorCode
+		name                 string
+		service              *fakeCategoryService
+		id                   uuid.UUID
+		expectedHttpStatus   int
+		expectedErrorCode    domain.ErrorCode
+		expectedDetailsCodes []domain.ErrorCode
 	}{
 		{
 			name: "success",
@@ -333,10 +333,10 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 					)
 				},
 			},
-			id:                 uuid.New(),
-			expectedHttpStatus: http.StatusNotFound,
-			expectedErrorCode:  domain.ErrorCodeCategoryNotFound,
-			expectedErrorCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+			id:                   uuid.New(),
+			expectedHttpStatus:   http.StatusNotFound,
+			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,
+			expectedDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
 		},
 		{
 			name: "category has linked products",
@@ -397,8 +397,8 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 				t.Fatalf("expect code %s, got %s", test.expectedErrorCode, response.Code)
 			}
 
-			if test.expectedErrorCodes != nil {
-				matchErrorCodes(t, test.expectedErrorCodes, response.Details)
+			if test.expectedDetailsCodes != nil {
+				matchErrorCodes(t, test.expectedDetailsCodes, response.Details)
 			}
 		})
 	}
