@@ -13,7 +13,7 @@ type DefaultCategoryService struct {
 
 var _ CategoryService = (*DefaultCategoryService)(nil)
 
-// NewDefaultCategoryService allocates and creates a new DefaultCategoryService.
+// NewDefaultCategoryService allocates and creates a new [DefaultCategoryService].
 func NewDefaultCategoryService(repository CategoryRepository) *DefaultCategoryService {
 	return &DefaultCategoryService{repository: repository}
 }

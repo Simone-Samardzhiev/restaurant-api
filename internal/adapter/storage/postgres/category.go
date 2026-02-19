@@ -19,6 +19,7 @@ type CategoryRepository struct {
 
 var _ menu.CategoryRepository = (*CategoryRepository)(nil)
 
+// NewCategoryRepository allocates and creates a new [CategoryRepository].
 func NewCategoryRepository(db *sql.DB) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
