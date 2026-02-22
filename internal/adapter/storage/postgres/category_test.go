@@ -48,11 +48,11 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no error, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 
 			if test.request.Name.String() != result.Name.String() {
-				t.Errorf("expected name %v, got %v", test.request.Name.String(), result.Name.String())
+				t.Errorf("wan name %v, got %v", test.request.Name.String(), result.Name.String())
 			}
 		})
 	}
@@ -101,7 +101,7 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no err, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 		})
 	}
@@ -149,7 +149,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no err, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 		})
 	}
@@ -165,7 +165,7 @@ func checkCategories(t *testing.T, expectedIds []uuid.UUID, categories []menu.Ca
 
 	for _, category := range categories {
 		if counter[category.Id] == 0 {
-			t.Errorf("unexpected category id %s", category.Id)
+			t.Errorf("unexpected category id: %s", category.Id)
 			continue
 		}
 		counter[category.Id]--
@@ -173,7 +173,7 @@ func checkCategories(t *testing.T, expectedIds []uuid.UUID, categories []menu.Ca
 
 	for id, count := range counter {
 		if count != 0 {
-			t.Errorf("missing category id %s", id)
+			t.Errorf("missing category id: %s", id)
 		}
 	}
 }
@@ -214,7 +214,7 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 			repo := postgres.NewCategoryRepository(database)
 			categories, err := repo.GetCategories(context.Background(), test.filter)
 			if err != nil {
-				t.Fatalf("expected no error, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 
 			checkCategories(t, test.expectedIds, categories)

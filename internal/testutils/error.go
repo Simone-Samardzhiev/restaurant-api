@@ -30,21 +30,21 @@ func AssertError(t *testing.T, err error, kind domain.ErrorKind, code domain.Err
 }
 
 // checkDetailsCodes checks if error codes in match the error codes in the details, in any order.
-func checkDetailsCodes(t *testing.T, expectedCodes []domain.ErrorCode, details []domain.ErrorDetail) {
+func checkDetailsCodes(t *testing.T, wantCodes []domain.ErrorCode, details []domain.ErrorDetail) {
 	t.Helper()
 
-	if len(expectedCodes) != len(details) {
-		t.Errorf("want %d codes, got %d", len(expectedCodes), len(details))
+	if len(wantCodes) != len(details) {
+		t.Errorf("want %d codes, got %d", len(wantCodes), len(details))
 	}
 
 	counter := make(map[domain.ErrorCode]int)
-	for _, code := range expectedCodes {
+	for _, code := range wantCodes {
 		counter[code]++
 	}
 
 	for _, detail := range details {
 		if counter[detail.Code] == 0 {
-			t.Errorf("unexpected error code %s", detail.Code)
+			t.Errorf("unexpected error code: %s", detail.Code)
 			continue
 		}
 		counter[detail.Code]--
@@ -52,7 +52,7 @@ func checkDetailsCodes(t *testing.T, expectedCodes []domain.ErrorCode, details [
 
 	for code, count := range counter {
 		if count != 0 {
-			t.Errorf("missing error code %s", code)
+			t.Errorf("missing error code %s:", code)
 		}
 	}
 }

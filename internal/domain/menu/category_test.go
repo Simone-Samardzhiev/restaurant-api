@@ -97,11 +97,11 @@ func TestParseCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no error, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 
 			if parsed.Name.String() != test.categoryName {
-				t.Fatalf("expected category name %s, got %s", test.categoryName, parsed.Name.String())
+				t.Fatalf("want category name %s, got %s", test.categoryName, parsed.Name.String())
 			}
 		})
 	}
@@ -150,11 +150,11 @@ func TestParseAddCategoryRequest(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no error, got : %v", err)
+				t.Fatalf("want no error, got: %v", err)
 			}
 
 			if parsed.Name.String() != test.categoryName {
-				t.Fatalf("expected category name %s, got %s", test.categoryName, parsed.Name.String())
+				t.Fatalf("want category name %s, got %s", test.categoryName, parsed.Name.String())
 			}
 		})
 	}
@@ -209,11 +209,11 @@ func TestParseUpdateCategoryRequest(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("expected no error, got : %v", err)
+				t.Fatalf("want no error, got : %v", err)
 			}
 
 			if *test.categoryName != result.Name.String() {
-				t.Fatalf("expected category name %s, got %s", *test.categoryName, result.Name.String())
+				t.Fatalf("want category name %s, got %s", *test.categoryName, result.Name.String())
 			}
 		})
 	}
