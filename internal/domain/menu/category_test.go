@@ -59,7 +59,6 @@ func TestParseCategory(t *testing.T) {
 		name             string
 		categoryName     string
 		wantErr          bool
-		wantErrorKind    domain.ErrorKind
 		wantErrorCode    domain.ErrorCode
 		wantDetailsCodes []domain.ErrorCode
 	}{
@@ -71,7 +70,6 @@ func TestParseCategory(t *testing.T) {
 			name:             "short name",
 			categoryName:     "ca",
 			wantErr:          true,
-			wantErrorKind:    domain.ErrorKindValidation,
 			wantErrorCode:    domain.ErrorCodeInvalidCategory,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
@@ -79,7 +77,6 @@ func TestParseCategory(t *testing.T) {
 			name:             "long name",
 			categoryName:     "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
 			wantErr:          true,
-			wantErrorKind:    domain.ErrorKindValidation,
 			wantErrorCode:    domain.ErrorCodeInvalidCategory,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
@@ -92,7 +89,7 @@ func TestParseCategory(t *testing.T) {
 			parsed, err := menu.ParseCategory(uuid.New(), test.categoryName)
 
 			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
 				return
 			}
 
@@ -112,7 +109,6 @@ func TestParseAddCategoryRequest(t *testing.T) {
 		name             string
 		categoryName     string
 		wantErr          bool
-		wantErrorKind    domain.ErrorKind
 		wantErrorCode    domain.ErrorCode
 		wantDetailsCodes []domain.ErrorCode
 	}{
@@ -124,7 +120,6 @@ func TestParseAddCategoryRequest(t *testing.T) {
 			name:             "short name",
 			categoryName:     "ca",
 			wantErr:          true,
-			wantErrorKind:    domain.ErrorKindValidation,
 			wantErrorCode:    domain.ErrorCodeInvalidCategory,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
 		},
@@ -132,7 +127,6 @@ func TestParseAddCategoryRequest(t *testing.T) {
 			name:             "long name",
 			categoryName:     "CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory",
 			wantErr:          true,
-			wantErrorKind:    domain.ErrorKindValidation,
 			wantErrorCode:    domain.ErrorCodeInvalidCategory,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
 		},
@@ -145,7 +139,7 @@ func TestParseAddCategoryRequest(t *testing.T) {
 			parsed, err := menu.ParseAddCategoryRequest(test.categoryName)
 
 			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
 				return
 			}
 
