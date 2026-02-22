@@ -9,8 +9,8 @@ import (
 
 // CategoryRepository describes how categories data is managed.
 type CategoryRepository interface {
-	// AddCategory saves a category.
-	AddCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error)
+	// SaveCategory saves a category.
+	SaveCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error)
 
 	// UpdateCategory applies updates to category.
 	UpdateCategory(ctx context.Context, request *UpdateCategoryRequest) error
@@ -24,7 +24,7 @@ type CategoryRepository interface {
 
 // CategoryService describes how category business logic is accessed.
 type CategoryService interface {
-	// AddCategory saves a category.
+	// AddCategory adds a category.
 	AddCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error)
 
 	// UpdateCategory applies updates to category.

@@ -40,7 +40,7 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewCategoryRepository(database)
-			result, err := repo.AddCategory(context.Background(), test.request)
+			result, err := repo.SaveCategory(context.Background(), test.request)
 
 			if test.wantErr {
 				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)

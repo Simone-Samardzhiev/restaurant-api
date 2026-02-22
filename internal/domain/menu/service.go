@@ -19,7 +19,7 @@ func NewDefaultCategoryService(repository CategoryRepository) *DefaultCategorySe
 }
 
 func (s *DefaultCategoryService) AddCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error) {
-	return s.repository.AddCategory(ctx, request)
+	return s.repository.SaveCategory(ctx, request)
 }
 
 func (s *DefaultCategoryService) UpdateCategory(ctx context.Context, request *UpdateCategoryRequest) error {

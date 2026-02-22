@@ -24,7 +24,7 @@ func NewCategoryRepository(db *sql.DB) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
 
-func (r *CategoryRepository) AddCategory(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
+func (r *CategoryRepository) SaveCategory(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
 	category := &menu.Category{
 		Id:   uuid.New(),
 		Name: request.Name,

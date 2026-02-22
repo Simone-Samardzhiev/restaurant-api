@@ -32,7 +32,6 @@ func (s *fakeCategoryService) AddCategory(ctx context.Context, request *menu.Add
 	}
 	return s.onAddCategory(ctx, request)
 }
-
 func (s *fakeCategoryService) UpdateCategory(ctx context.Context, request *menu.UpdateCategoryRequest) error {
 	if s.onUpdateCategory == nil {
 		panic("onUpdateCategory function is not defined")
