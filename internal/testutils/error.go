@@ -34,7 +34,7 @@ func checkDetailsCodes(t *testing.T, expectedCodes []domain.ErrorCode, details [
 	t.Helper()
 
 	if len(expectedCodes) != len(details) {
-		t.Errorf("want %d expectedCodes, got %d", len(expectedCodes), len(details))
+		t.Errorf("want %d codes, got %d", len(expectedCodes), len(details))
 	}
 
 	counter := make(map[domain.ErrorCode]int)
