@@ -1,0 +1,201 @@
+package menu
+
+import (
+	"errors"
+	"restaurant/internal/domain"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+)
+
+// Constants for [ProductName] length requirements.
+const (
+	minProductNameLength = 3
+	maxProductNameLength = 100
+)
+
+// ProductName represents a valid product name.
+type ProductName struct {
+	raw string
+}
+
+func (p *ProductName) String() string {
+	return p.raw
+}
+
+// ParseProductName parses a [ProductName] from string.
+//
+// If the name is invalid the returned error will be of type [domain.ErrorDetail].
+func ParseProductName(name string) (ProductName, error) {
+	name = strings.TrimSpace(name)
+	length := utf8.RuneCountInString(name)
+
+	if length < minProductNameLength {
+		return ProductName{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeProductNameTooShort,
+			Message: "product name too short",
+			Metadata: map[string]any{
+				"actual": length,
+				"min":    minProductNameLength,
+				"max":    maxProductNameLength,
+			},
+		}
+	}
+
+	if length > maxProductNameLength {
+		return ProductName{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeProductNameTooLong,
+			Message: "product name is too long.",
+			Metadata: map[string]any{
+				"actual": length,
+				"min":    minProductNameLength,
+				"max":    maxProductNameLength,
+			},
+		}
+	}
+
+	return ProductName{raw: name}, nil
+}
+
+// Constants for [ProductDescription] length requirements.
+const (
+	minProductDescriptionLength = 15
+)
+
+// ProductDescription represents a valid product description.
+type ProductDescription struct {
+	raw string
+}
+
+func (p *ProductDescription) String() string {
+	return p.raw
+}
+
+// ParseProductDescription parses a [ProductDescription] from string.
+//
+// If the description is invalid the returned error will be of type [domain.ErrorDetail].
+func ParseProductDescription(description string) (ProductDescription, error) {
+	description = strings.TrimSpace(description)
+	length := utf8.RuneCountInString(description)
+
+	if length < minProductDescriptionLength {
+		return ProductDescription{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeProductDescriptionTooShort,
+			Message: "product description is too short",
+			Metadata: map[string]any{
+				"actual": length,
+				"min":    minProductDescriptionLength,
+			},
+		}
+	}
+	return ProductDescription{raw: description}, nil
+}
+
+// ProductPrice represents a valid product price.
+type ProductPrice struct {
+	raw decimal.Decimal
+}
+
+func (p *ProductPrice) Value() decimal.Decimal {
+	return p.raw
+}
+
+// ParseProductPrice parses a [ProductPrice] from [decimal.Decimal].
+//
+// If the price is invalid the returned error will be of type [domain.ErrorDetail].
+func ParseProductPrice(price decimal.Decimal) (ProductPrice, error) {
+	if price.LessThanOrEqual(decimal.Zero) {
+		return ProductPrice{}, &domain.ErrorDetail{
+			Code:    domain.ErrorCodeProductPriceLessThanZero,
+			Message: "product price cannot be less than zero",
+			Metadata: map[string]any{
+				"actual": price,
+				"min":    "0",
+			},
+		}
+	}
+
+	return ProductPrice{raw: price}, nil
+}
+
+// Product represent a valid product of the menu.
+type Product struct {
+	Id          uuid.UUID
+	Name        ProductName
+	Description ProductDescription
+	Price       ProductPrice
+	CategoryId  uuid.UUID
+	ImagePath   string
+}
+
+// ParseProduct parses a [Product] from id, name, description, price, category id, imagePath.
+//
+// If the product is invalid the returned error will be of type [domain.Error].
+func ParseProduct(
+	id uuid.UUID,
+	name,
+	description string,
+	price decimal.Decimal,
+	categoryId uuid.UUID,
+	imagePath string,
+) (*Product, error) {
+	errs := make([]domain.ErrorDetail, 0)
+
+	parsedName, err := ParseProductName(name)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	parsedDescription, err := ParseProductDescription(description)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	parsedPrice, err := ParseProductPrice(price)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid product", domain.ErrorCodeInvalidProduct, errs...)
+	}
+
+	return &Product{
+		Id:          id,
+		Name:        parsedName,
+		Description: parsedDescription,
+		Price:       parsedPrice,
+		CategoryId:  categoryId,
+		ImagePath:   imagePath,
+	}, nil
+}
+
+// MustParseProduct is like [ParseProduct], but instead of
+// returning the error it panics.
+func MustParseProduct(id uuid.UUID,
+	name,
+	description string,
+	price decimal.Decimal,
+	categoryId uuid.UUID,
+	imagePath string,
+) *Product {
+	product, err := ParseProduct(id, name, description, price, categoryId, imagePath)
+	if err != nil {
+		panic(err)
+	}
+	return product
+}

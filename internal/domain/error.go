@@ -46,6 +46,12 @@ const (
 	ErrorCodeInvalidImageType
 	ErrorCodeImageNotFound
 
+	ErrorCodeInvalidProduct
+	ErrorCodeProductNameTooShort
+	ErrorCodeProductNameTooLong
+	ErrorCodeProductDescriptionTooShort
+	ErrorCodeProductPriceLessThanZero
+
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
 	ErrorCodeInvalidUUID
@@ -65,6 +71,12 @@ var mapErrorCode = map[ErrorCode]string{
 
 	ErrorCodeInvalidImageType: "INVALID_IMAGE_TYPE",
 	ErrorCodeImageNotFound:    "IMAGE_NOT_FOUND",
+
+	ErrorCodeInvalidProduct:             "INVALID_PRODUCT",
+	ErrorCodeProductNameTooShort:        "PRODUCT_NAME_TOO_SHORT",
+	ErrorCodeProductNameTooLong:         "PRODUCT_NAME_TOO_LONG",
+	ErrorCodeProductDescriptionTooShort: "PRODUCT_DESCRIPTION_TOO_LONG",
+	ErrorCodeProductPriceLessThanZero:   "PRODUCT_PRICE_LESS_THAN_ZERO",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

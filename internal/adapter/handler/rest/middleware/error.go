@@ -44,6 +44,12 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInvalidImageType: "Invalid image type.",
 	domain.ErrorCodeImageNotFound:    "Image not found.",
 
+	domain.ErrorCodeInvalidProduct:             "Invalid product.",
+	domain.ErrorCodeProductNameTooShort:        "Product name is too short.",
+	domain.ErrorCodeProductNameTooLong:         "Product name is too long.",
+	domain.ErrorCodeProductDescriptionTooShort: "Product description is too short.",
+	domain.ErrorCodeProductPriceLessThanZero:   "Product price cannot be less than 0.",
+
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",
 	domain.ErrorCodeInvalidUUID:      "Invalid UUID.",
