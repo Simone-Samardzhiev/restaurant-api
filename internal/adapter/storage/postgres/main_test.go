@@ -46,7 +46,7 @@ func seedMenuTables(t *testing.T) {
 func TestMain(m *testing.M) {
 	url, ok := os.LookupEnv("TEST_DB_URL")
 	if !ok {
-		log.Fatal("DATABASE_URL not set")
+		log.Fatal("TEST_DB_URL not set")
 	}
 
 	connectToTestDb(url)
