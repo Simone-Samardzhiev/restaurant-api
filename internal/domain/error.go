@@ -43,6 +43,9 @@ const (
 	ErrorCodeCategoryNotFoundByID
 	ErrorCodeCategoryHasLinkedProducts
 
+	ErrorCodeInvalidImageType
+	ErrorCodeImageNotFound
+
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
 	ErrorCodeInvalidUUID
@@ -59,6 +62,9 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeCategoryNotFound:          "CATEGORY_NOT_FOUND",
 	ErrorCodeCategoryNotFoundByID:      "CATEGORY_NOT_FOUND_BY_ID",
 	ErrorCodeCategoryHasLinkedProducts: "CATEGORY_HAS_LINKED_PRODUCTS",
+
+	ErrorCodeInvalidImageType: "INVALID_IMAGE_TYPE",
+	ErrorCodeImageNotFound:    "IMAGE_NOT_FOUND",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

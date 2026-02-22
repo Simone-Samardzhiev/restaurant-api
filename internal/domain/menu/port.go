@@ -2,6 +2,7 @@ package menu
 
 import (
 	"context"
+	"io"
 
 	"github.com/google/uuid"
 )
@@ -34,4 +35,13 @@ type CategoryService interface {
 
 	// GetCategories fetches categories by applying a filter.
 	GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error)
+}
+
+// ImageRepository describes how image data is managed.
+type ImageRepository interface {
+	// SaveImage saves an image and returns the path to it.
+	SaveImage(ctx context.Context, data io.Reader, imageType ImageType) (string, error)
+
+	// DeleteImage deletes an image by path.
+	DeleteImage(ctx context.Context, path string) error
 }

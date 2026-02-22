@@ -41,6 +41,9 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeCategoryNotFoundByID:      "Category with provided id not found.",
 	domain.ErrorCodeCategoryHasLinkedProducts: "Category cannot be deleted as it has linked products.",
 
+	domain.ErrorCodeInvalidImageType: "Invalid image type.",
+	domain.ErrorCodeImageNotFound:    "Image not found.",
+
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",
 	domain.ErrorCodeInvalidUUID:      "Invalid UUID.",
@@ -54,25 +57,6 @@ func mapErrorCodeToMessage(code domain.ErrorCode) string {
 		return "Internal server error."
 	}
 
-	return result
-}
-
-// mapErrorKind is used to map [domain.ErrorKind] to http status codes.
-var mapErrorKind = map[domain.ErrorKind]int{
-	domain.ErrorKindInternal:   http.StatusInternalServerError,
-	domain.ErrorKindValidation: http.StatusUnprocessableEntity,
-	domain.ErrorKindConflict:   http.StatusConflict,
-	domain.ErrorKindBadRequest: http.StatusBadRequest,
-	domain.ErrorKindNotFound:   http.StatusNotFound,
-}
-
-// mapErrorKindHttpCode maps [domain.ErrorKind] to http status codes.
-// If the kind is not found [http.StatusInternalServerError] is returned.
-func mapErrorKindHttpCode(kind domain.ErrorKind) int {
-	result, ok := mapErrorKind[kind]
-	if !ok {
-		return http.StatusInternalServerError
-	}
 	return result
 }
 
