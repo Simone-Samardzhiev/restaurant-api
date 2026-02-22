@@ -45,3 +45,9 @@ type ImageRepository interface {
 	// DeleteImage deletes an image by path.
 	DeleteImage(ctx context.Context, path string) error
 }
+
+// ProductRepository described how product data is managed.
+type ProductRepository interface {
+	// SaveProduct saves a product.
+	SaveProduct(ctx context.Context, request *SaveProductRequest) (*Product, error)
+}

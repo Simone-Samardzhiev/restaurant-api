@@ -51,6 +51,7 @@ const (
 	ErrorCodeProductNameTooLong
 	ErrorCodeProductDescriptionTooShort
 	ErrorCodeProductPriceLessThanZero
+	ErrorCodeProductNameConflict
 
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
@@ -77,6 +78,7 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeProductNameTooLong:         "PRODUCT_NAME_TOO_LONG",
 	ErrorCodeProductDescriptionTooShort: "PRODUCT_DESCRIPTION_TOO_LONG",
 	ErrorCodeProductPriceLessThanZero:   "PRODUCT_PRICE_LESS_THAN_ZERO",
+	ErrorCodeProductNameConflict:        "PRODUCT_NAME_CONFLICT",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

@@ -21,7 +21,7 @@ func AssertError(t *testing.T, err error, kind domain.ErrorKind, code domain.Err
 	}
 
 	if domainErr.Code != code {
-		t.Errorf("want error code %d, got %d", code, domainErr.Code)
+		t.Errorf("want error code %s, got %s", code, domainErr.Code)
 	}
 
 	if len(expectedDetailCodes) > 0 {

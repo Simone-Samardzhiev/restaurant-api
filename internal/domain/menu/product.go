@@ -199,3 +199,25 @@ func MustParseProduct(id uuid.UUID,
 	}
 	return product
 }
+
+type SaveProductRequest struct {
+	Name        ProductName
+	Description ProductDescription
+	Price       ProductPrice
+	CategoryId  uuid.UUID
+	ImagePath   string
+}
+
+func NewSaveProductRequest(
+	name ProductName,
+	description ProductDescription,
+	price ProductPrice,
+	categoryId uuid.UUID,
+) *SaveProductRequest {
+	return &SaveProductRequest{
+		Name:        name,
+		Description: description,
+		Price:       price,
+		CategoryId:  categoryId,
+	}
+}
