@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// CategoryRepository describes how categories data is accessed.
+// CategoryRepository describes how categories data is managed.
 type CategoryRepository interface {
 	// AddCategory saves a category.
 	AddCategory(ctx context.Context, request *AddCategoryRequest) (*Category, error)
