@@ -9,6 +9,25 @@ import (
 	"go.uber.org/zap"
 )
 
+// mapErrorKind is used to map [domain.ErrorKind] to http status codes.
+var mapErrorKind = map[domain.ErrorKind]int{
+	domain.ErrorKindInternal:   http.StatusInternalServerError,
+	domain.ErrorKindValidation: http.StatusUnprocessableEntity,
+	domain.ErrorKindConflict:   http.StatusConflict,
+	domain.ErrorKindBadRequest: http.StatusBadRequest,
+	domain.ErrorKindNotFound:   http.StatusNotFound,
+}
+
+// mapErrorKindHttpCode maps [domain.ErrorKind] to http status codes.
+// If the kind is not found [http.StatusInternalServerError] is returned.
+func mapErrorKindHttpCode(kind domain.ErrorKind) int {
+	result, ok := mapErrorKind[kind]
+	if !ok {
+		return http.StatusInternalServerError
+	}
+	return result
+}
+
 // mapErrorCode is used to map [domain.ErrorCode] to user message.
 var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInternal: "Internal server error.",
