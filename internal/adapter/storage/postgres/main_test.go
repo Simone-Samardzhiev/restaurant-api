@@ -2,43 +2,14 @@ package postgres_test
 
 import (
 	"database/sql"
+	_ "embed"
 	"log"
 	"os"
-	"restaurant/internal/domain"
 	"testing"
 )
 
 // database holds connecting to the test database.
 var database *sql.DB
-
-// matchErrorCodes verifies details error codes match the codes in details
-// ignoring the order.
-func matchErrorCodes(t *testing.T, expectedCodes []domain.ErrorCode, details []domain.ErrorDetail) {
-	t.Helper()
-
-	if len(details) != len(expectedCodes) {
-		t.Fatalf("length mismatch: expected codes %d, got %d ", len(expectedCodes), len(details))
-	}
-
-	var counter = map[domain.ErrorCode]int{}
-	for _, code := range expectedCodes {
-		counter[code]++
-	}
-
-	for _, detail := range details {
-		if counter[detail.Code] == 0 {
-			t.Errorf("unexpected error code: %s", detail.Code)
-			continue
-		}
-		counter[detail.Code]--
-	}
-
-	for code, count := range counter {
-		if count != 0 {
-			t.Errorf("missing error code: %s", code)
-		}
-	}
-}
 
 // connectToTestDb establishes and checks connection to postgres database.
 func connectToTestDb(url string) {
@@ -54,15 +25,28 @@ func connectToTestDb(url string) {
 	database = db
 }
 
-// defaultURL holds the default postgres url for testing.
-const defaultURL = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+//go:embed testdata/seeds/menu.sql
+var seedMenuTablesQuery string
+
+// seedMenuTables seeds table for products and product categories with [seedMenuTablesQuery].
+func seedMenuTables(t *testing.T) {
+	t.Helper()
+
+	if _, err := database.Exec(seedMenuTablesQuery); err != nil {
+		t.Fatalf("error seeding menu tables: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if _, err := database.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE `); err != nil {
+			t.Fatalf("error truncating tables: %v", err)
+		}
+	})
+}
 
 func TestMain(m *testing.M) {
-	var url string
-	if val, ok := os.LookupEnv("TEST_DB_URL"); ok {
-		url = val
-	} else {
-		url = defaultURL
+	url, ok := os.LookupEnv("TEST_DB_URL")
+	if !ok {
+		log.Fatal("DATABASE_URL not set")
 	}
 
 	connectToTestDb(url)

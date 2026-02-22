@@ -1,7 +1,6 @@
 package postgres_test
 
 import (
-	"errors"
 	"restaurant/internal/adapter/storage/postgres"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
@@ -10,44 +9,29 @@ import (
 	"context"
 	_ "embed"
 
+	"restaurant/internal/testutils"
+
 	"github.com/google/uuid"
 )
 
-//go:embed testdata/seeds/menu.sql
-var seedMenuTablesQuery string
-
-func seedMenuTables(t *testing.T) {
-	t.Helper()
-
-	if _, err := database.Exec(seedMenuTablesQuery); err != nil {
-		t.Fatalf("error seeding menu tables: %v", err)
-	}
-
-	t.Cleanup(func() {
-		if _, err := database.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE `); err != nil {
-			t.Fatalf("error truncating tables: %v", err)
-		}
-	})
-}
-
 func TestCategoryRepositoryAddCategory(t *testing.T) {
 	tests := []struct {
-		name              string
-		request           *menu.AddCategoryRequest
-		wantErr           bool
-		expectedErrorKind domain.ErrorKind
-		expectedErrorCode domain.ErrorCode
+		name          string
+		request       *menu.AddCategoryRequest
+		wantErr       bool
+		wantErrorKind domain.ErrorKind
+		wantErrorCode domain.ErrorCode
 	}{
 		{
 			name:    "success",
 			request: menu.MustParseAddCategoryRequest("New category"),
 		},
 		{
-			name:              "name already exists",
-			request:           menu.MustParseAddCategoryRequest("Appetizers"),
-			wantErr:           true,
-			expectedErrorKind: domain.ErrorKindConflict,
-			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
+			name:          "name already exists",
+			request:       menu.MustParseAddCategoryRequest("Appetizers"),
+			wantErr:       true,
+			wantErrorKind: domain.ErrorKindConflict,
+			wantErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 	}
 
@@ -59,28 +43,12 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 			result, err := repo.AddCategory(context.Background(), test.request)
 
 			if test.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-
-				domainErr, ok := errors.AsType[*domain.Error](err)
-				if !ok {
-					t.Fatalf("expected domain error, got %T", err)
-				}
-
-				if domainErr.Kind != test.expectedErrorKind {
-					t.Errorf("expected error kind %v, got %v", test.expectedErrorKind, domainErr.Kind)
-				}
-
-				if test.expectedErrorCode != domainErr.Code {
-					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
-				}
-
+				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
 				return
 			}
 
 			if err != nil {
-				t.Fatalf("expected no err, got : %v", err)
+				t.Fatalf("expected no error, got : %v", err)
 			}
 
 			if test.request.Name.String() != result.Name.String() {
@@ -128,25 +96,7 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 			repo := postgres.NewCategoryRepository(database)
 			err := repo.UpdateCategory(context.Background(), test.request)
 			if test.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-
-				domainErr, ok := errors.AsType[*domain.Error](err)
-				if !ok {
-					t.Fatalf("expected domain error, got %T", err)
-				}
-
-				if domainErr.Kind != test.expectedErrorKind {
-					t.Errorf("expected error kind %v, got %v", test.expectedErrorKind, domainErr.Kind)
-				}
-				if test.expectedErrorCode != domainErr.Code {
-					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
-				}
-
-				if test.expectedDetailsCodes != nil {
-					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
-				}
+				testutils.AssertError(t, err, test.expectedErrorKind, test.expectedErrorCode, test.expectedDetailsCodes...)
 				return
 			}
 
@@ -194,27 +144,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 			repo := postgres.NewCategoryRepository(database)
 			err := repo.DeleteCategory(context.Background(), test.id)
 			if test.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-
-				domainErr, ok := errors.AsType[*domain.Error](err)
-				if !ok {
-					t.Fatalf("expected domain error, got %T", err)
-				}
-
-				if domainErr.Kind != test.expectedErrorKind {
-					t.Errorf("expected error kind %v, got %v", test.expectedErrorKind, domainErr.Kind)
-				}
-
-				if test.expectedErrorCode != domainErr.Code {
-					t.Errorf("expected error code %v, got %v", test.expectedErrorCode, domainErr.Code)
-				}
-
-				if test.expectedDetailsCodes != nil {
-					matchErrorCodes(t, test.expectedDetailsCodes, domainErr.Details)
-				}
-
+				testutils.AssertError(t, err, test.expectedErrorKind, test.expectedErrorCode, test.expectedDetailsCodes...)
 				return
 			}
 
@@ -222,6 +152,29 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 				t.Fatalf("expected no err, got : %v", err)
 			}
 		})
+	}
+}
+
+func checkCategories(t *testing.T, expectedIds []uuid.UUID, categories []menu.Category) {
+	t.Helper()
+
+	counter := make(map[uuid.UUID]int)
+	for _, id := range expectedIds {
+		counter[id]++
+	}
+
+	for _, category := range categories {
+		if counter[category.Id] == 0 {
+			t.Errorf("unexpected category id %s", category.Id)
+			continue
+		}
+		counter[category.Id]--
+	}
+
+	for id, count := range counter {
+		if count != 0 {
+			t.Errorf("missing category id %s", id)
+		}
 	}
 }
 
@@ -261,31 +214,10 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 			repo := postgres.NewCategoryRepository(database)
 			categories, err := repo.GetCategories(context.Background(), test.filter)
 			if err != nil {
-				t.Fatalf("expected no err, got : %v", err)
+				t.Fatalf("expected no error, got : %v", err)
 			}
 
-			if len(categories) != len(test.expectedIds) {
-				t.Errorf("expected %d categories, got %d", len(test.expectedIds), len(categories))
-			}
-
-			counter := map[uuid.UUID]int{}
-			for _, category := range test.expectedIds {
-				counter[category]++
-			}
-
-			for _, category := range categories {
-				if counter[category.Id] == 0 {
-					t.Errorf("unexpected category id: %s", category.Id)
-					continue
-				}
-				counter[category.Id]--
-			}
-
-			for id, count := range counter {
-				if count != 0 {
-					t.Errorf("missing category id: %s", id)
-				}
-			}
+			checkCategories(t, test.expectedIds, categories)
 		})
 	}
 }
