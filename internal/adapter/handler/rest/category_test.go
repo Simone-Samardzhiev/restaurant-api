@@ -28,27 +28,27 @@ var _ menu.CategoryService = (*fakeCategoryService)(nil)
 
 func (s *fakeCategoryService) AddCategory(ctx context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
 	if s.onAddCategory == nil {
-		panic("onAddCategory function is not defined")
+		panic("onAddCategory function is not implemented")
 	}
 	return s.onAddCategory(ctx, request)
 }
 func (s *fakeCategoryService) UpdateCategory(ctx context.Context, request *menu.UpdateCategoryRequest) error {
 	if s.onUpdateCategory == nil {
-		panic("onUpdateCategory function is not defined")
+		panic("onUpdateCategory function is not implemented")
 	}
 	return s.onUpdateCategory(ctx, request)
 }
 
 func (s *fakeCategoryService) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	if s.onDeleteCategory == nil {
-		panic("onDeleteCategory function is not defined")
+		panic("onDeleteCategory function is not implemented")
 	}
 	return s.onDeleteCategory(ctx, id)
 }
 
 func (s *fakeCategoryService) GetCategories(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
 	if s.onGetCategories == nil {
-		panic("onGetCategories function is not defined")
+		panic("onGetCategories function is not implemented")
 	}
 	return s.onGetCategories(ctx, filter)
 }
