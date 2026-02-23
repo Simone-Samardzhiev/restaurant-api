@@ -7,9 +7,10 @@ import (
 	"restaurant/internal/testutils"
 	"testing"
 
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"golang.org/x/net/context"
 )
 
 func mustParseSaveProductRequest(
