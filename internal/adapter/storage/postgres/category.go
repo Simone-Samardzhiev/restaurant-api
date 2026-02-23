@@ -6,6 +6,7 @@ import (
 	"errors"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -145,7 +146,7 @@ func (r *CategoryRepository) GetCategories(ctx context.Context, filter *menu.Cat
 	query.WriteString("SELECT id, name FROM product_categories")
 
 	if filter.Id != nil {
-		query.WriteString(" WHERE id = $1")
+		query.WriteString(" WHERE id = $" + strconv.Itoa(len(args)+1))
 		args = append(args, *filter.Id)
 	}
 
