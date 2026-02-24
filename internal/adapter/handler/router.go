@@ -14,6 +14,7 @@ import (
 // Handlers holds all rest handlers.
 type Handlers struct {
 	CategoryHandler *rest.CategoryHandler
+	ProductHandler  *rest.ProductHandler
 }
 
 // Router routes all http request to the specific handler function.
@@ -50,11 +51,16 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 				categories.PATCH("/:id", handlers.CategoryHandler.UpdateCategory)
 				categories.DELETE("/:id", handlers.CategoryHandler.DeleteCategory)
 			}
+			{
+				products := menu.Group("/products")
+				products.POST("", handlers.ProductHandler.AddProduct)
+			}
 		}
 	}
 	{
 		public := api.Group("/public")
 		public.GET("/categories", handlers.CategoryHandler.GetCategories)
+		public.Static("images", container.AppConfig.ImageSavePath)
 	}
 
 	server := &http.Server{

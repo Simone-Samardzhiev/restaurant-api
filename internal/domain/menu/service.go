@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 // DefaultCategoryService is the default implementation of [CategoryService].
@@ -32,4 +33,39 @@ func (s *DefaultCategoryService) DeleteCategory(ctx context.Context, id uuid.UUI
 
 func (s *DefaultCategoryService) GetCategories(ctx context.Context, filter *CategoryFilter) ([]Category, error) {
 	return s.repository.GetCategories(ctx, filter)
+}
+
+// DefaultProductService is the default implementation of [ProductService].
+type DefaultProductService struct {
+	productRepository ProductRepository
+	imageRepository   ImageRepository
+}
+
+var _ ProductService = (*DefaultProductService)(nil)
+
+// NewDefaultProductService allocates and creates a new [DefaultProductService].
+func NewDefaultProductService(productRepository ProductRepository, imageRepository ImageRepository) *DefaultProductService {
+	return &DefaultProductService{
+		productRepository: productRepository,
+		imageRepository:   imageRepository,
+	}
+}
+
+func (s *DefaultProductService) AddProduct(ctx context.Context, request *AddProductRequest) (*Product, error) {
+	imagePath, err := s.imageRepository.SaveImage(ctx, request.ImageData, request.ImageType)
+	if err != nil {
+		return nil, err
+	}
+
+	saveRequest := NewSaveProductRequest(request.Name, request.Description, request.Price, request.CategoryId, imagePath)
+	product, err := s.productRepository.SaveProduct(ctx, saveRequest)
+	if err != nil {
+		if deleteErr := s.imageRepository.DeleteImage(ctx, imagePath); deleteErr != nil {
+			zap.L().Error("error cleaning up image", zap.String("imagePath", imagePath), zap.Error(deleteErr))
+		}
+
+		return nil, err
+	}
+
+	return product, nil
 }

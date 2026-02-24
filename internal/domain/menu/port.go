@@ -51,3 +51,9 @@ type ProductRepository interface {
 	// SaveProduct saves a product.
 	SaveProduct(ctx context.Context, request *SaveProductRequest) (*Product, error)
 }
+
+// ProductService describes how product business logic is accessed.
+type ProductService interface {
+	// AddProduct adds a new product with image.
+	AddProduct(ctx context.Context, request *AddProductRequest) (*Product, error)
+}

@@ -2,6 +2,7 @@ package menu
 
 import (
 	"errors"
+	"io"
 	"restaurant/internal/domain"
 	"strings"
 	"unicode/utf8"
@@ -184,22 +185,7 @@ func ParseProduct(
 	}, nil
 }
 
-// MustParseProduct is like [ParseProduct], but instead of
-// returning the error it panics.
-func MustParseProduct(id uuid.UUID,
-	name,
-	description string,
-	price decimal.Decimal,
-	categoryId uuid.UUID,
-	imagePath string,
-) *Product {
-	product, err := ParseProduct(id, name, description, price, categoryId, imagePath)
-	if err != nil {
-		panic(err)
-	}
-	return product
-}
-
+// SaveProductRequest represent a request for saving a product.
 type SaveProductRequest struct {
 	Name        ProductName
 	Description ProductDescription
@@ -208,16 +194,108 @@ type SaveProductRequest struct {
 	ImagePath   string
 }
 
+// NewSaveProductRequest allocates and creates a new [SaveProductRequest].
 func NewSaveProductRequest(
 	name ProductName,
 	description ProductDescription,
 	price ProductPrice,
 	categoryId uuid.UUID,
+	imagePath string,
 ) *SaveProductRequest {
 	return &SaveProductRequest{
 		Name:        name,
 		Description: description,
 		Price:       price,
 		CategoryId:  categoryId,
+		ImagePath:   imagePath,
 	}
+}
+
+// AddProductRequest represents a request for adding a new product with image.
+type AddProductRequest struct {
+	Name        ProductName
+	Description ProductDescription
+	Price       ProductPrice
+	CategoryId  uuid.UUID
+	ImageData   io.Reader
+	ImageType   ImageType
+}
+
+// ParseAddProductRequest parses [AddProductRequest] from name, description, price, category id, image data and image type.
+//
+// If the fields are invalid the returned error will be of type [domain.Error].
+func ParseAddProductRequest(
+	name,
+	description string,
+	price decimal.Decimal,
+	categoryId uuid.UUID,
+	imageData io.Reader,
+	imageType string,
+) (*AddProductRequest, error) {
+	errs := make([]domain.ErrorDetail, 0)
+	parsedName, err := ParseProductName(name)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	parsedDescription, err := ParseProductDescription(description)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	parsedPrice, err := ParseProductPrice(price)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	parsedImageType, err := ParseImageType(imageType)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			return nil, err
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid product", domain.ErrorCodeInvalidProduct, errs...)
+	}
+
+	return &AddProductRequest{
+		Name:        parsedName,
+		Description: parsedDescription,
+		Price:       parsedPrice,
+		CategoryId:  categoryId,
+		ImageData:   imageData,
+		ImageType:   parsedImageType,
+	}, nil
+}
+
+// MustParseAddProductRequest is like [ParseAddProductRequest], but instead
+// of returning the error it panics.
+func MustParseAddProductRequest(
+	name,
+	description string,
+	price decimal.Decimal,
+	categoryId uuid.UUID,
+	imageData io.Reader,
+	imageType string,
+) *AddProductRequest {
+	request, err := ParseAddProductRequest(name, description, price, categoryId, imageData, imageType)
+	if err != nil {
+		panic(err)
+	}
+	return request
 }
