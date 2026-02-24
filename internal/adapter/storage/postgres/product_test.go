@@ -13,6 +13,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// mustParseSaveProductRequest parses all fields to create a valid [menu.SaveProductRequest]
+// and panics if any error occurred.
 func mustParseSaveProductRequest(
 	name,
 	description string,

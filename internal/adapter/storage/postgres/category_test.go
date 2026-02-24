@@ -155,6 +155,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 	}
 }
 
+// checkCategories checks if expected ids matches the ids of the categories in any order.
 func checkCategories(t *testing.T, expectedIds []uuid.UUID, categories []menu.Category) {
 	t.Helper()
 
