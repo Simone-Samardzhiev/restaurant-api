@@ -28,6 +28,7 @@ func NewProductHandler(service menu.ProductService, imageServingPath string) *Pr
 	}
 }
 
+// AddProductRequest represent the request for adding a product.
 type AddProductRequest struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
@@ -35,6 +36,7 @@ type AddProductRequest struct {
 	CategoryID  uuid.UUID       `json:"categoryId"`
 }
 
+// readProductRequest reads [AddProductRequest] from multipart data.
 func readProductRequest(ctx *gin.Context) (*AddProductRequest, error) {
 	var req AddProductRequest
 	if err := json.NewDecoder(strings.NewReader(ctx.PostForm("product"))).Decode(&req); err != nil {
@@ -44,11 +46,14 @@ func readProductRequest(ctx *gin.Context) (*AddProductRequest, error) {
 	return &req, nil
 }
 
+// AddImageRequest represents the request for adding product image.
 type AddImageRequest struct {
 	ImageData io.ReadCloser
 	ImageType string
 }
 
+// getImageType returns the string representation of the image type
+// using [http.DetectContentType]. The default value is "application/octet-stream".
 func getImageType(image io.ReadSeeker) (string, error) {
 	buffer := make([]byte, 512)
 	_, err := image.Read(buffer)
@@ -64,6 +69,7 @@ func getImageType(image io.ReadSeeker) (string, error) {
 	return imageType, nil
 }
 
+// readImageImage reads [AddImageRequest] from multipart data.
 func readImageImage(ctx *gin.Context) (*AddImageRequest, error) {
 	file, err := ctx.FormFile("image")
 	if err != nil {
@@ -86,6 +92,7 @@ func readImageImage(ctx *gin.Context) (*AddImageRequest, error) {
 	}, nil
 }
 
+// ProductResponse represents JSON response of a product.
 type ProductResponse struct {
 	Id          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
@@ -95,6 +102,8 @@ type ProductResponse struct {
 	ImageURL    string          `json:"imageUrl"`
 }
 
+// AddProduct decodes both [AddProductRequest] and [AddImageRequest], and attempts to add the product.
+// If the product is added successfully the response is [ProductResponse].
 func (h *ProductHandler) AddProduct(ctx *gin.Context) {
 	productReq, err := readProductRequest(ctx)
 	if err != nil {
