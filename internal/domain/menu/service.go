@@ -69,3 +69,7 @@ func (s *DefaultProductService) AddProduct(ctx context.Context, request *AddProd
 
 	return product, nil
 }
+
+func (s *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
+	return s.productRepository.UpdateProduct(ctx, request)
+}

@@ -147,3 +147,74 @@ func TestProductRepositorySaveProduct(t *testing.T) {
 		})
 	}
 }
+
+func TestProductRepositoryUpdateProduct(t *testing.T) {
+	tests := []struct {
+		name             string
+		request          *menu.UpdateProductRequest
+		wantErr          bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			request: menu.MustParseProductUpdateRequest(
+				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+				new("New product name"),
+				nil, nil, nil, nil,
+			),
+		},
+		{
+			name: "name already exists",
+			request: menu.MustParseProductUpdateRequest(
+				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+				new("Garlic Bread"),
+				nil, nil, nil, nil,
+			),
+			wantErr:       true,
+			wantErrorKind: domain.ErrorKindConflict,
+			wantErrorCode: domain.ErrorCodeProductNameConflict,
+		},
+		{
+			name: "category not found",
+			request: menu.MustParseProductUpdateRequest(
+				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+				nil, nil, nil,
+				new(uuid.New()),
+				nil,
+			),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindNotFound,
+			wantErrorCode:    domain.ErrorCodeCategoryNotFound,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
+		},
+		{
+			name: "product not found",
+			request: menu.MustParseProductUpdateRequest(
+				uuid.New(),
+				new("New product name"),
+				nil, nil, nil, nil,
+			),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindNotFound,
+			wantErrorCode:    domain.ErrorCodeProductNotFound,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeProductNotFoundByID},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			seedMenuTables(t)
+			repo := postgres.NewProductRepository(database)
+			err := repo.UpdateProduct(context.Background(), test.request)
+			if test.wantErr {
+				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+				return
+			}
+			if err != nil {
+				t.Fatalf("want no error, got: %v", err)
+			}
+		})
+	}
+}

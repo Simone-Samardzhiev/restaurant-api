@@ -38,12 +38,6 @@ func seedMenuTables(t *testing.T) {
 	if _, err := database.Exec(seedMenuTablesQuery); err != nil {
 		t.Fatalf("error seeding menu tables: %v", err)
 	}
-
-	t.Cleanup(func() {
-		if _, err := database.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE `); err != nil {
-			t.Fatalf("error truncating tables: %v", err)
-		}
-	})
 }
 
 func TestMain(m *testing.M) {

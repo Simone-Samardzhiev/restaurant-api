@@ -50,6 +50,9 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeProductDescriptionTooShort: "Product description is too short.",
 	domain.ErrorCodeProductPriceLessThanZero:   "Product price cannot be less than 0.",
 	domain.ErrorCodeProductNameConflict:        "Product name is already used.",
+	domain.ErrorCodeInvalidProductUpdate:       "Provided product update contains invalid data.",
+	domain.ErrorCodeProductNotFound:            "Product not found.",
+	domain.ErrorCodeProductNotFoundByID:        "Product with provided id not found.",
 
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",

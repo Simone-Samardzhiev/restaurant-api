@@ -154,12 +154,7 @@ type UpdateCategoryRequest struct {
 //
 // If the name is invalid or the request update data is empty the error will be of type [domain.Error].
 func ParseUpdateCategoryRequest(id uuid.UUID, name *string) (*UpdateCategoryRequest, error) {
-	hasData := false
-	if name != nil {
-		hasData = true
-	}
-
-	if !hasData {
+	if name == nil {
 		return nil, domain.NewBadRequestError("update does not have data", domain.ErrorCodeNoData, nil)
 	}
 

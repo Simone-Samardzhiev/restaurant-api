@@ -28,7 +28,7 @@ func NewProductHandler(service menu.ProductService, imageServingPath string) *Pr
 	}
 }
 
-// AddProductRequest represent the request for adding a product.
+// AddProductRequest represent the JSON request for adding a product.
 type AddProductRequest struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
@@ -143,4 +143,45 @@ func (h *ProductHandler) AddProduct(ctx *gin.Context) {
 		CategoryId:  product.CategoryId,
 		ImageURL:    path.Join(h.imageServingPath, product.ImagePath),
 	})
+}
+
+// UpdateProductRequest represents the JSON request for updating a product.
+type UpdateProductRequest struct {
+	Name        *string          `json:"name,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Price       *decimal.Decimal `json:"price,omitempty"`
+	CategoryID  *uuid.UUID       `json:"categoryId,omitempty"`
+}
+
+// UpdateProduct decodes [UpdateProductRequest] and attempts to update the product.
+// If the product is updated successfully the response is [http.StatusNoContent].
+func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	var req UpdateProductRequest
+	if err = ctx.BindJSON(&req); err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid json", domain.ErrorCodeMalformedRequest, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	domainReq, err := menu.ParseUpdateProductRequest(id, req.Name, req.Description, req.Price, req.CategoryID, nil)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	if err = h.service.UpdateProduct(ctx, domainReq); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

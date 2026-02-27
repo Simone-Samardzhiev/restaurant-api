@@ -310,3 +310,56 @@ func TestParseAddProductRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestParseUpdateProductRequest(t *testing.T) {
+	tests := []struct {
+		name             string
+		productName      *string
+		description      *string
+		price            *decimal.Decimal
+		categoryId       *uuid.UUID
+		wantErr          bool
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name:        "success",
+			productName: new("valid product name"),
+			description: new("valid description"),
+			price:       new(decimal.NewFromFloat(10.10)),
+			categoryId:  new(uuid.New()),
+		},
+		{
+			name:          "no data",
+			productName:   nil,
+			description:   nil,
+			price:         nil,
+			categoryId:    nil,
+			wantErr:       true,
+			wantErrorCode: domain.ErrorCodeNoData,
+		},
+		{
+			name:          "invalid product name",
+			productName:   new("na"),
+			description:   nil,
+			price:         nil,
+			categoryId:    nil,
+			wantErr:       true,
+			wantErrorCode: domain.ErrorCodeInvalidProductUpdate,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := menu.ParseUpdateProductRequest(uuid.New(), test.productName, test.description, test.price, test.categoryId, new("new image path"))
+			if test.wantErr {
+				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+				return
+			}
+			if err != nil {
+				t.Fatalf("want no error, got %d", err)
+			}
+		})
+	}
+}

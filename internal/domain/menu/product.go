@@ -299,3 +299,99 @@ func MustParseAddProductRequest(
 	}
 	return request
 }
+
+// UpdateProductRequest represents a request for updating a product.
+type UpdateProductRequest struct {
+	Id          uuid.UUID
+	Name        *ProductName
+	Description *ProductDescription
+	Price       *ProductPrice
+	CategoryId  *uuid.UUID
+	ImagePath   *string
+}
+
+// ParseUpdateProductRequest parses an [UpdateProductRequest] from id, name, description, price, category id.
+//
+// If fields are invalid the returned error will be of type
+func ParseUpdateProductRequest(
+	id uuid.UUID,
+	name,
+	description *string,
+	price *decimal.Decimal,
+	categoryId *uuid.UUID,
+	imagePath *string,
+) (*UpdateProductRequest, error) {
+	if name == nil && description == nil && price == nil && categoryId == nil && imagePath == nil {
+		return nil, domain.NewBadRequestError(
+			"update does not have data",
+			domain.ErrorCodeNoData,
+			nil,
+		)
+	}
+
+	errs := make([]domain.ErrorDetail, 0)
+	update := &UpdateProductRequest{
+		Id:         id,
+		CategoryId: categoryId,
+		ImagePath:  imagePath,
+	}
+
+	if name != nil {
+		parsedName, err := ParseProductName(*name)
+		if err != nil {
+			if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+				errs = append(errs, *detailErr)
+			} else {
+				return nil, err
+			}
+		}
+		update.Name = &parsedName
+	}
+
+	if description != nil {
+		parsedDescription, err := ParseProductDescription(*description)
+		if err != nil {
+			if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+				errs = append(errs, *detailErr)
+			} else {
+				return nil, err
+			}
+		}
+		update.Description = &parsedDescription
+	}
+
+	if price != nil {
+		parsedPrice, err := ParseProductPrice(*price)
+		if err != nil {
+			if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+				errs = append(errs, *detailErr)
+			} else {
+				return nil, err
+			}
+		}
+		update.Price = &parsedPrice
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid product", domain.ErrorCodeInvalidProductUpdate, errs...)
+	}
+
+	return update, nil
+}
+
+// MustParseProductUpdateRequest is like [ParseUpdateProductRequest], but insted of
+// returning the error it panics.
+func MustParseProductUpdateRequest(
+	id uuid.UUID,
+	name,
+	description *string,
+	price *decimal.Decimal,
+	categoryId *uuid.UUID,
+	imagePath *string,
+) *UpdateProductRequest {
+	request, err := ParseUpdateProductRequest(id, name, description, price, categoryId, imagePath)
+	if err != nil {
+		panic(err)
+	}
+	return request
+}
