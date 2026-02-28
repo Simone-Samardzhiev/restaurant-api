@@ -162,7 +162,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 			request: menu.MustParseProductUpdateRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("New product name"),
-				nil, nil, nil, nil,
+				nil, nil, nil,
 			),
 		},
 		{
@@ -170,7 +170,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 			request: menu.MustParseProductUpdateRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("Garlic Bread"),
-				nil, nil, nil, nil,
+				nil, nil, nil,
 			),
 			wantErr:       true,
 			wantErrorKind: domain.ErrorKindConflict,
@@ -182,7 +182,6 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				nil, nil, nil,
 				new(uuid.New()),
-				nil,
 			),
 			wantErr:          true,
 			wantErrorKind:    domain.ErrorKindNotFound,
@@ -194,7 +193,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 			request: menu.MustParseProductUpdateRequest(
 				uuid.New(),
 				new("New product name"),
-				nil, nil, nil, nil,
+				nil, nil, nil,
 			),
 			wantErr:          true,
 			wantErrorKind:    domain.ErrorKindNotFound,

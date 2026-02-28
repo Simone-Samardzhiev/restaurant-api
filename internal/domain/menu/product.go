@@ -307,7 +307,6 @@ type UpdateProductRequest struct {
 	Description *ProductDescription
 	Price       *ProductPrice
 	CategoryId  *uuid.UUID
-	ImagePath   *string
 }
 
 // ParseUpdateProductRequest parses an [UpdateProductRequest] from id, name, description, price, category id.
@@ -319,9 +318,8 @@ func ParseUpdateProductRequest(
 	description *string,
 	price *decimal.Decimal,
 	categoryId *uuid.UUID,
-	imagePath *string,
 ) (*UpdateProductRequest, error) {
-	if name == nil && description == nil && price == nil && categoryId == nil && imagePath == nil {
+	if name == nil && description == nil && price == nil && categoryId == nil {
 		return nil, domain.NewBadRequestError(
 			"update does not have data",
 			domain.ErrorCodeNoData,
@@ -333,7 +331,6 @@ func ParseUpdateProductRequest(
 	update := &UpdateProductRequest{
 		Id:         id,
 		CategoryId: categoryId,
-		ImagePath:  imagePath,
 	}
 
 	if name != nil {
@@ -379,7 +376,7 @@ func ParseUpdateProductRequest(
 	return update, nil
 }
 
-// MustParseProductUpdateRequest is like [ParseUpdateProductRequest], but insted of
+// MustParseProductUpdateRequest is like [ParseUpdateProductRequest], but instead of
 // returning the error it panics.
 func MustParseProductUpdateRequest(
 	id uuid.UUID,
@@ -387,9 +384,8 @@ func MustParseProductUpdateRequest(
 	description *string,
 	price *decimal.Decimal,
 	categoryId *uuid.UUID,
-	imagePath *string,
 ) *UpdateProductRequest {
-	request, err := ParseUpdateProductRequest(id, name, description, price, categoryId, imagePath)
+	request, err := ParseUpdateProductRequest(id, name, description, price, categoryId)
 	if err != nil {
 		panic(err)
 	}

@@ -352,7 +352,7 @@ func TestParseUpdateProductRequest(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := menu.ParseUpdateProductRequest(uuid.New(), test.productName, test.description, test.price, test.categoryId, new("new image path"))
+			_, err := menu.ParseUpdateProductRequest(uuid.New(), test.productName, test.description, test.price, test.categoryId)
 			if test.wantErr {
 				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
 				return

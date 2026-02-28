@@ -172,7 +172,7 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 		return
 	}
 
-	domainReq, err := menu.ParseUpdateProductRequest(id, req.Name, req.Description, req.Price, req.CategoryID, nil)
+	domainReq, err := menu.ParseUpdateProductRequest(id, req.Name, req.Description, req.Price, req.CategoryID)
 	if err != nil {
 		ctx.Error(err).SetType(gin.ErrorTypePublic)
 		return

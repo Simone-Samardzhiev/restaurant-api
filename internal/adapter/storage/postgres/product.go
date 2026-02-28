@@ -112,12 +112,6 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, request *menu.Upd
 			Valid: true,
 		}
 	}
-	if request.ImagePath != nil {
-		imagePath = sql.NullString{
-			String: *request.ImagePath,
-			Valid:  true,
-		}
-	}
 
 	result, err := r.db.ExecContext(
 		ctx,
