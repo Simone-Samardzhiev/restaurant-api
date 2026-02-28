@@ -160,7 +160,7 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		ctx.Error(
-			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err),
 		).SetType(gin.ErrorTypePublic)
 		return
 	}
@@ -198,7 +198,7 @@ func (h *ProductHandler) UpdateImage(ctx *gin.Context) {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		ctx.Error(
-			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err),
 		).SetType(gin.ErrorTypePublic)
 		return
 	}
