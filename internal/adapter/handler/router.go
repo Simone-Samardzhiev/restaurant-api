@@ -55,6 +55,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 				products := menu.Group("/products")
 				products.POST("", handlers.ProductHandler.AddProduct)
 				products.PATCH("/:id", handlers.ProductHandler.UpdateProduct)
+				products.PUT("/:id/image", handlers.ProductHandler.UpdateImage)
 			}
 		}
 	}

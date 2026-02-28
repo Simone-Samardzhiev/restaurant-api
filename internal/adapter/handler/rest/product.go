@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -184,4 +185,45 @@ func (h *ProductHandler) UpdateProduct(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+// UpdateImageResponse represents JSON response when updating product image.
+type UpdateImageResponse struct {
+	ImageURL string `json:"imageUrl"`
+}
+
+// UpdateImage updates the image of the product, by the id of the product.
+// If the image is updates successfully the response is [UpdateImageResponse].
+func (h *ProductHandler) UpdateImage(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidCategory, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	buffer := make([]byte, 512)
+	if _, err = ctx.Request.Body.Read(buffer); err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid image data", domain.ErrorCodeMalformedRequest, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+	imageType := strings.Split(http.DetectContentType(buffer), "/")[1]
+
+	domainRequest, err := menu.ParseUpdateImageRequest(id, io.MultiReader(bytes.NewReader(buffer), ctx.Request.Body), imageType)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	imagePath, err := h.service.UpdateImage(ctx, domainRequest)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+	ctx.JSON(http.StatusCreated, UpdateImageResponse{
+		ImageURL: path.Join(h.imageServingPath, imagePath),
+	})
 }

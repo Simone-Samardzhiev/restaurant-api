@@ -45,6 +45,7 @@ const (
 
 	ErrorCodeInvalidImageType
 	ErrorCodeImageNotFound
+	ErrorCodeInvalidImageUpdate
 
 	ErrorCodeInvalidProduct
 	ErrorCodeProductNameTooShort
@@ -73,8 +74,9 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeCategoryNotFoundByID:      "CATEGORY_NOT_FOUND_BY_ID",
 	ErrorCodeCategoryHasLinkedProducts: "CATEGORY_HAS_LINKED_PRODUCTS",
 
-	ErrorCodeInvalidImageType: "INVALID_IMAGE_TYPE",
-	ErrorCodeImageNotFound:    "IMAGE_NOT_FOUND",
+	ErrorCodeInvalidImageType:   "INVALID_IMAGE_TYPE",
+	ErrorCodeImageNotFound:      "IMAGE_NOT_FOUND",
+	ErrorCodeInvalidImageUpdate: "INVALID_IMAGE_UPDATE",
 
 	ErrorCodeInvalidProduct:             "INVALID_PRODUCT",
 	ErrorCodeProductNameTooShort:        "PRODUCT_NAME_TOO_SHORT",

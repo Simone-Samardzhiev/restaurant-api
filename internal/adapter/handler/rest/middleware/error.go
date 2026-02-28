@@ -41,8 +41,9 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeCategoryNotFoundByID:      "Category with provided id not found.",
 	domain.ErrorCodeCategoryHasLinkedProducts: "Category cannot be deleted as it has linked products.",
 
-	domain.ErrorCodeInvalidImageType: "Invalid image type.",
-	domain.ErrorCodeImageNotFound:    "Image not found.",
+	domain.ErrorCodeInvalidImageType:   "Invalid image type.",
+	domain.ErrorCodeImageNotFound:      "Image not found.",
+	domain.ErrorCodeInvalidImageUpdate: "Invalid image update.",
 
 	domain.ErrorCodeInvalidProduct:             "Invalid product.",
 	domain.ErrorCodeProductNameTooShort:        "Product name is too short.",

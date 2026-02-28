@@ -217,3 +217,52 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		})
 	}
 }
+
+func TestProductRepositoryUpdateImagePath(t *testing.T) {
+	tests := []struct {
+		name             string
+		id               uuid.UUID
+		path             string
+		wantPath         string
+		wantErr          bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name:     "success",
+			id:       uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+			path:     "new/path/to/image",
+			wantPath: "image1",
+		},
+		{
+			name:             "product not found",
+			id:               uuid.New(),
+			path:             "new/path/to/image",
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindNotFound,
+			wantErrorCode:    domain.ErrorCodeProductNotFound,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeProductNotFoundByID},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			seedMenuTables(t)
+
+			repo := postgres.NewProductRepository(database)
+			result, err := repo.UpdateImagePath(context.Background(), test.id, test.path)
+			if test.wantErr {
+				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("want no error, got: %v", err)
+			}
+			if test.wantPath != result {
+				t.Fatalf("want %v, got %v", test.wantPath, result)
+			}
+		})
+	}
+}

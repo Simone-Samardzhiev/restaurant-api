@@ -53,6 +53,9 @@ type ProductRepository interface {
 
 	// UpdateProduct applies update to a product.
 	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error
+
+	// UpdateImagePath updates image path of a product and returns the old one.
+	UpdateImagePath(ctx context.Context, id uuid.UUID, path string) (string, error)
 }
 
 // ProductService describes how product business logic is accessed.
@@ -62,4 +65,7 @@ type ProductService interface {
 
 	// UpdateProduct applies update to a product.
 	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error
+
+	// UpdateImage updates the image of a product and returns the new image path.
+	UpdateImage(ctx context.Context, request *UpdateImageRequest) (string, error)
 }

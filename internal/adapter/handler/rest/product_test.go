@@ -22,6 +22,7 @@ import (
 type fakeProductService struct {
 	onAddProduct    func(ctx context.Context, request *menu.AddProductRequest) (*menu.Product, error)
 	onUpdateProduct func(ctx context.Context, request *menu.UpdateProductRequest) error
+	onUpdateImage   func(ctx context.Context, request *menu.UpdateImageRequest) (string, error)
 }
 
 var _ menu.ProductService = (*fakeProductService)(nil)
@@ -38,6 +39,13 @@ func (s *fakeProductService) UpdateProduct(ctx context.Context, request *menu.Up
 		panic("onUpdateProduct function is not implemented")
 	}
 	return s.onUpdateProduct(ctx, request)
+}
+
+func (s *fakeProductService) UpdateImage(ctx context.Context, request *menu.UpdateImageRequest) (string, error) {
+	if s.onUpdateImage == nil {
+		panic("onUpdateImage function is not implemented")
+	}
+	return s.onUpdateImage(ctx, request)
 }
 
 //go:embed testdata/product_image.jpg
@@ -295,6 +303,76 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 			}
 
 			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+		})
+	}
+}
+
+// creteUpdateImageRouter creates a gin router with PUT /:id/image
+// for [ProductHandler.UpdateImage].
+func creteUpdateImageRouter(service menu.ProductService) *gin.Engine {
+	handler := rest.NewProductHandler(service, "")
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.PUT("/:id/image", handler.UpdateImage)
+	return router
+}
+
+func TestProductHandlerUpdateImage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name             string
+		service          *fakeProductService
+		id               uuid.UUID
+		image            []byte
+		wantHttpStatus   int
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			service: &fakeProductService{
+				onUpdateImage: func(ctx context.Context, request *menu.UpdateImageRequest) (string, error) {
+					return "new/path", nil
+				},
+			},
+			id:             uuid.New(),
+			image:          validProductImage,
+			wantHttpStatus: http.StatusCreated,
+		},
+		{
+			name:           "invalid request",
+			id:             uuid.New(),
+			image:          []byte("invalid image"),
+			wantHttpStatus: http.StatusUnprocessableEntity,
+			wantErrorCode:  domain.ErrorCodeInvalidImageUpdate,
+			wantDetailsCodes: []domain.ErrorCode{
+				domain.ErrorCodeInvalidImageType,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			router := creteUpdateImageRouter(test.service)
+			request := httptest.NewRequest(http.MethodPut, "/"+test.id.String()+"/image", bytes.NewReader(test.image))
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, request)
+
+			if recorder.Code != test.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			}
+
+			if test.wantHttpStatus == http.StatusCreated {
+				var response rest.UpdateImageResponse
+				if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+					t.Fatalf("error decoding response: %v", err)
+				}
+			} else {
+				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+			}
 		})
 	}
 }

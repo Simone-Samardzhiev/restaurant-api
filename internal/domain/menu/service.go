@@ -61,7 +61,7 @@ func (s *DefaultProductService) AddProduct(ctx context.Context, request *AddProd
 	product, err := s.productRepository.SaveProduct(ctx, saveRequest)
 	if err != nil {
 		if deleteErr := s.imageRepository.DeleteImage(ctx, imagePath); deleteErr != nil {
-			zap.L().Error("error cleaning up image", zap.String("imagePath", imagePath), zap.Error(deleteErr))
+			zap.L().Warn("error cleaning up image", zap.String("imagePath", imagePath), zap.Error(deleteErr))
 		}
 
 		return nil, err
@@ -72,4 +72,26 @@ func (s *DefaultProductService) AddProduct(ctx context.Context, request *AddProd
 
 func (s *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
 	return s.productRepository.UpdateProduct(ctx, request)
+}
+
+func (s *DefaultProductService) UpdateImage(ctx context.Context, request *UpdateImageRequest) (string, error) {
+	newPath, err := s.imageRepository.SaveImage(ctx, request.Data, request.ImageType)
+	if err != nil {
+		return "", err
+	}
+
+	oldPath, err := s.productRepository.UpdateImagePath(ctx, request.Id, newPath)
+	if err != nil {
+		if deleteErr := s.imageRepository.DeleteImage(ctx, newPath); deleteErr != nil {
+			zap.L().Warn("error cleaning up image", zap.String("imagePath", newPath), zap.Error(deleteErr))
+		}
+
+		return "", err
+	}
+
+	if err = s.imageRepository.DeleteImage(ctx, oldPath); err != nil {
+		zap.L().Warn("error cleaning up image", zap.String("imagePath", oldPath), zap.Error(err))
+	}
+
+	return newPath, nil
 }

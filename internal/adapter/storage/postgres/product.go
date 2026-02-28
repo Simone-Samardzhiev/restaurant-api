@@ -180,3 +180,33 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, request *menu.Upd
 
 	return nil
 }
+
+func (r *ProductRepository) UpdateImagePath(ctx context.Context, id uuid.UUID, path string) (string, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`WITH old_paths AS (
+    	SELECT image_path FROM products WHERE id = $1
+        ) 
+        UPDATE products SET image_path = $2 WHERE id = $1
+		RETURNING (SELECT image_path FROM old_paths)`,
+		id, path,
+	)
+
+	var imagePath string
+	if err := row.Scan(&imagePath); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", domain.NewNotFoundError(
+				"product not found",
+				domain.ErrorCodeProductNotFound,
+				domain.ErrorDetail{
+					Code:     domain.ErrorCodeProductNotFoundByID,
+					Message:  "product not found by id",
+					Metadata: map[string]interface{}{"id": id},
+				},
+			)
+		}
+		return "", domain.NewInternalError("error updating product image_path", err)
+	}
+
+	return imagePath, nil
+}
