@@ -141,21 +141,23 @@ func (r *CategoryRepository) DeleteCategory(ctx context.Context, id uuid.UUID) e
 }
 
 func (r *CategoryRepository) GetCategories(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
-	var query strings.Builder
+	var conditions []string
 	var args []any
-	query.WriteString("SELECT id, name FROM product_categories")
-
 	if filter.Id != nil {
-		query.WriteString(" WHERE id = $" + strconv.Itoa(len(args)+1))
+		conditions = append(conditions, "id = $"+strconv.Itoa(len(conditions)+1))
 		args = append(args, *filter.Id)
 	}
 
-	rows, err := r.db.QueryContext(ctx, query.String(), args...)
-	defer rows.Close()
+	query := "SELECT id, name FROM product_categories "
+	if len(conditions) > 0 {
+		query = "SELECT id, name FROM product_categories WHERE " + strings.Join(conditions, " AND ")
+	}
 
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, domain.NewInternalError("error getting categories", err)
 	}
+	defer rows.Close()
 
 	var categories []menu.Category
 	for rows.Next() {

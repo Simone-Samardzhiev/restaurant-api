@@ -48,7 +48,7 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("want no error, got : %v", err)
+				t.Fatalf("want no error, got: %v", err)
 			}
 
 			if test.request.Name.String() != result.Name.String() {
@@ -101,7 +101,7 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("want no error, got : %v", err)
+				t.Fatalf("want no error, got: %v", err)
 			}
 		})
 	}
@@ -149,7 +149,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 			}
 
 			if err != nil {
-				t.Fatalf("want no error, got : %v", err)
+				t.Fatalf("want no error, got: %v", err)
 			}
 		})
 	}
@@ -215,7 +215,7 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 			repo := postgres.NewCategoryRepository(database)
 			categories, err := repo.GetCategories(context.Background(), test.filter)
 			if err != nil {
-				t.Fatalf("want no error, got : %v", err)
+				t.Fatalf("want no error, got: %v", err)
 			}
 
 			checkCategories(t, test.expectedIds, categories)
