@@ -34,10 +34,10 @@ func (r *ImageRepository) CreateSavePath() error {
 func (r *ImageRepository) SaveImage(_ context.Context, data io.Reader, imageType menu.ImageType) (string, error) {
 	imagePath := uuid.NewString() + "." + imageType.String()
 	file, err := os.Create(filepath.Join(r.savePath, imagePath))
-	defer file.Close()
 	if err != nil {
 		return "", domain.NewInternalError("error creating image", err)
 	}
+	defer file.Close()
 	if _, err = io.Copy(file, data); err != nil {
 		return "", domain.NewInternalError("error saving image", err)
 	}
