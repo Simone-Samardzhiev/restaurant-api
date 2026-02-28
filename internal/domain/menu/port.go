@@ -56,6 +56,9 @@ type ProductRepository interface {
 
 	// UpdateImagePath updates image path of a product and returns the old one.
 	UpdateImagePath(ctx context.Context, id uuid.UUID, path string) (string, error)
+
+	// DeleteProduct deletes a product by id and return the image path for cleanup.
+	DeleteProduct(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 // ProductService describes how product business logic is accessed.
@@ -68,4 +71,7 @@ type ProductService interface {
 
 	// UpdateImage updates the image of a product and returns the new image path.
 	UpdateImage(ctx context.Context, request *UpdateImageRequest) (string, error)
+
+	// DeleteProduct deletes a product by id.
+	DeleteProduct(ctx context.Context, id uuid.UUID) error
 }

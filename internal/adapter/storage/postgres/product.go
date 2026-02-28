@@ -210,3 +210,24 @@ func (r *ProductRepository) UpdateImagePath(ctx context.Context, id uuid.UUID, p
 
 	return imagePath, nil
 }
+
+func (r *ProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (string, error) {
+	row := r.db.QueryRowContext(ctx, "DELETE FROM products WHERE id = $1 RETURNING image_path", id)
+	var imagePath string
+	if err := row.Scan(&imagePath); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", domain.NewNotFoundError(
+				"product not found",
+				domain.ErrorCodeProductNotFound,
+				domain.ErrorDetail{
+					Code:     domain.ErrorCodeProductNotFoundByID,
+					Message:  "product not found by id",
+					Metadata: map[string]interface{}{"id": id},
+				},
+			)
+		}
+		return "", domain.NewInternalError("error deleting product", err)
+	}
+
+	return imagePath, nil
+}

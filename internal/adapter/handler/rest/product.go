@@ -227,3 +227,21 @@ func (h *ProductHandler) UpdateImage(ctx *gin.Context) {
 		ImageURL: path.Join(h.imageServingPath, imagePath),
 	})
 }
+
+// DeleteProduct parses the id from the path parameter "id"
+// and attempts to delete a product.
+// If the product is deleted successfully the response is [http.StatusOK].
+func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(
+			domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err),
+		).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	if err = h.service.DeleteProduct(ctx, id); err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+	}
+	ctx.Status(http.StatusOK)
+}

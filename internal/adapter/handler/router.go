@@ -56,6 +56,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 				products.POST("", handlers.ProductHandler.AddProduct)
 				products.PATCH("/:id", handlers.ProductHandler.UpdateProduct)
 				products.PUT("/:id/image", handlers.ProductHandler.UpdateImage)
+				products.DELETE("/:id", handlers.ProductHandler.DeleteProduct)
 			}
 		}
 	}

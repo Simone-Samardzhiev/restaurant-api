@@ -23,6 +23,7 @@ type fakeProductService struct {
 	onAddProduct    func(ctx context.Context, request *menu.AddProductRequest) (*menu.Product, error)
 	onUpdateProduct func(ctx context.Context, request *menu.UpdateProductRequest) error
 	onUpdateImage   func(ctx context.Context, request *menu.UpdateImageRequest) (string, error)
+	onDeleteProduct func(ctx context.Context, id uuid.UUID) error
 }
 
 var _ menu.ProductService = (*fakeProductService)(nil)
@@ -46,6 +47,13 @@ func (s *fakeProductService) UpdateImage(ctx context.Context, request *menu.Upda
 		panic("onUpdateImage function is not implemented")
 	}
 	return s.onUpdateImage(ctx, request)
+}
+
+func (s *fakeProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	if s.onDeleteProduct == nil {
+		panic("onDeleteProduct function is not implemented")
+	}
+	return s.onDeleteProduct(ctx, id)
 }
 
 //go:embed testdata/product_image.jpg
@@ -373,6 +381,64 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 			} else {
 				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
 			}
+		})
+	}
+}
+
+// createDeleteProductRouter creates a new gin router with DELETE product/:id
+// for [ProductHandler.DeleteProduct].
+func createDeleteProductRouter(service menu.ProductService) *gin.Engine {
+	handler := rest.NewProductHandler(service, "")
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.DELETE("/product/:id", handler.DeleteProduct)
+	return router
+}
+
+func TestProductHandlerDeleteProduct(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		service        *fakeProductService
+		id             string
+		wantHttpStatus int
+		wantErrorCode  domain.ErrorCode
+	}{
+		{
+			name: "success",
+			service: &fakeProductService{
+				onDeleteProduct: func(ctx context.Context, id uuid.UUID) error {
+					return nil
+				},
+			},
+			id:             uuid.NewString(),
+			wantHttpStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid uuid",
+			id:             "invalid",
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			router := createDeleteProductRouter(test.service)
+			request := httptest.NewRequest(http.MethodDelete, "/product/"+test.id, nil)
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, request)
+			if recorder.Code != test.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			}
+
+			if test.wantHttpStatus == http.StatusOK {
+				return
+			}
+			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode)
 		})
 	}
 }

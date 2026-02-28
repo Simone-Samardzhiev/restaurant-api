@@ -41,6 +41,7 @@ func (r *fakeImageRepository) DeleteImage(ctx context.Context, path string) erro
 type fakeProductRepository struct {
 	onSaveProduct     func(ctx context.Context, request *menu.SaveProductRequest) (*menu.Product, error)
 	onUpdateImagePath func(ctx context.Context, id uuid.UUID, path string) (string, error)
+	onDeleteProduct   func(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 var _ menu.ProductRepository = (*fakeProductRepository)(nil)
@@ -61,6 +62,13 @@ func (r *fakeProductRepository) UpdateImagePath(ctx context.Context, id uuid.UUI
 		panic("onUpdateImagePath function is not implemented")
 	}
 	return r.onUpdateImagePath(ctx, id, path)
+}
+
+func (r *fakeProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (string, error) {
+	if r.onDeleteProduct == nil {
+		panic("onDeleteProduct function is not implemented")
+	}
+	return r.onDeleteProduct(ctx, id)
 }
 
 func checkAddProductResult(
@@ -276,4 +284,75 @@ func TestDefaultProductServiceUpdateImage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDefaultProductServiceDeleteProduct(t *testing.T) {
+	tests := []struct {
+		name                 string
+		productRepository    *fakeProductRepository
+		imageRepository      *fakeImageRepository
+		wantDeleteImageCount int
+		wantErr              bool
+		wantErrorKind        domain.ErrorKind
+		wantErrorCode        domain.ErrorCode
+		wantDetailsCodes     []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			productRepository: &fakeProductRepository{
+				onDeleteProduct: func(ctx context.Context, id uuid.UUID) (string, error) {
+					return "oldPath", nil
+				},
+			},
+			imageRepository: &fakeImageRepository{
+				onDeleteImage: func(ctx context.Context, path string) error {
+					return nil
+				},
+			},
+			wantDeleteImageCount: 1,
+		},
+		{
+			name: "product not found",
+			productRepository: &fakeProductRepository{
+				onDeleteProduct: func(ctx context.Context, id uuid.UUID) (string, error) {
+					return "", domain.NewNotFoundError(
+						"product not found",
+						domain.ErrorCodeProductNotFound,
+						domain.ErrorDetail{
+							Code:     domain.ErrorCodeProductNotFoundByID,
+							Message:  "product not found by id",
+							Metadata: map[string]interface{}{"id": id},
+						},
+					)
+				},
+			},
+			imageRepository:      &fakeImageRepository{},
+			wantDeleteImageCount: 0,
+			wantErr:              true,
+			wantErrorKind:        domain.ErrorKindNotFound,
+			wantErrorCode:        domain.ErrorCodeProductNotFound,
+			wantDetailsCodes:     []domain.ErrorCode{domain.ErrorCodeProductNotFoundByID},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			service := menu.NewDefaultProductService(test.productRepository, test.imageRepository)
+			err := service.DeleteProduct(context.Background(), uuid.New())
+			if test.wantDeleteImageCount != test.imageRepository.deleteImageCounter {
+				t.Errorf("want delete image count %d, got %d", test.wantDeleteImageCount, test.imageRepository.deleteImageCounter)
+			}
+
+			if test.wantErr {
+				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
+				return
+			}
+			if err != nil {
+				t.Fatalf("want no error, got %v", err)
+			}
+		})
+	}
+
 }

@@ -95,3 +95,15 @@ func (s *DefaultProductService) UpdateImage(ctx context.Context, request *Update
 
 	return newPath, nil
 }
+
+func (s *DefaultProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	imagePath, err := s.productRepository.DeleteProduct(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err = s.imageRepository.DeleteImage(ctx, imagePath); err != nil {
+		zap.L().Warn("error cleaning up image", zap.String("imagePath", imagePath))
+	}
+	return nil
+}
