@@ -391,3 +391,9 @@ func MustParseProductUpdateRequest(
 	}
 	return request
 }
+
+// ProductFilter represents a filter used for fetching products.
+type ProductFilter struct {
+	Id         *uuid.UUID
+	CategoryId *uuid.UUID
+}

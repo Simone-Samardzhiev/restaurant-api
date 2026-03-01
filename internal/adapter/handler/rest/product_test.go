@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
@@ -24,6 +25,7 @@ type fakeProductService struct {
 	onUpdateProduct func(ctx context.Context, request *menu.UpdateProductRequest) error
 	onUpdateImage   func(ctx context.Context, request *menu.UpdateImageRequest) (string, error)
 	onDeleteProduct func(ctx context.Context, id uuid.UUID) error
+	onGetProducts   func(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error)
 }
 
 var _ menu.ProductService = (*fakeProductService)(nil)
@@ -54,6 +56,13 @@ func (s *fakeProductService) DeleteProduct(ctx context.Context, id uuid.UUID) er
 		panic("onDeleteProduct function is not implemented")
 	}
 	return s.onDeleteProduct(ctx, id)
+}
+
+func (s *fakeProductService) GetProducts(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {
+	if s.onGetProducts == nil {
+		panic("onGetProducts function is not implemented")
+	}
+	return s.onGetProducts(ctx, filter)
 }
 
 //go:embed testdata/product_image.jpg
@@ -439,6 +448,82 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 				return
 			}
 			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode)
+		})
+	}
+}
+
+// createGetProductsRouter creates a gin router with GET /product for
+// [ProductHandler.GetProducts].
+func createGetProductsRouter(service menu.ProductService) *gin.Engine {
+	handler := rest.NewProductHandler(service, "")
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.GET("/product", handler.GetProducts)
+	return router
+}
+
+func createGetProductsRequest(id *string, categoryId *string) *http.Request {
+	var query = url.Values{}
+	if id != nil {
+		query.Add("id", *id)
+	}
+	if categoryId != nil {
+		query.Add("category", *categoryId)
+	}
+
+	return httptest.NewRequest(http.MethodGet, "/product?"+query.Encode(), nil)
+}
+
+func TestProductHandlerGetProducts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		service        *fakeProductService
+		id             *string
+		categoryId     *string
+		wantHttpStatus int
+		wantErrorCode  domain.ErrorCode
+	}{
+		{
+			name: "success",
+			service: &fakeProductService{
+				onGetProducts: func(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {
+					return []menu.Product{}, nil
+				},
+			},
+			id:             nil,
+			categoryId:     nil,
+			wantHttpStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid request",
+			id:             nil,
+			categoryId:     new(""),
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			router := createGetProductsRouter(test.service)
+			request := createGetProductsRequest(test.id, test.categoryId)
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, request)
+			if recorder.Code != test.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			}
+			if test.wantHttpStatus == http.StatusOK {
+				var response []rest.ProductResponse
+				if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
+					t.Fatalf("error decoding response: %v", err)
+				}
+			} else {
+				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode)
+			}
 		})
 	}
 }

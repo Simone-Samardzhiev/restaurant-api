@@ -59,6 +59,9 @@ type ProductRepository interface {
 
 	// DeleteProduct deletes a product by id and return the image path for cleanup.
 	DeleteProduct(ctx context.Context, id uuid.UUID) (string, error)
+
+	// GetProducts fetches products by applying a filter.
+	GetProducts(ctx context.Context, filter *ProductFilter) ([]Product, error)
 }
 
 // ProductService describes how product business logic is accessed.
@@ -74,4 +77,7 @@ type ProductService interface {
 
 	// DeleteProduct deletes a product by id.
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
+
+	// GetProducts fetches products by applying a filter.
+	GetProducts(ctx context.Context, filter *ProductFilter) ([]Product, error)
 }

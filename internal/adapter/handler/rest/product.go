@@ -245,3 +245,46 @@ func (h *ProductHandler) DeleteProduct(ctx *gin.Context) {
 	}
 	ctx.Status(http.StatusOK)
 }
+
+func (h *ProductHandler) GetProducts(ctx *gin.Context) {
+	filter := &menu.ProductFilter{}
+	if id, ok := ctx.GetQuery("id"); ok {
+		parsedId, err := uuid.Parse(id)
+		if err != nil {
+			ctx.Error(
+				domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err),
+			).SetType(gin.ErrorTypePublic)
+			return
+		}
+		filter.Id = &parsedId
+	}
+
+	if category, ok := ctx.GetQuery("category"); ok {
+		parsedId, err := uuid.Parse(category)
+		if err != nil {
+			ctx.Error(
+				domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err),
+			).SetType(gin.ErrorTypePublic)
+			return
+		}
+		filter.CategoryId = &parsedId
+	}
+
+	products, err := h.service.GetProducts(ctx, filter)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+	}
+
+	response := make([]ProductResponse, 0, len(products))
+	for _, product := range products {
+		response = append(response, ProductResponse{
+			Id:          product.Id,
+			Name:        product.Name.String(),
+			Description: product.Description.String(),
+			Price:       product.Price.Value(),
+			CategoryId:  product.CategoryId,
+			ImageURL:    path.Join(h.imageServingPath, product.ImagePath),
+		})
+	}
+	ctx.JSON(http.StatusOK, response)
+}

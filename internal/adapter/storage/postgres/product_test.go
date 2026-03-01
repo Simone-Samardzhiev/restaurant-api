@@ -313,3 +313,70 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 		})
 	}
 }
+
+// checkProducts checks if expected ids matches the ids of the products in any order.
+func checkProducts(t *testing.T, expectedIds []uuid.UUID, products []menu.Product) {
+	t.Helper()
+
+	counter := make(map[uuid.UUID]int)
+	for _, id := range expectedIds {
+		counter[id]++
+	}
+
+	for _, category := range products {
+		if counter[category.Id] == 0 {
+			t.Errorf("unexpected category id: %s", category.Id)
+			continue
+		}
+		counter[category.Id]--
+	}
+
+	for id, count := range counter {
+		if count != 0 {
+			t.Errorf("missing category id: %s", id)
+		}
+	}
+}
+
+func TestProductRepositorGetProducts(t *testing.T) {
+	tests := []struct {
+		name    string
+		filer   *menu.ProductFilter
+		wantIds []uuid.UUID
+	}{
+		{
+			name: "success filter by category",
+			filer: &menu.ProductFilter{
+				CategoryId: new(uuid.MustParse("11111111-1111-1111-1111-111111111111")),
+			},
+			wantIds: []uuid.UUID{
+				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+				uuid.MustParse("a2a2a2a2-a2a2-a2a2-a2a2-a2a2a2a2a2a2"),
+				uuid.MustParse("a3a3a3a3-a3a3-a3a3-a3a3-a3a3a3a3a3a3"),
+				uuid.MustParse("a4a4a4a4-a4a4-a4a4-a4a4-a4a4a4a4a4a4"),
+				uuid.MustParse("a5a5a5a5-a5a5-a5a5-a5a5-a5a5a5a5a5a5"),
+			},
+		},
+		{
+			name: "success filter by id",
+			filer: &menu.ProductFilter{
+				Id: new(uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1")),
+			},
+			wantIds: []uuid.UUID{
+				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			seedMenuTables(t)
+			repo := postgres.NewProductRepository(database)
+			products, err := repo.GetProducts(context.Background(), test.filer)
+			if err != nil {
+				t.Fatalf("want no error, got: %v", err)
+			}
+			checkProducts(t, test.wantIds, products)
+		})
+	}
+}

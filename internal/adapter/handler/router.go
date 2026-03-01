@@ -63,6 +63,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 	{
 		public := api.Group("/public")
 		public.GET("/categories", handlers.CategoryHandler.GetCategories)
+		public.GET("/products", handlers.ProductHandler.GetProducts)
 		public.Static("images", container.AppConfig.ImageSavePath)
 	}
 

@@ -107,3 +107,7 @@ func (s *DefaultProductService) DeleteProduct(ctx context.Context, id uuid.UUID)
 	}
 	return nil
 }
+
+func (s *DefaultProductService) GetProducts(ctx context.Context, filter *ProductFilter) ([]Product, error) {
+	return s.productRepository.GetProducts(ctx, filter)
+}

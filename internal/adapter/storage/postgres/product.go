@@ -1,12 +1,13 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-
-	"context"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -230,4 +231,51 @@ func (r *ProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (st
 	}
 
 	return imagePath, nil
+}
+
+func (r *ProductRepository) GetProducts(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {
+	var conditions []string
+	var args []any
+
+	if filter.Id != nil {
+		conditions = append(conditions, "id = $"+strconv.Itoa(len(conditions)+1))
+		args = append(args, *filter.Id)
+	}
+	if filter.CategoryId != nil {
+		conditions = append(conditions, "category = $"+strconv.Itoa(len(conditions)+1))
+		args = append(args, *filter.CategoryId)
+	}
+
+	query := "SELECT id, name, description, price, category, image_path FROM products"
+	if len(conditions) > 0 {
+		query = query + " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	defer rows.Close()
+	if err != nil {
+		return nil, domain.NewInternalError("error getting products", err)
+	}
+
+	var products []menu.Product
+	for rows.Next() {
+		var id uuid.UUID
+		var name string
+		var description string
+		var price decimal.Decimal
+		var categoryId uuid.UUID
+		var imagePath string
+
+		if err := rows.Scan(&id, &name, &description, &price, &categoryId, &imagePath); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		product, err := menu.ParseProduct(id, name, description, price, categoryId, imagePath)
+		if err != nil {
+			return nil, domain.NewInternalError("error parsing product", err)
+		}
+		products = append(products, *product)
+	}
+
+	return products, nil
 }
