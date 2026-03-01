@@ -40,6 +40,20 @@ func seedMenuTables(t *testing.T) {
 	}
 }
 
+//go:embed testdata/seeds/orders.sql
+var seedOrderTablesQuery string
+
+// seedOrderTables seed the table order sessions and ordered products with [seedOrderTablesQuery].
+func seedOrderTables(t *testing.T) {
+	t.Helper()
+
+	if _, err := database.Exec(`TRUNCATE TABLE ordered_products, order_sessions RESTART IDENTITY CASCADE`); err != nil {
+	}
+	if _, err := database.Exec(seedOrderTablesQuery); err != nil {
+		t.Fatalf("error seeding order tables: %v", err)
+	}
+}
+
 func TestMain(m *testing.M) {
 	url, ok := os.LookupEnv("TEST_DB_URL")
 	if !ok {

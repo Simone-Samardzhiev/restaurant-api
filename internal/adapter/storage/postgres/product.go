@@ -215,22 +215,35 @@ func (r *ProductRepository) UpdateImagePath(ctx context.Context, id uuid.UUID, p
 func (r *ProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID) (string, error) {
 	row := r.db.QueryRowContext(ctx, "DELETE FROM products WHERE id = $1 RETURNING image_path", id)
 	var imagePath string
-	if err := row.Scan(&imagePath); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", domain.NewNotFoundError(
-				"product not found",
-				domain.ErrorCodeProductNotFound,
-				domain.ErrorDetail{
-					Code:     domain.ErrorCodeProductNotFoundByID,
-					Message:  "product not found by id",
-					Metadata: map[string]interface{}{"id": id},
-				},
-			)
-		}
-		return "", domain.NewInternalError("error deleting product", err)
+	err := row.Scan(&imagePath)
+
+	if err == nil {
+		return imagePath, nil
 	}
 
-	return imagePath, nil
+	if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+		if pqErr.Code == "23503" && pqErr.Constraint == "ordered_products_product_id_fkey" {
+			return "", domain.NewConflictError(
+				"product has linked orders",
+				domain.ErrorCodeProductHasLinkedOrders,
+				err,
+			)
+		}
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", domain.NewNotFoundError(
+			"product not found",
+			domain.ErrorCodeProductNotFound,
+			domain.ErrorDetail{
+				Code:     domain.ErrorCodeProductNotFoundByID,
+				Message:  "product not found by id",
+				Metadata: map[string]interface{}{"id": id},
+			},
+		)
+	}
+
+	return "", domain.NewInternalError("error deleting product", err)
 }
 
 func (r *ProductRepository) GetProducts(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {

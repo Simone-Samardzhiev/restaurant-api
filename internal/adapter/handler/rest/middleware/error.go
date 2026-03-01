@@ -54,6 +54,7 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInvalidProductUpdate:       "Provided product update contains invalid data.",
 	domain.ErrorCodeProductNotFound:            "Product not found.",
 	domain.ErrorCodeProductNotFoundByID:        "Product with provided id not found.",
+	domain.ErrorCodeProductHasLinkedOrders:     "Product cannot be deleted as it has linked orders.",
 
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",

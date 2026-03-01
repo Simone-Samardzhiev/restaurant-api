@@ -56,6 +56,7 @@ const (
 	ErrorCodeInvalidProductUpdate
 	ErrorCodeProductNotFound
 	ErrorCodeProductNotFoundByID
+	ErrorCodeProductHasLinkedOrders
 
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
@@ -87,6 +88,7 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidProductUpdate:       "INVALID_PRODUCT_UPDATE",
 	ErrorCodeProductNotFound:            "PRODUCT_NOT_FOUND",
 	ErrorCodeProductNotFoundByID:        "PRODUCT_NOT_FOUND_BY_ID",
+	ErrorCodeProductHasLinkedOrders:     "PRODUCT_HAS_LINKED_ORDERS",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

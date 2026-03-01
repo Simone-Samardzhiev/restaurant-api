@@ -290,11 +290,19 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 			wantErrorCode:    domain.ErrorCodeProductNotFound,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeProductNotFoundByID},
 		},
+		{
+			name:          "linked order error",
+			id:            uuid.MustParse("d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4"),
+			wantErr:       true,
+			wantErrorKind: domain.ErrorKindConflict,
+			wantErrorCode: domain.ErrorCodeProductHasLinkedOrders,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			seedMenuTables(t)
+			seedOrderTables(t)
 
 			repo := postgres.NewProductRepository(database)
 			result, err := repo.DeleteProduct(context.Background(), test.id)
