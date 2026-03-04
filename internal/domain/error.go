@@ -82,7 +82,7 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidProduct:             "INVALID_PRODUCT",
 	ErrorCodeProductNameTooShort:        "PRODUCT_NAME_TOO_SHORT",
 	ErrorCodeProductNameTooLong:         "PRODUCT_NAME_TOO_LONG",
-	ErrorCodeProductDescriptionTooShort: "PRODUCT_DESCRIPTION_TOO_LONG",
+	ErrorCodeProductDescriptionTooShort: "PRODUCT_DESCRIPTION_TOO_SHORT",
 	ErrorCodeProductPriceLessThanZero:   "PRODUCT_PRICE_LESS_THAN_ZERO",
 	ErrorCodeProductNameConflict:        "PRODUCT_NAME_CONFLICT",
 	ErrorCodeInvalidProductUpdate:       "INVALID_PRODUCT_UPDATE",
