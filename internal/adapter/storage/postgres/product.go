@@ -265,10 +265,10 @@ func (r *ProductRepository) GetProducts(ctx context.Context, filter *menu.Produc
 	}
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
-	defer rows.Close()
 	if err != nil {
 		return nil, domain.NewInternalError("error getting products", err)
 	}
+	defer rows.Close()
 
 	var products []menu.Product
 	for rows.Next() {
