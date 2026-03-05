@@ -155,40 +155,16 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 	}
 }
 
-// checkCategories checks if expected ids matches the ids of the categories in any order.
-func checkCategories(t *testing.T, expectedIds []uuid.UUID, categories []menu.Category) {
-	t.Helper()
-
-	counter := make(map[uuid.UUID]int)
-	for _, id := range expectedIds {
-		counter[id]++
-	}
-
-	for _, category := range categories {
-		if counter[category.Id] == 0 {
-			t.Errorf("unexpected category id: %s", category.Id)
-			continue
-		}
-		counter[category.Id]--
-	}
-
-	for id, count := range counter {
-		if count != 0 {
-			t.Errorf("missing category id: %s", id)
-		}
-	}
-}
-
 func TestCategoryRepositoryGetCategories(t *testing.T) {
 	tests := []struct {
-		name        string
-		filter      *menu.CategoryFilter
-		expectedIds []uuid.UUID
+		name    string
+		filter  *menu.CategoryFilter
+		wantIds []uuid.UUID
 	}{
 		{
 			name:   "success all",
 			filter: &menu.CategoryFilter{},
-			expectedIds: []uuid.UUID{
+			wantIds: []uuid.UUID{
 				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 				uuid.MustParse("22222222-2222-2222-2222-222222222222"),
 				uuid.MustParse("33333333-3333-3333-3333-333333333333"),
@@ -202,7 +178,7 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 			filter: &menu.CategoryFilter{
 				Id: new(uuid.MustParse("11111111-1111-1111-1111-111111111111")),
 			},
-			expectedIds: []uuid.UUID{
+			wantIds: []uuid.UUID{
 				uuid.MustParse("11111111-1111-1111-1111-111111111111"),
 			},
 		},
@@ -218,7 +194,9 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 				t.Fatalf("want no error, got: %v", err)
 			}
 
-			checkCategories(t, test.expectedIds, categories)
+			testutils.CheckEntities(t, test.wantIds, categories, func(category menu.Category) uuid.UUID {
+				return category.Id
+			})
 		})
 	}
 }

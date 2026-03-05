@@ -8,7 +8,7 @@ import (
 
 // AssertError is helper function for asserting an error is of type [domain.Error]
 // and [domain.Error.Kind] and [domain.Error.Code] matches with the arguments.
-func AssertError(t *testing.T, err error, kind domain.ErrorKind, code domain.ErrorCode, expectedDetailCodes ...domain.ErrorCode) {
+func AssertError(t testing.TB, err error, kind domain.ErrorKind, code domain.ErrorCode, expectedDetailCodes ...domain.ErrorCode) {
 	t.Helper()
 
 	domainErr, ok := errors.AsType[*domain.Error](err)
@@ -30,7 +30,7 @@ func AssertError(t *testing.T, err error, kind domain.ErrorKind, code domain.Err
 }
 
 // checkDetailsCodes checks if error codes in match the error codes in the details, in any order.
-func checkDetailsCodes(t *testing.T, wantCodes []domain.ErrorCode, details []domain.ErrorDetail) {
+func checkDetailsCodes(t testing.TB, wantCodes []domain.ErrorCode, details []domain.ErrorDetail) {
 	t.Helper()
 
 	if len(wantCodes) != len(details) {
@@ -59,7 +59,7 @@ func checkDetailsCodes(t *testing.T, wantCodes []domain.ErrorCode, details []dom
 
 // AssertErrorDetail is helper function for asserting an error is of type [domain.ErrorDetail]
 // and [domain.ErrorDetail.Code] matches with the argument.
-func AssertErrorDetail(t *testing.T, err error, code domain.ErrorCode) {
+func AssertErrorDetail(t testing.TB, err error, code domain.ErrorCode) {
 	t.Helper()
 
 	detailErr, ok := errors.AsType[*domain.ErrorDetail](err)

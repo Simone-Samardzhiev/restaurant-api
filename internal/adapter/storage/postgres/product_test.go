@@ -322,30 +322,6 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 	}
 }
 
-// checkProducts checks if expected ids matches the ids of the products in any order.
-func checkProducts(t *testing.T, expectedIds []uuid.UUID, products []menu.Product) {
-	t.Helper()
-
-	counter := make(map[uuid.UUID]int)
-	for _, id := range expectedIds {
-		counter[id]++
-	}
-
-	for _, category := range products {
-		if counter[category.Id] == 0 {
-			t.Errorf("unexpected category id: %s", category.Id)
-			continue
-		}
-		counter[category.Id]--
-	}
-
-	for id, count := range counter {
-		if count != 0 {
-			t.Errorf("missing category id: %s", id)
-		}
-	}
-}
-
 func TestProductRepositorGetProducts(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -384,7 +360,9 @@ func TestProductRepositorGetProducts(t *testing.T) {
 			if err != nil {
 				t.Fatalf("want no error, got: %v", err)
 			}
-			checkProducts(t, test.wantIds, products)
+			testutils.CheckEntities(t, test.wantIds, products, func(product menu.Product) uuid.UUID {
+				return product.Id
+			})
 		})
 	}
 }
