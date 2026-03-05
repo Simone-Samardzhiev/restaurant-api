@@ -46,30 +46,24 @@ func mustParseSaveProductRequest(
 	}
 }
 
-func checkSaveProductResult(t *testing.T,
-	product *menu.Product,
-	wantName menu.ProductName,
-	wantDescription menu.ProductDescription,
-	wantPrice menu.ProductPrice,
-	wantCategoryId uuid.UUID,
-	wantImagePath string,
+func checkSaveProductResult(t *testing.T, request *menu.SaveProductRequest, product *menu.Product,
 ) {
 	t.Helper()
 
-	if wantName.String() != product.Name.String() {
-		t.Errorf("want name %s, got %s", wantName, product.Name)
+	if request.Name.String() != product.Name.String() {
+		t.Errorf("want name %s, got %s", request.Name, product.Name)
 	}
-	if wantDescription.String() != product.Description.String() {
-		t.Errorf("want description %s, got %s", wantDescription, product.Description)
+	if request.Description.String() != product.Description.String() {
+		t.Errorf("want description %s, got %s", request.Description, product.Description)
 	}
-	if !wantPrice.Value().Equal(product.Price.Value()) {
-		t.Errorf("want price %s, got %s", wantPrice.Value(), product.Price.Value())
+	if !request.Price.Value().Equal(product.Price.Value()) {
+		t.Errorf("want price %s, got %s", product.Price.Value(), request.Price.Value())
 	}
-	if wantCategoryId != product.CategoryId {
-		t.Errorf("want category id %s, got %s", wantCategoryId, product.CategoryId)
+	if request.CategoryId != product.CategoryId {
+		t.Errorf("want category id %s, got %s", request.CategoryId, product.CategoryId)
 	}
-	if wantImagePath != product.ImagePath {
-		t.Errorf("want image path %s, got %s", wantImagePath, product.ImagePath)
+	if request.ImagePath != product.ImagePath {
+		t.Errorf("want image path %s, got %s", request.ImagePath, product.ImagePath)
 	}
 }
 
@@ -135,15 +129,7 @@ func TestProductRepositorySaveProduct(t *testing.T) {
 			if err != nil {
 				t.Fatalf("want no error, got : %v", err)
 			}
-			checkSaveProductResult(
-				t,
-				result,
-				test.request.Name,
-				test.request.Description,
-				test.request.Price,
-				test.request.CategoryId,
-				test.request.ImagePath,
-			)
+			checkSaveProductResult(t, test.request, result)
 		})
 	}
 }
