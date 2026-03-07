@@ -1,24 +1,25 @@
-package rest_test
+package testutils
 
 import (
 	"encoding/json"
+	"io"
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"testing"
 )
 
-// checkErrorResponse checks if the response is [middleware.ErrorResponse] and
+// CheckErrorResponse checks if the response is [middleware.ErrorResponse] and
 // the error code and details code match the arguments
-func checkErrorResponse(
+func CheckErrorResponse(
 	t *testing.T,
-	body []byte,
+	body io.Reader,
 	expectedCode domain.ErrorCode,
 	expectedCodes ...domain.ErrorCode,
 ) {
 	t.Helper()
 
 	var resp middleware.ErrorResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
+	if err := json.NewDecoder(body).Decode(&resp); err != nil {
 		t.Fatalf("failed to decode error response body: %s", err)
 	}
 
@@ -27,12 +28,12 @@ func checkErrorResponse(
 	}
 
 	if len(expectedCodes) > 0 {
-		matchErrorCodes(t, expectedCodes, resp.Details)
+		MatchErrorCodes(t, expectedCodes, resp.Details)
 	}
 }
 
-// checkDetailsCodes checks if error codes in match the error codes in the details, in any order.
-func matchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middleware.ErrorDetailsResponse) {
+// MatchErrorCodes checks if error codes in match the error codes in the details, in any order.
+func MatchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middleware.ErrorDetailsResponse) {
 	t.Helper()
 
 	if len(details) != len(details) {

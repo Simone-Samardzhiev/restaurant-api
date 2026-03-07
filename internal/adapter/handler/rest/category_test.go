@@ -11,6 +11,7 @@ import (
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
+	"restaurant/internal/testutils"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -69,7 +70,7 @@ func createAddCategoryRequest(t *testing.T, request *rest.AddCategoryRequest) *h
 		t.Fatalf("failed to encode request: %v", err)
 	}
 
-	return httptest.NewRequest(http.MethodPost, "/category", bytes.NewBuffer(body))
+	return httptest.NewRequest(http.MethodPost, "/category", bytes.NewReader(body))
 }
 
 // checkAddCategoryResponse checks if response body is [rest.CategoryResponse] and validates the name.
@@ -152,7 +153,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			if test.wantHttpStatus == http.StatusCreated {
 				checkAddCategoryResponse(t, recorder.Body.Bytes(), test.request.Name)
 			} else {
-				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailCodes...)
+				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailCodes...)
 			}
 		})
 	}
@@ -281,7 +282,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 				return
 			}
 
-			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
 		})
 	}
 }
@@ -369,7 +370,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 				return
 			}
 
-			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
 		})
 	}
 }

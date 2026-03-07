@@ -13,6 +13,7 @@ import (
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
+	"restaurant/internal/testutils"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -230,7 +231,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 					test.productRequest.CategoryID,
 				)
 			} else {
-				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
 			}
 		})
 	}
@@ -319,7 +320,7 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 				return
 			}
 
-			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
 		})
 	}
 }
@@ -388,7 +389,7 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 					t.Fatalf("error decoding response: %v", err)
 				}
 			} else {
-				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode, test.wantDetailsCodes...)
+				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
 			}
 		})
 	}
@@ -447,7 +448,7 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 			if test.wantHttpStatus == http.StatusOK {
 				return
 			}
-			checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode)
+			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode)
 		})
 	}
 }
@@ -522,7 +523,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 					t.Fatalf("error decoding response: %v", err)
 				}
 			} else {
-				checkErrorResponse(t, recorder.Body.Bytes(), test.wantErrorCode)
+				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode)
 			}
 		})
 	}

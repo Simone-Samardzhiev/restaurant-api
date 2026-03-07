@@ -8,7 +8,7 @@ import (
 
 // AssertError is helper function for asserting an error is of type [domain.Error]
 // and [domain.Error.Kind] and [domain.Error.Code] matches with the arguments.
-func AssertError(t testing.TB, err error, kind domain.ErrorKind, code domain.ErrorCode, expectedDetailCodes ...domain.ErrorCode) {
+func AssertError(t testing.TB, err error, kind domain.ErrorKind, code domain.ErrorCode, wantDetailsCodes ...domain.ErrorCode) {
 	t.Helper()
 
 	domainErr, ok := errors.AsType[*domain.Error](err)
@@ -24,8 +24,8 @@ func AssertError(t testing.TB, err error, kind domain.ErrorKind, code domain.Err
 		t.Errorf("want error code %s, got %s", code, domainErr.Code)
 	}
 
-	if len(expectedDetailCodes) > 0 {
-		checkDetailsCodes(t, expectedDetailCodes, domainErr.Details)
+	if len(wantDetailsCodes) > 0 {
+		checkDetailsCodes(t, wantDetailsCodes, domainErr.Details)
 	}
 }
 
@@ -37,7 +37,7 @@ func checkDetailsCodes(t testing.TB, wantCodes []domain.ErrorCode, details []dom
 		t.Errorf("want %d codes, got %d", len(wantCodes), len(details))
 	}
 
-	counter := make(map[domain.ErrorCode]int)
+	counter := make(map[domain.ErrorCode]int, len(details))
 	for _, code := range wantCodes {
 		counter[code]++
 	}

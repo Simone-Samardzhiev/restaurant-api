@@ -11,7 +11,7 @@ func CheckEntities[T any, K comparable](t testing.TB, expectedIds []K, entities 
 		t.Errorf("want %d entities, got %d", len(expectedIds), len(entities))
 	}
 
-	counter := make(map[K]int)
+	counter := make(map[K]int, len(expectedIds))
 	for _, id := range expectedIds {
 		counter[id]++
 	}
