@@ -22,25 +22,10 @@ func mustParseSaveProductRequest(
 	categoryId uuid.UUID,
 	imagePath string,
 ) *menu.SaveProductRequest {
-	parsedName, err := menu.ParseProductName(name)
-	if err != nil {
-		panic(err)
-	}
-
-	parsedDescription, err := menu.ParseProductDescription(description)
-	if err != nil {
-		panic(err)
-	}
-
-	parsedPrice, err := menu.ParseProductPrice(price)
-	if err != nil {
-		panic(err)
-	}
-
 	return &menu.SaveProductRequest{
-		Name:        parsedName,
-		Description: parsedDescription,
-		Price:       parsedPrice,
+		Name:        testutils.Must(menu.ParseProductName(name)),
+		Description: testutils.Must(menu.ParseProductDescription(description)),
+		Price:       testutils.Must(menu.ParseProductPrice(price)),
 		CategoryId:  categoryId,
 		ImagePath:   imagePath,
 	}
@@ -145,30 +130,30 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			request: menu.MustParseProductUpdateRequest(
+			request: testutils.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("New product name"),
 				nil, nil, nil,
-			),
+			)),
 		},
 		{
 			name: "name already exists",
-			request: menu.MustParseProductUpdateRequest(
+			request: testutils.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("Garlic Bread"),
 				nil, nil, nil,
-			),
+			)),
 			wantErr:       true,
 			wantErrorKind: domain.ErrorKindConflict,
 			wantErrorCode: domain.ErrorCodeProductNameConflict,
 		},
 		{
 			name: "category not found",
-			request: menu.MustParseProductUpdateRequest(
+			request: testutils.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				nil, nil, nil,
 				new(uuid.New()),
-			),
+			)),
 			wantErr:          true,
 			wantErrorKind:    domain.ErrorKindNotFound,
 			wantErrorCode:    domain.ErrorCodeCategoryNotFound,
@@ -176,11 +161,11 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		},
 		{
 			name: "product not found",
-			request: menu.MustParseProductUpdateRequest(
+			request: testutils.Must(menu.ParseUpdateProductRequest(
 				uuid.New(),
 				new("New product name"),
 				nil, nil, nil,
-			),
+			)),
 			wantErr:          true,
 			wantErrorKind:    domain.ErrorKindNotFound,
 			wantErrorCode:    domain.ErrorCodeProductNotFound,

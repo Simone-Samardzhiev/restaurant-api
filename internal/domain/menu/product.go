@@ -283,23 +283,6 @@ func ParseAddProductRequest(
 	}, nil
 }
 
-// MustParseAddProductRequest is like [ParseAddProductRequest], but instead
-// of returning the error it panics.
-func MustParseAddProductRequest(
-	name,
-	description string,
-	price decimal.Decimal,
-	categoryId uuid.UUID,
-	imageData io.Reader,
-	imageType string,
-) *AddProductRequest {
-	request, err := ParseAddProductRequest(name, description, price, categoryId, imageData, imageType)
-	if err != nil {
-		panic(err)
-	}
-	return request
-}
-
 // UpdateProductRequest represents a request for updating a product.
 type UpdateProductRequest struct {
 	Id          uuid.UUID
@@ -374,22 +357,6 @@ func ParseUpdateProductRequest(
 	}
 
 	return update, nil
-}
-
-// MustParseProductUpdateRequest is like [ParseUpdateProductRequest], but instead of
-// returning the error it panics.
-func MustParseProductUpdateRequest(
-	id uuid.UUID,
-	name,
-	description *string,
-	price *decimal.Decimal,
-	categoryId *uuid.UUID,
-) *UpdateProductRequest {
-	request, err := ParseUpdateProductRequest(id, name, description, price, categoryId)
-	if err != nil {
-		panic(err)
-	}
-	return request
 }
 
 // ProductFilter represents a filter used for fetching products.

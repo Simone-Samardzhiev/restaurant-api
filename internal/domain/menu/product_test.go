@@ -319,6 +319,7 @@ func TestParseUpdateProductRequest(t *testing.T) {
 		price            *decimal.Decimal
 		categoryId       *uuid.UUID
 		wantErr          bool
+		wantErrorKind    domain.ErrorKind
 		wantErrorCode    domain.ErrorCode
 		wantDetailsCodes []domain.ErrorCode
 	}{
@@ -336,6 +337,7 @@ func TestParseUpdateProductRequest(t *testing.T) {
 			price:         nil,
 			categoryId:    nil,
 			wantErr:       true,
+			wantErrorKind: domain.ErrorKindBadRequest,
 			wantErrorCode: domain.ErrorCodeNoData,
 		},
 		{
@@ -345,6 +347,7 @@ func TestParseUpdateProductRequest(t *testing.T) {
 			price:         nil,
 			categoryId:    nil,
 			wantErr:       true,
+			wantErrorKind: domain.ErrorKindValidation,
 			wantErrorCode: domain.ErrorCodeInvalidProductUpdate,
 		},
 	}
@@ -354,7 +357,7 @@ func TestParseUpdateProductRequest(t *testing.T) {
 			t.Parallel()
 			_, err := menu.ParseUpdateProductRequest(uuid.New(), test.productName, test.description, test.price, test.categoryId)
 			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
 				return
 			}
 			if err != nil {

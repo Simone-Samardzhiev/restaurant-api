@@ -91,16 +91,6 @@ func ParseCategory(id uuid.UUID, name string) (*Category, error) {
 	}, nil
 }
 
-// MustParseCategory is like [ParseCategory], but instead
-// of returning the error it panics.
-func MustParseCategory(id uuid.UUID, name string) *Category {
-	category, err := ParseCategory(id, name)
-	if err != nil {
-		panic(err)
-	}
-	return category
-}
-
 // AddCategoryRequest represents a request for adding a new category.
 type AddCategoryRequest struct {
 	Name CategoryName
@@ -132,16 +122,6 @@ func ParseAddCategoryRequest(name string) (*AddCategoryRequest, error) {
 	return &AddCategoryRequest{
 		Name: parsedName,
 	}, nil
-}
-
-// MustParseAddCategoryRequest is like [ParseAddCategoryRequest], but instead
-// of returning the error it panics.
-func MustParseAddCategoryRequest(name string) *AddCategoryRequest {
-	request, err := ParseAddCategoryRequest(name)
-	if err != nil {
-		panic(err)
-	}
-	return request
 }
 
 // UpdateCategoryRequest represents a request for updating a category.
@@ -176,16 +156,6 @@ func ParseUpdateCategoryRequest(id uuid.UUID, name *string) (*UpdateCategoryRequ
 		Id:   id,
 		Name: &parsedName,
 	}, nil
-}
-
-// MustParseUpdateCategoryRequest is like [ParseUpdateCategoryRequest], but instead of
-// returning the error it panics.
-func MustParseUpdateCategoryRequest(id uuid.UUID, name *string) *UpdateCategoryRequest {
-	request, err := ParseUpdateCategoryRequest(id, name)
-	if err != nil {
-		panic(err)
-	}
-	return request
 }
 
 // CategoryFilter represents a filter used for fetching categories.

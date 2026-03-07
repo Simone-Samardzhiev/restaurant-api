@@ -102,7 +102,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			name: "success",
 			service: &fakeCategoryService{
 				onAddCategory: func(_ context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
-					return menu.MustParseCategory(uuid.New(), "New Category"), nil
+					return testutils.Must(menu.ParseCategory(uuid.New(), "New Category")), nil
 				},
 			},
 			request:        rest.AddCategoryRequest{Name: "New Category"},
@@ -429,8 +429,8 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 			service: &fakeCategoryService{
 				onGetCategories: func(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
 					return []menu.Category{
-						*menu.MustParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1"),
-						*menu.MustParseCategory(uuid.MustParse("22222222-2222-2222-2222-222222222222"), "Category 2"),
+						*testutils.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
+						*testutils.Must(menu.ParseCategory(uuid.MustParse("22222222-2222-2222-2222-222222222222"), "Category 2")),
 					}, nil
 				},
 			},
@@ -452,7 +452,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 					}
 
 					return []menu.Category{
-						*menu.MustParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1"),
+						*testutils.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
 					}, nil
 				},
 			},

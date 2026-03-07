@@ -24,11 +24,11 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			request: menu.MustParseAddCategoryRequest("New category"),
+			request: testutils.Must(menu.ParseAddCategoryRequest("New category")),
 		},
 		{
 			name:          "name already exists",
-			request:       menu.MustParseAddCategoryRequest("Appetizers"),
+			request:       testutils.Must(menu.ParseAddCategoryRequest("Appetizers")),
 			wantErr:       true,
 			wantErrorKind: domain.ErrorKindConflict,
 			wantErrorCode: domain.ErrorCodeCategoryNameConflict,
@@ -69,19 +69,19 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			request: menu.MustParseUpdateCategoryRequest(uuid.MustParse("11111111-1111-1111-1111-111111111111"), new("New name")),
+			request: testutils.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("11111111-1111-1111-1111-111111111111"), new("New name"))),
 			wantErr: false,
 		},
 		{
 			name:              "name already exists",
-			request:           menu.MustParseUpdateCategoryRequest(uuid.MustParse("22222222-2222-2222-2222-222222222222"), new("Appetizers")),
+			request:           testutils.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("22222222-2222-2222-2222-222222222222"), new("Appetizers"))),
 			wantErr:           true,
 			expectedErrorKind: domain.ErrorKindConflict,
 			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 		{
 			name:                 "not found",
-			request:              menu.MustParseUpdateCategoryRequest(uuid.New(), new("New name")),
+			request:              testutils.Must(menu.ParseUpdateCategoryRequest(uuid.New(), new("New name"))),
 			wantErr:              true,
 			expectedErrorKind:    domain.ErrorKindNotFound,
 			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,

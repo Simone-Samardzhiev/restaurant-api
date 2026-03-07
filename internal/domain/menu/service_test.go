@@ -71,6 +71,10 @@ func (r *fakeProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID)
 	return r.onDeleteProduct(ctx, id)
 }
 
+func (r *fakeProductRepository) GetProducts(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {
+	panic("implement me")
+}
+
 func checkAddProductResult(
 	t *testing.T,
 	product *menu.Product,
@@ -108,14 +112,14 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			request: menu.MustParseAddProductRequest(
+			request: testutils.Must(menu.ParseAddProductRequest(
 				"Valid product name",
 				"Valid product description",
 				decimal.NewFromFloat(10.5),
 				uuid.New(),
 				strings.NewReader("image data"),
 				"png",
-			),
+			)),
 			imageRepository: &fakeImageRepository{
 				onSaveImage: func(ctx context.Context, data io.Reader, imageType menu.ImageType) (string, error) {
 					return filepath.Join("save", uuid.NewString()+"."+imageType.String()), nil
@@ -136,14 +140,14 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 		},
 		{
 			name: "error saving product",
-			request: menu.MustParseAddProductRequest(
+			request: testutils.Must(menu.ParseAddProductRequest(
 				"Valid product name",
 				"Valid product description",
 				decimal.NewFromFloat(10.5),
 				uuid.New(),
 				strings.NewReader("image data"),
 				"png",
-			),
+			)),
 			imageRepository: &fakeImageRepository{
 				onSaveImage: func(ctx context.Context, data io.Reader, imageType menu.ImageType) (string, error) {
 					return filepath.Join("save", uuid.NewString()+"."+imageType.String()), nil
