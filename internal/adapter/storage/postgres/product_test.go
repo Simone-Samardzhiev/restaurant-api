@@ -102,8 +102,7 @@ func TestProductRepositorySaveProduct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewProductRepository(database)
 			result, err := repo.SaveProduct(context.Background(), tt.request)
 			if tt.wantErr {
@@ -175,7 +174,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewProductRepository(database)
 			err := repo.UpdateProduct(context.Background(), tt.request)
 			if tt.wantErr {
@@ -219,8 +218,7 @@ func TestProductRepositoryUpdateImagePath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewProductRepository(database)
 			result, err := repo.UpdateImagePath(context.Background(), tt.id, tt.path)
 			if tt.wantErr {
@@ -272,9 +270,8 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-			seedOrderTables(t)
-
+			test.SeedMenuTables(t, database)
+			test.SeedOrderTables(t, database)
 			repo := postgres.NewProductRepository(database)
 			result, err := repo.DeleteProduct(context.Background(), tt.id)
 			if tt.wantErr {
@@ -325,7 +322,7 @@ func TestProductRepositorGetProducts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewProductRepository(database)
 			products, err := repo.GetProducts(context.Background(), tt.filer)
 			if err != nil {

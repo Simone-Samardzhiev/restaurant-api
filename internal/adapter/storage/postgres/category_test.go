@@ -37,8 +37,7 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewCategoryRepository(database)
 			result, err := repo.SaveCategory(context.Background(), tt.request)
 
@@ -91,8 +90,7 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewCategoryRepository(database)
 			err := repo.UpdateCategory(context.Background(), tt.request)
 			if tt.wantErr {
@@ -139,8 +137,7 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewCategoryRepository(database)
 			err := repo.DeleteCategory(context.Background(), tt.id)
 			if tt.wantErr {
@@ -186,8 +183,7 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedMenuTables(t)
-
+			test.SeedMenuTables(t, database)
 			repo := postgres.NewCategoryRepository(database)
 			categories, err := repo.GetCategories(context.Background(), tt.filter)
 			if err != nil {
