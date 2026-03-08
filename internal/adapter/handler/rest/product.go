@@ -34,7 +34,7 @@ type AddProductRequest struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	Price       decimal.Decimal `json:"price"`
-	CategoryID  uuid.UUID       `json:"categoryId"`
+	CategoryId  uuid.UUID       `json:"categoryId"`
 }
 
 // readProductRequest reads [AddProductRequest] from multipart data.
@@ -122,7 +122,7 @@ func (h *ProductHandler) AddProduct(ctx *gin.Context) {
 		productReq.Name,
 		productReq.Description,
 		productReq.Price,
-		productReq.CategoryID,
+		productReq.CategoryId,
 		imageReq.ImageData,
 		imageReq.ImageType,
 	)

@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -80,29 +81,26 @@ func createAddProductRouter(service menu.ProductService) *gin.Engine {
 
 func checkAddProductResponse(
 	t *testing.T,
-	body []byte,
-	wantName,
-	wantDescription string,
-	wantPrice decimal.Decimal,
-	wantCategoryId uuid.UUID,
+	body io.Reader,
+	request *rest.AddProductRequest,
 ) {
 	t.Helper()
 
-	var response rest.ProductResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		t.Fatalf("failed to decode response: %v", err)
+	var res rest.ProductResponse
+	if err := json.NewDecoder(body).Decode(&res); err != nil {
+		t.Fatalf("failed to decode res: %v", err)
 	}
-	if wantName != response.Name {
-		t.Errorf("want name %s, got %s", wantName, response.Name)
+	if request.Name != res.Name {
+		t.Errorf("want name %s, got %s", request.Name, res.Name)
 	}
-	if wantDescription != response.Description {
-		t.Errorf("want description %s, got %s", wantDescription, response.Description)
+	if request.Description != res.Description {
+		t.Errorf("want description %s, got %s", request.Description, res.Description)
 	}
-	if !wantPrice.Equal(response.Price) {
-		t.Errorf("want price %s, got %s", wantPrice, response.Price)
+	if !request.Price.Equal(res.Price) {
+		t.Errorf("want price %s, got %s", request.Price, res.Price)
 	}
-	if wantCategoryId != response.CategoryId {
-		t.Errorf("want categoryId %s, got %s", wantCategoryId, response.CategoryId)
+	if request.CategoryId != res.CategoryId {
+		t.Errorf("want category id %s, got %s", request.CategoryId, res.CategoryId)
 	}
 }
 
@@ -138,7 +136,6 @@ func creatAddProductRequest(t *testing.T, product *rest.AddProductRequest, image
 }
 
 func TestProductHandlerAddProduct(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name             string
@@ -167,7 +164,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 				Name:        "Valida product name",
 				Description: "Valid product description",
 				Price:       decimal.NewFromFloat(10.5),
-				CategoryID:  uuid.New(),
+				CategoryId:  uuid.New(),
 			},
 			image:          validProductImage,
 			wantHttpStatus: http.StatusCreated,
@@ -179,7 +176,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 				Name:        "",
 				Description: "",
 				Price:       decimal.NewFromFloat(-10.5),
-				CategoryID:  uuid.New(),
+				CategoryId:  uuid.New(),
 			},
 			image:          validProductImage,
 			wantHttpStatus: http.StatusUnprocessableEntity,
@@ -197,7 +194,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 				Name:        "Valida product name",
 				Description: "Valid product description",
 				Price:       decimal.NewFromFloat(10.5),
-				CategoryID:  uuid.New(),
+				CategoryId:  uuid.New(),
 			},
 			image:          []byte("invalid product image"),
 			wantHttpStatus: http.StatusUnprocessableEntity,
@@ -222,14 +219,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 			}
 
 			if tt.wantHttpStatus == http.StatusCreated {
-				checkAddProductResponse(
-					t,
-					recorder.Body.Bytes(),
-					tt.productRequest.Name,
-					tt.productRequest.Description,
-					tt.productRequest.Price,
-					tt.productRequest.CategoryID,
-				)
+				checkAddProductResponse(t, recorder.Body, tt.productRequest)
 			} else {
 				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 			}
@@ -259,8 +249,6 @@ func createUpdateProductRequest(t *testing.T, id uuid.UUID, productRequest *rest
 }
 
 func TestProductHandlerUpdateProduct(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name             string
 		service          *fakeProductService
@@ -336,8 +324,6 @@ func creteUpdateImageRouter(service menu.ProductService) *gin.Engine {
 }
 
 func TestProductHandlerUpdateImage(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name             string
 		service          *fakeProductService
@@ -406,8 +392,6 @@ func createDeleteProductRouter(service menu.ProductService) *gin.Engine {
 }
 
 func TestProductHandlerDeleteProduct(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name           string
 		service        *fakeProductService
@@ -476,8 +460,6 @@ func createGetProductsRequest(id *string, categoryId *string) *http.Request {
 }
 
 func TestProductHandlerGetProducts(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name           string
 		service        *fakeProductService

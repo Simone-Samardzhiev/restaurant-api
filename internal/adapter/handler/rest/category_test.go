@@ -88,8 +88,6 @@ func checkAddCategoryResponse(t *testing.T, body []byte, expectedName string) {
 }
 
 func TestCategoryHandlerAddCategory(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name            string
 		service         *fakeCategoryService
@@ -178,7 +176,6 @@ func createUpdateCategoryRequest(t *testing.T, request *rest.UpdateCategoryReque
 }
 
 func TestCategoryHandlerUpdateCategory(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	tests := []struct {
 		name             string
 		service          *fakeCategoryService
@@ -297,7 +294,6 @@ func createDeleteCategoryRouter(service menu.CategoryService) *gin.Engine {
 }
 
 func TestCategoryHandlerDeleteCategory(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	tests := []struct {
 		name             string
 		service          *fakeCategoryService
@@ -416,8 +412,6 @@ func checkGetCategoriesResponse(t *testing.T, body []byte, expectedIds []uuid.UU
 }
 
 func TestCategoryHandlerGetCategories(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name    string
 		service *fakeCategoryService
