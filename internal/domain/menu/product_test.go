@@ -3,7 +3,7 @@ package menu_test
 import (
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"strings"
 	"testing"
 
@@ -36,13 +36,13 @@ func TestParseProductName(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseProductName(test.productName)
-			if test.wantErr {
-				testutils.AssertErrorDetail(t, err, test.wantErrorCode)
+			parsed, err := menu.ParseProductName(tt.productName)
+			if tt.wantErr {
+				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
 			}
 
@@ -50,8 +50,8 @@ func TestParseProductName(t *testing.T) {
 				t.Fatalf("want no error, got %d", err)
 			}
 
-			if test.productName != parsed.String() {
-				t.Fatalf("want name %s, got %s", test.productName, parsed.String())
+			if tt.productName != parsed.String() {
+				t.Fatalf("want name %s, got %s", tt.productName, parsed.String())
 			}
 		})
 	}
@@ -75,19 +75,19 @@ func TestParseProductDescription(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			parsed, err := menu.ParseProductDescription(test.description)
-			if test.wantErr {
-				testutils.AssertErrorDetail(t, err, test.wantErrorCode)
+			parsed, err := menu.ParseProductDescription(tt.description)
+			if tt.wantErr {
+				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
 			}
 			if err != nil {
 				t.Fatalf("want no error, got %d", err)
 			}
-			if test.description != parsed.String() {
-				t.Fatalf("want description %s, got %s", test.description, parsed.String())
+			if tt.description != parsed.String() {
+				t.Fatalf("want description %s, got %s", tt.description, parsed.String())
 			}
 		})
 	}
@@ -112,18 +112,18 @@ func TestParseProductPrice(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			parsed, err := menu.ParseProductPrice(test.price)
-			if test.wantErr {
-				testutils.AssertErrorDetail(t, err, test.wantErrorCode)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsed, err := menu.ParseProductPrice(tt.price)
+			if tt.wantErr {
+				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
 			}
 			if err != nil {
 				t.Fatalf("want no error, got %d", err)
 			}
-			if !test.price.Equal(parsed.Value()) {
-				t.Fatalf("want price %s, got %s", test.price, parsed.Value().String())
+			if !tt.price.Equal(parsed.Value()) {
+				t.Fatalf("want price %s, got %s", tt.price, parsed.Value().String())
 			}
 		})
 	}
@@ -185,20 +185,20 @@ func TestParseProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseProduct(uuid.New(), test.productName, test.description, test.price, uuid.New(), "image/path")
-			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+			parsed, err := menu.ParseProduct(uuid.New(), tt.productName, tt.description, tt.price, uuid.New(), "image/path")
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
 			if err != nil {
 				t.Fatalf("want no error, got %d", err)
 			}
-			checkProduct(t, parsed, test.productName, test.description, test.price)
+			checkProduct(t, parsed, tt.productName, tt.description, tt.price)
 		})
 	}
 }
@@ -285,28 +285,28 @@ func TestParseAddProductRequest(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			parsed, err := menu.ParseAddProductRequest(
-				test.productName,
-				test.description,
-				test.price,
+				tt.productName,
+				tt.description,
+				tt.price,
 				uuid.New(),
 				strings.NewReader("image data"),
-				test.imageType,
+				tt.imageType,
 			)
 
-			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
 			if err != nil {
 				t.Fatalf("want no error, got %d", err)
 			}
-			checkAddProductRequest(t, parsed, test.productName, test.description, test.price, test.imageType)
+			checkAddProductRequest(t, parsed, tt.productName, tt.description, tt.price, tt.imageType)
 		})
 	}
 }
@@ -352,12 +352,12 @@ func TestParseUpdateProductRequest(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := menu.ParseUpdateProductRequest(uuid.New(), test.productName, test.description, test.price, test.categoryId)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			_, err := menu.ParseUpdateProductRequest(uuid.New(), tt.productName, tt.description, tt.price, tt.categoryId)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 			if err != nil {

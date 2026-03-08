@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"strings"
 	"testing"
 
@@ -71,31 +71,28 @@ func (r *fakeProductRepository) DeleteProduct(ctx context.Context, id uuid.UUID)
 	return r.onDeleteProduct(ctx, id)
 }
 
-func (r *fakeProductRepository) GetProducts(ctx context.Context, filter *menu.ProductFilter) ([]menu.Product, error) {
+func (r *fakeProductRepository) GetProducts(_ context.Context, _ *menu.ProductFilter) ([]menu.Product, error) {
 	panic("implement me")
 }
 
 func checkAddProductResult(
 	t *testing.T,
 	product *menu.Product,
-	wantName menu.ProductName,
-	wantDescription menu.ProductDescription,
-	wantPrice menu.ProductPrice,
-	wantCategoryId uuid.UUID,
+	request *menu.AddProductRequest,
 ) {
 	t.Helper()
 
-	if wantName.String() != product.Name.String() {
-		t.Errorf("want name %s, got %s", wantName.String(), product.Name)
+	if request.Name.String() != product.Name.String() {
+		t.Errorf("want name %v, got %v", product.Name, request.Name)
 	}
-	if wantDescription.String() != product.Description.String() {
-		t.Errorf("want description %s, got %s", wantDescription.String(), product.Description)
+	if request.Description.String() != product.Description.String() {
+		t.Errorf("want description %v, got %v", product.Description, request.Description)
 	}
-	if wantPrice.Value() != product.Price.Value() {
-		t.Errorf("want price %s, got %s", wantPrice.Value(), product.Price.Value())
+	if !request.Price.Value().Equal(product.Price.Value()) {
+		t.Errorf("want price %v, got %v", product.Price, request.Price)
 	}
-	if wantCategoryId != product.CategoryId {
-		t.Errorf("want category id %s, got %s", wantCategoryId.String(), product.CategoryId)
+	if request.CategoryId != product.CategoryId {
+		t.Errorf("want category id %v, got %v", product.CategoryId, request.CategoryId)
 	}
 }
 
@@ -112,7 +109,7 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			request: testutils.Must(menu.ParseAddProductRequest(
+			request: test.Must(menu.ParseAddProductRequest(
 				"Valid product name",
 				"Valid product description",
 				decimal.NewFromFloat(10.5),
@@ -140,7 +137,7 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 		},
 		{
 			name: "error saving product",
-			request: testutils.Must(menu.ParseAddProductRequest(
+			request: test.Must(menu.ParseAddProductRequest(
 				"Valid product name",
 				"Valid product description",
 				decimal.NewFromFloat(10.5),
@@ -168,22 +165,22 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			service := menu.NewDefaultProductService(test.productRepository, test.imageRepository)
-			product, err := service.AddProduct(context.Background(), test.request)
+			service := menu.NewDefaultProductService(tt.productRepository, tt.imageRepository)
+			product, err := service.AddProduct(context.Background(), tt.request)
 
-			if test.wantDeleteImageCount != test.imageRepository.deleteImageCounter {
-				t.Errorf("want delete image count %d, got %d", test.wantDeleteImageCount, test.imageRepository.deleteImageCounter)
+			if tt.wantDeleteImageCount != tt.imageRepository.deleteImageCounter {
+				t.Errorf("want delete image count %d, got %d", tt.wantDeleteImageCount, tt.imageRepository.deleteImageCounter)
 			}
 
-			if test.wantErr {
-				if test.wantDeleteImageCount != test.imageRepository.deleteImageCounter {
-					t.Errorf("want delete image called %d, got %d", test.wantDeleteImageCount, test.imageRepository.deleteImageCounter)
+			if tt.wantErr {
+				if tt.wantDeleteImageCount != tt.imageRepository.deleteImageCounter {
+					t.Errorf("want delete image called %d, got %d", tt.wantDeleteImageCount, tt.imageRepository.deleteImageCounter)
 				}
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode)
 				return
 			}
 
@@ -191,13 +188,7 @@ func TestDefaultProductServiceAddProduct(t *testing.T) {
 				t.Fatalf("want no error, got %v", err)
 			}
 
-			checkAddProductResult(
-				t, product,
-				test.request.Name,
-				test.request.Description,
-				test.request.Price,
-				test.request.CategoryId,
-			)
+			checkAddProductResult(t, product, tt.request)
 		})
 	}
 }
@@ -266,25 +257,25 @@ func TestDefaultProductServiceUpdateImage(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			service := menu.NewDefaultProductService(test.productRepository, test.imageRepository)
-			path, err := service.UpdateImage(context.Background(), test.request)
-			if test.wantDeleteImageCount != test.imageRepository.deleteImageCounter {
-				t.Errorf("want delete image count %d, got %d", test.wantDeleteImageCount, test.imageRepository.deleteImageCounter)
+			service := menu.NewDefaultProductService(tt.productRepository, tt.imageRepository)
+			path, err := service.UpdateImage(context.Background(), tt.request)
+			if tt.wantDeleteImageCount != tt.imageRepository.deleteImageCounter {
+				t.Errorf("want delete image count %d, got %d", tt.wantDeleteImageCount, tt.imageRepository.deleteImageCounter)
 			}
 
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode)
 				return
 			}
 			if err != nil {
 				t.Fatalf("want no error, got %v", err)
 			}
-			if test.wantPath != path {
-				t.Errorf("want path %s, got %s", test.wantPath, path)
+			if tt.wantPath != path {
+				t.Errorf("want path %s, got %s", tt.wantPath, path)
 			}
 		})
 	}
@@ -339,18 +330,18 @@ func TestDefaultProductServiceDeleteProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			service := menu.NewDefaultProductService(test.productRepository, test.imageRepository)
+			service := menu.NewDefaultProductService(tt.productRepository, tt.imageRepository)
 			err := service.DeleteProduct(context.Background(), uuid.New())
-			if test.wantDeleteImageCount != test.imageRepository.deleteImageCounter {
-				t.Errorf("want delete image count %d, got %d", test.wantDeleteImageCount, test.imageRepository.deleteImageCounter)
+			if tt.wantDeleteImageCount != tt.imageRepository.deleteImageCounter {
+				t.Errorf("want delete image count %d, got %d", tt.wantDeleteImageCount, tt.imageRepository.deleteImageCounter)
 			}
 
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode)
 				return
 			}
 			if err != nil {

@@ -3,7 +3,7 @@ package menu_test
 import (
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 
 	"github.com/google/uuid"
@@ -34,21 +34,21 @@ func TestParseCategoryName(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseCategoryName(test.categoryName)
-			if test.wantErr {
-				testutils.AssertErrorDetail(t, err, test.wantErrorCode)
+			parsed, err := menu.ParseCategoryName(tt.categoryName)
+			if tt.wantErr {
+				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
 			}
 
 			if err != nil {
 				return
 			}
-			if parsed.String() != test.categoryName {
-				t.Fatalf("want name %s, got %s", test.categoryName, parsed.String())
+			if parsed.String() != tt.categoryName {
+				t.Fatalf("want name %s, got %s", tt.categoryName, parsed.String())
 			}
 		})
 	}
@@ -82,14 +82,14 @@ func TestParseCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseCategory(uuid.New(), test.categoryName)
+			parsed, err := menu.ParseCategory(uuid.New(), tt.categoryName)
 
-			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
@@ -97,8 +97,8 @@ func TestParseCategory(t *testing.T) {
 				t.Fatalf("want no error, got : %v", err)
 			}
 
-			if parsed.Name.String() != test.categoryName {
-				t.Fatalf("want category name %s, got %s", test.categoryName, parsed.Name.String())
+			if parsed.Name.String() != tt.categoryName {
+				t.Fatalf("want category name %s, got %s", tt.categoryName, parsed.Name.String())
 			}
 		})
 	}
@@ -132,14 +132,14 @@ func TestParseAddCategoryRequest(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseAddCategoryRequest(test.categoryName)
+			parsed, err := menu.ParseAddCategoryRequest(tt.categoryName)
 
-			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
@@ -147,8 +147,8 @@ func TestParseAddCategoryRequest(t *testing.T) {
 				t.Fatalf("want no error, got: %v", err)
 			}
 
-			if parsed.Name.String() != test.categoryName {
-				t.Fatalf("want category name %s, got %s", test.categoryName, parsed.Name.String())
+			if parsed.Name.String() != tt.categoryName {
+				t.Fatalf("want category name %s, got %s", tt.categoryName, parsed.Name.String())
 			}
 		})
 	}
@@ -192,13 +192,13 @@ func TestParseUpdateCategoryRequest(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := menu.ParseUpdateCategoryRequest(uuid.New(), test.categoryName)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			result, err := menu.ParseUpdateCategoryRequest(uuid.New(), tt.categoryName)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
@@ -206,8 +206,8 @@ func TestParseUpdateCategoryRequest(t *testing.T) {
 				t.Fatalf("want no error, got : %v", err)
 			}
 
-			if *test.categoryName != result.Name.String() {
-				t.Fatalf("want category name %s, got %s", *test.categoryName, result.Name.String())
+			if *tt.categoryName != result.Name.String() {
+				t.Fatalf("want category name %s, got %s", *tt.categoryName, result.Name.String())
 			}
 		})
 	}

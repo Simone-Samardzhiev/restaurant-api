@@ -13,7 +13,7 @@ import (
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -208,30 +208,30 @@ func TestProductHandlerAddProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createAddProductRouter(test.service)
-			request := creatAddProductRequest(t, test.productRequest, test.image)
+			router := createAddProductRouter(tt.service)
+			request := creatAddProductRequest(t, tt.productRequest, tt.image)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if recorder.Code != test.wantHttpStatus {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if recorder.Code != tt.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
 
-			if test.wantHttpStatus == http.StatusCreated {
+			if tt.wantHttpStatus == http.StatusCreated {
 				checkAddProductResponse(
 					t,
 					recorder.Body.Bytes(),
-					test.productRequest.Name,
-					test.productRequest.Description,
-					test.productRequest.Price,
-					test.productRequest.CategoryID,
+					tt.productRequest.Name,
+					tt.productRequest.Description,
+					tt.productRequest.Price,
+					tt.productRequest.CategoryID,
 				)
 			} else {
-				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
+				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 			}
 		})
 	}
@@ -304,23 +304,23 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createUpdateProductRouter(test.service)
-			request := createUpdateProductRequest(t, test.id, test.productRequest)
+			router := createUpdateProductRouter(tt.service)
+			request := createUpdateProductRequest(t, tt.id, tt.productRequest)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if recorder.Code != test.wantHttpStatus {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if recorder.Code != tt.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
-			if test.wantHttpStatus == http.StatusNoContent {
+			if tt.wantHttpStatus == http.StatusNoContent {
 				return
 			}
 
-			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
+			test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 		})
 	}
 }
@@ -370,26 +370,26 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := creteUpdateImageRouter(test.service)
-			request := httptest.NewRequest(http.MethodPut, "/"+test.id.String()+"/image", bytes.NewReader(test.image))
+			router := creteUpdateImageRouter(tt.service)
+			request := httptest.NewRequest(http.MethodPut, "/"+tt.id.String()+"/image", bytes.NewReader(tt.image))
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if recorder.Code != test.wantHttpStatus {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if recorder.Code != tt.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
 
-			if test.wantHttpStatus == http.StatusCreated {
+			if tt.wantHttpStatus == http.StatusCreated {
 				var response rest.UpdateImageResponse
 				if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
 					t.Fatalf("error decoding response: %v", err)
 				}
 			} else {
-				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
+				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 			}
 		})
 	}
@@ -433,22 +433,22 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createDeleteProductRouter(test.service)
-			request := httptest.NewRequest(http.MethodDelete, "/product/"+test.id, nil)
+			router := createDeleteProductRouter(tt.service)
+			request := httptest.NewRequest(http.MethodDelete, "/product/"+tt.id, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
-			if recorder.Code != test.wantHttpStatus {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if recorder.Code != tt.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
 
-			if test.wantHttpStatus == http.StatusOK {
+			if tt.wantHttpStatus == http.StatusOK {
 				return
 			}
-			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode)
+			test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode)
 		})
 	}
 }
@@ -506,24 +506,24 @@ func TestProductHandlerGetProducts(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createGetProductsRouter(test.service)
-			request := createGetProductsRequest(test.id, test.categoryId)
+			router := createGetProductsRouter(tt.service)
+			request := createGetProductsRequest(tt.id, tt.categoryId)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
-			if recorder.Code != test.wantHttpStatus {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if recorder.Code != tt.wantHttpStatus {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
-			if test.wantHttpStatus == http.StatusOK {
+			if tt.wantHttpStatus == http.StatusOK {
 				var response []rest.ProductResponse
 				if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
 					t.Fatalf("error decoding response: %v", err)
 				}
 			} else {
-				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode)
+				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode)
 			}
 		})
 	}

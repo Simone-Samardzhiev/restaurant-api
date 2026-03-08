@@ -3,7 +3,7 @@ package menu_test
 import (
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 
 	"github.com/google/uuid"
@@ -36,20 +36,20 @@ func TestParseImageType(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseImageType(test.imageType)
-			if test.wantErr {
-				testutils.AssertErrorDetail(t, err, test.wantErrorCode)
+			parsed, err := menu.ParseImageType(tt.imageType)
+			if tt.wantErr {
+				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
 			}
 			if err != nil {
 				t.Fatalf("want no error, got %v", err)
 			}
-			if parsed.String() != test.imageType {
-				t.Fatalf("want image type %s, got %s", test.imageType, parsed.String())
+			if parsed.String() != tt.imageType {
+				t.Fatalf("want image type %s, got %s", tt.imageType, parsed.String())
 			}
 		})
 	}
@@ -78,21 +78,21 @@ func TestParseUpdateImageRequest(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := menu.ParseUpdateImageRequest(uuid.New(), nil, test.imageType)
-			if test.wantErr {
-				testutils.AssertError(t, err, domain.ErrorKindValidation, test.wantErrorCode, test.wantDetailsCodes...)
+			parsed, err := menu.ParseUpdateImageRequest(uuid.New(), nil, tt.imageType)
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 			if err != nil {
 				t.Fatalf("want no error, got %v", err)
 			}
 
-			if test.imageType != parsed.ImageType.String() {
-				t.Fatalf("want image type %s, got %s", test.imageType, parsed.ImageType.String())
+			if tt.imageType != parsed.ImageType.String() {
+				t.Fatalf("want image type %s, got %s", tt.imageType, parsed.ImageType.String())
 			}
 		})
 	}

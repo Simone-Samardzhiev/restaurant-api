@@ -9,7 +9,7 @@ import (
 	"context"
 	_ "embed"
 
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 
 	"github.com/google/uuid"
 )
@@ -24,26 +24,26 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			request: testutils.Must(menu.ParseAddCategoryRequest("New category")),
+			request: test.Must(menu.ParseAddCategoryRequest("New category")),
 		},
 		{
 			name:          "name already exists",
-			request:       testutils.Must(menu.ParseAddCategoryRequest("Appetizers")),
+			request:       test.Must(menu.ParseAddCategoryRequest("Appetizers")),
 			wantErr:       true,
 			wantErrorKind: domain.ErrorKindConflict,
 			wantErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewCategoryRepository(database)
-			result, err := repo.SaveCategory(context.Background(), test.request)
+			result, err := repo.SaveCategory(context.Background(), tt.request)
 
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode)
 				return
 			}
 
@@ -51,8 +51,8 @@ func TestCategoryRepositoryAddCategory(t *testing.T) {
 				t.Fatalf("want no error, got: %v", err)
 			}
 
-			if test.request.Name.String() != result.Name.String() {
-				t.Errorf("wan name %v, got %v", test.request.Name.String(), result.Name.String())
+			if tt.request.Name.String() != result.Name.String() {
+				t.Errorf("wan name %v, got %v", tt.request.Name.String(), result.Name.String())
 			}
 		})
 	}
@@ -69,19 +69,19 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			request: testutils.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("11111111-1111-1111-1111-111111111111"), new("New name"))),
+			request: test.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("11111111-1111-1111-1111-111111111111"), new("New name"))),
 			wantErr: false,
 		},
 		{
 			name:              "name already exists",
-			request:           testutils.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("22222222-2222-2222-2222-222222222222"), new("Appetizers"))),
+			request:           test.Must(menu.ParseUpdateCategoryRequest(uuid.MustParse("22222222-2222-2222-2222-222222222222"), new("Appetizers"))),
 			wantErr:           true,
 			expectedErrorKind: domain.ErrorKindConflict,
 			expectedErrorCode: domain.ErrorCodeCategoryNameConflict,
 		},
 		{
 			name:                 "not found",
-			request:              testutils.Must(menu.ParseUpdateCategoryRequest(uuid.New(), new("New name"))),
+			request:              test.Must(menu.ParseUpdateCategoryRequest(uuid.New(), new("New name"))),
 			wantErr:              true,
 			expectedErrorKind:    domain.ErrorKindNotFound,
 			expectedErrorCode:    domain.ErrorCodeCategoryNotFound,
@@ -89,14 +89,14 @@ func TestCategoryRepositoryUpdateCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewCategoryRepository(database)
-			err := repo.UpdateCategory(context.Background(), test.request)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.expectedErrorKind, test.expectedErrorCode, test.expectedDetailsCodes...)
+			err := repo.UpdateCategory(context.Background(), tt.request)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.expectedErrorKind, tt.expectedErrorCode, tt.expectedDetailsCodes...)
 				return
 			}
 
@@ -137,14 +137,14 @@ func TestCategoryRepositoryDeleteCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewCategoryRepository(database)
-			err := repo.DeleteCategory(context.Background(), test.id)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.expectedErrorKind, test.expectedErrorCode, test.expectedDetailsCodes...)
+			err := repo.DeleteCategory(context.Background(), tt.id)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.expectedErrorKind, tt.expectedErrorCode, tt.expectedDetailsCodes...)
 				return
 			}
 
@@ -184,17 +184,17 @@ func TestCategoryRepositoryGetCategories(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewCategoryRepository(database)
-			categories, err := repo.GetCategories(context.Background(), test.filter)
+			categories, err := repo.GetCategories(context.Background(), tt.filter)
 			if err != nil {
 				t.Fatalf("want no error, got: %v", err)
 			}
 
-			testutils.CheckEntities(t, test.wantIds, categories, func(category menu.Category) uuid.UUID {
+			test.CheckEntities(t, tt.wantIds, categories, func(category menu.Category) uuid.UUID {
 				return category.Id
 			})
 		})

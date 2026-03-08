@@ -1,4 +1,4 @@
-package testutils
+package test
 
 // Must is a helper function for functions with (value, error) signature
 // returning the value and panicking if the error is not nil.

@@ -11,7 +11,7 @@ import (
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -102,7 +102,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			name: "success",
 			service: &fakeCategoryService{
 				onAddCategory: func(_ context.Context, request *menu.AddCategoryRequest) (*menu.Category, error) {
-					return testutils.Must(menu.ParseCategory(uuid.New(), "New Category")), nil
+					return test.Must(menu.ParseCategory(uuid.New(), "New Category")), nil
 				},
 			},
 			request:        rest.AddCategoryRequest{Name: "New Category"},
@@ -137,23 +137,23 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createAddCategoryRouter(test.service)
-			request := createAddCategoryRequest(t, &test.request)
+			router := createAddCategoryRouter(tt.service)
+			request := createAddCategoryRequest(t, &tt.request)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if test.wantHttpStatus != recorder.Code {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if tt.wantHttpStatus != recorder.Code {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
 
-			if test.wantHttpStatus == http.StatusCreated {
-				checkAddCategoryResponse(t, recorder.Body.Bytes(), test.request.Name)
+			if tt.wantHttpStatus == http.StatusCreated {
+				checkAddCategoryResponse(t, recorder.Body.Bytes(), tt.request.Name)
 			} else {
-				testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailCodes...)
+				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailCodes...)
 			}
 		})
 	}
@@ -266,23 +266,23 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createUpdateCategoryRouter(test.service)
-			request := createUpdateCategoryRequest(t, &test.request, test.id)
+			router := createUpdateCategoryRouter(tt.service)
+			request := createUpdateCategoryRequest(t, &tt.request, tt.id)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if test.wantHttpStatus != recorder.Code {
-				t.Fatalf("want http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if tt.wantHttpStatus != recorder.Code {
+				t.Fatalf("want http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
-			if test.wantHttpStatus == http.StatusNoContent {
+			if tt.wantHttpStatus == http.StatusNoContent {
 				return
 			}
 
-			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
+			test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 		})
 	}
 }
@@ -353,24 +353,24 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createDeleteCategoryRouter(test.service)
-			request := httptest.NewRequest(http.MethodDelete, "/category/"+test.id.String(), nil)
+			router := createDeleteCategoryRouter(tt.service)
+			request := httptest.NewRequest(http.MethodDelete, "/category/"+tt.id.String(), nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
-			if test.wantHttpStatus != recorder.Code {
-				t.Fatalf("expected http status %d, got %d", test.wantHttpStatus, recorder.Code)
+			if tt.wantHttpStatus != recorder.Code {
+				t.Fatalf("expected http status %d, got %d", tt.wantHttpStatus, recorder.Code)
 			}
 
-			if test.wantHttpStatus == http.StatusOK {
+			if tt.wantHttpStatus == http.StatusOK {
 				return
 			}
 
-			testutils.CheckErrorResponse(t, recorder.Body, test.wantErrorCode, test.wantDetailsCodes...)
+			test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 		})
 	}
 }
@@ -429,8 +429,8 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 			service: &fakeCategoryService{
 				onGetCategories: func(ctx context.Context, filter *menu.CategoryFilter) ([]menu.Category, error) {
 					return []menu.Category{
-						*testutils.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
-						*testutils.Must(menu.ParseCategory(uuid.MustParse("22222222-2222-2222-2222-222222222222"), "Category 2")),
+						*test.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
+						*test.Must(menu.ParseCategory(uuid.MustParse("22222222-2222-2222-2222-222222222222"), "Category 2")),
 					}, nil
 				},
 			},
@@ -452,7 +452,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 					}
 
 					return []menu.Category{
-						*testutils.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
+						*test.Must(menu.ParseCategory(uuid.MustParse("11111111-1111-1111-1111-111111111111"), "Category 1")),
 					}, nil
 				},
 			},
@@ -463,14 +463,14 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createGetCategoriesRouter(test.service)
+			router := createGetCategoriesRouter(tt.service)
 			query := url.Values{}
-			if test.id != nil {
-				query.Set("id", test.id.String())
+			if tt.id != nil {
+				query.Set("id", tt.id.String())
 			}
 			req := httptest.NewRequest(http.MethodGet, "/categories?"+query.Encode(), nil)
 			recorder := httptest.NewRecorder()
@@ -480,7 +480,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 				t.Fatalf("want http status %d, got %d", http.StatusOK, recorder.Code)
 			}
 
-			checkGetCategoriesResponse(t, recorder.Body.Bytes(), test.wantIds)
+			checkGetCategoriesResponse(t, recorder.Body.Bytes(), tt.wantIds)
 		})
 	}
 }

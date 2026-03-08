@@ -9,7 +9,7 @@ import (
 	"restaurant/internal/adapter/storage/local"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 )
 
@@ -52,6 +52,6 @@ func TestImageRepositoryDeleteImage(t *testing.T) {
 	}
 
 	if err = repository.DeleteImage(context.Background(), path); err != nil {
-		testutils.AssertError(t, err, domain.ErrorKindNotFound, domain.ErrorCodeImageNotFound)
+		test.AssertError(t, err, domain.ErrorKindNotFound, domain.ErrorCodeImageNotFound)
 	}
 }

@@ -4,7 +4,7 @@ import (
 	"restaurant/internal/adapter/storage/postgres"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
-	"restaurant/internal/testutils"
+	"restaurant/internal/test"
 	"testing"
 
 	"context"
@@ -23,9 +23,9 @@ func mustParseSaveProductRequest(
 	imagePath string,
 ) *menu.SaveProductRequest {
 	return &menu.SaveProductRequest{
-		Name:        testutils.Must(menu.ParseProductName(name)),
-		Description: testutils.Must(menu.ParseProductDescription(description)),
-		Price:       testutils.Must(menu.ParseProductPrice(price)),
+		Name:        test.Must(menu.ParseProductName(name)),
+		Description: test.Must(menu.ParseProductDescription(description)),
+		Price:       test.Must(menu.ParseProductPrice(price)),
 		CategoryId:  categoryId,
 		ImagePath:   imagePath,
 	}
@@ -100,21 +100,21 @@ func TestProductRepositorySaveProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewProductRepository(database)
-			result, err := repo.SaveProduct(context.Background(), test.request)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			result, err := repo.SaveProduct(context.Background(), tt.request)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
 			if err != nil {
 				t.Fatalf("want no error, got : %v", err)
 			}
-			checkSaveProductResult(t, test.request, result)
+			checkSaveProductResult(t, tt.request, result)
 		})
 	}
 }
@@ -130,7 +130,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			request: testutils.Must(menu.ParseUpdateProductRequest(
+			request: test.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("New product name"),
 				nil, nil, nil,
@@ -138,7 +138,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		},
 		{
 			name: "name already exists",
-			request: testutils.Must(menu.ParseUpdateProductRequest(
+			request: test.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				new("Garlic Bread"),
 				nil, nil, nil,
@@ -149,7 +149,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		},
 		{
 			name: "category not found",
-			request: testutils.Must(menu.ParseUpdateProductRequest(
+			request: test.Must(menu.ParseUpdateProductRequest(
 				uuid.MustParse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
 				nil, nil, nil,
 				new(uuid.New()),
@@ -161,7 +161,7 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		},
 		{
 			name: "product not found",
-			request: testutils.Must(menu.ParseUpdateProductRequest(
+			request: test.Must(menu.ParseUpdateProductRequest(
 				uuid.New(),
 				new("New product name"),
 				nil, nil, nil,
@@ -173,13 +173,13 @@ func TestProductRepositoryUpdateProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 			repo := postgres.NewProductRepository(database)
-			err := repo.UpdateProduct(context.Background(), test.request)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			err := repo.UpdateProduct(context.Background(), tt.request)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 			if err != nil {
@@ -217,22 +217,22 @@ func TestProductRepositoryUpdateImagePath(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 
 			repo := postgres.NewProductRepository(database)
-			result, err := repo.UpdateImagePath(context.Background(), test.id, test.path)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			result, err := repo.UpdateImagePath(context.Background(), tt.id, tt.path)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
 			if err != nil {
 				t.Fatalf("want no error, got: %v", err)
 			}
-			if test.wantPath != result {
-				t.Fatalf("want %v, got %v", test.wantPath, result)
+			if tt.wantPath != result {
+				t.Fatalf("want %v, got %v", tt.wantPath, result)
 			}
 		})
 	}
@@ -270,15 +270,15 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 			seedOrderTables(t)
 
 			repo := postgres.NewProductRepository(database)
-			result, err := repo.DeleteProduct(context.Background(), test.id)
-			if test.wantErr {
-				testutils.AssertError(t, err, test.wantErrorKind, test.wantErrorCode, test.wantDetailsCodes...)
+			result, err := repo.DeleteProduct(context.Background(), tt.id)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
 			}
 
@@ -286,8 +286,8 @@ func TestProductRepositoryDeleteProduct(t *testing.T) {
 				t.Fatalf("want no error, got: %v", err)
 			}
 
-			if test.wantPath != result {
-				t.Fatalf("want %v, got %v", test.wantPath, result)
+			if tt.wantPath != result {
+				t.Fatalf("want %v, got %v", tt.wantPath, result)
 			}
 		})
 	}
@@ -323,15 +323,15 @@ func TestProductRepositorGetProducts(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			seedMenuTables(t)
 			repo := postgres.NewProductRepository(database)
-			products, err := repo.GetProducts(context.Background(), test.filer)
+			products, err := repo.GetProducts(context.Background(), tt.filer)
 			if err != nil {
 				t.Fatalf("want no error, got: %v", err)
 			}
-			testutils.CheckEntities(t, test.wantIds, products, func(product menu.Product) uuid.UUID {
+			test.CheckEntities(t, tt.wantIds, products, func(product menu.Product) uuid.UUID {
 				return product.Id
 			})
 		})
