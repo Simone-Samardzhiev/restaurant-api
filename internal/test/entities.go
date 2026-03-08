@@ -18,7 +18,7 @@ func CheckEntities[T any, K comparable](t testing.TB, wantIds []K, entities []T,
 
 	for _, entity := range entities {
 		if counter[getId(entity)] == 0 {
-			t.Errorf("unexpected : %v", getId(entity))
+			t.Errorf("unexpected id: %v", getId(entity))
 			continue
 		}
 		counter[getId(entity)]--

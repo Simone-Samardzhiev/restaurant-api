@@ -3,9 +3,13 @@ package test
 import (
 	"encoding/json"
 	"io"
+	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
+	"restaurant/internal/domain/menu"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CheckErrorResponse checks if the response is [middleware.ErrorResponse] and
@@ -58,4 +62,22 @@ func MatchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middl
 			t.Errorf("missing error code: %s", code)
 		}
 	}
+}
+
+// CreateCategoryRouter creates a new [gin.Engine] with router for [rest.CategoryHandler].
+//
+// Path to each method:
+//   - POST /categories - [rest.CategoryHandler.AddCategory].
+//   - PATCH /categories/:id - [rest.CategoryHandler.UpdateCategory].
+//   - DELETE /categories/:id - [rest.CategoryHandler.DeleteCategory].
+//   - GET /categories - [rest.CategoryHandler.GetCategories].
+func CreateCategoryRouter(service menu.CategoryService) *gin.Engine {
+	handler := rest.NewCategoryHandler(service)
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.POST("/categories", handler.AddCategory)
+	router.PATCH("/categories/:id", handler.UpdateCategory)
+	router.DELETE("/categories/:id", handler.DeleteCategory)
+	router.GET("/categories", handler.GetCategories)
+	return router
 }

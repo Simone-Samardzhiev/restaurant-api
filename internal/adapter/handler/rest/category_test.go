@@ -4,17 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"restaurant/internal/adapter/handler/rest"
-	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
 	"restaurant/internal/test"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -54,36 +53,17 @@ func (s *fakeCategoryService) GetCategories(ctx context.Context, filter *menu.Ca
 	return s.onGetCategories(ctx, filter)
 }
 
-// createAddCategoryRouter creates a gin router with /category path for [CategoryHandler.AddCategory].
-func createAddCategoryRouter(service menu.CategoryService) *gin.Engine {
-	handler := rest.NewCategoryHandler(service)
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.POST("/category", handler.AddCategory)
-	return router
-}
-
-// createAddCategoryRequest creates an [http.Request] for adding a category.
-func createAddCategoryRequest(t *testing.T, request *rest.AddCategoryRequest) *http.Request {
-	body, err := json.Marshal(request)
-	if err != nil {
-		t.Fatalf("failed to encode request: %v", err)
-	}
-
-	return httptest.NewRequest(http.MethodPost, "/category", bytes.NewReader(body))
-}
-
 // checkAddCategoryResponse checks if response body is [rest.CategoryResponse] and validates the name.
-func checkAddCategoryResponse(t *testing.T, body []byte, expectedName string) {
+func checkAddCategoryResponse(t *testing.T, body io.Reader, expectedName string) {
 	t.Helper()
 
-	var response rest.CategoryResponse
-	if err := json.Unmarshal(body, &response); err != nil {
+	var res rest.CategoryResponse
+	if err := json.NewDecoder(body).Decode(&res); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	if response.Name != expectedName {
-		t.Fatalf("want name %s, got %s", expectedName, response.Name)
+	if res.Name != expectedName {
+		t.Fatalf("want name %s, got %s", expectedName, res.Name)
 	}
 }
 
@@ -139,8 +119,13 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createAddCategoryRouter(tt.service)
-			request := createAddCategoryRequest(t, &tt.request)
+			body, err := json.Marshal(tt.request)
+			if err != nil {
+				t.Fatalf("failed to encode request body: %v", err)
+			}
+
+			request := httptest.NewRequest(http.MethodPost, "/categories", bytes.NewReader(body))
+			router := test.CreateCategoryRouter(tt.service)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -149,7 +134,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			}
 
 			if tt.wantHttpStatus == http.StatusCreated {
-				checkAddCategoryResponse(t, recorder.Body.Bytes(), tt.request.Name)
+				checkAddCategoryResponse(t, recorder.Body, tt.request.Name)
 			} else {
 				test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailCodes...)
 			}
@@ -157,29 +142,11 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 	}
 }
 
-// createUpdateCategoryRouter creates a gin router with /category/:id for [CategoryHandler.UpdateCategory].
-func createUpdateCategoryRouter(service menu.CategoryService) *gin.Engine {
-	handler := rest.NewCategoryHandler(service)
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.PATCH("/category/:id", handler.UpdateCategory)
-	return router
-}
-
-// createUpdateCategoryRequest creates a request for updating a category.
-func createUpdateCategoryRequest(t *testing.T, request *rest.UpdateCategoryRequest, id uuid.UUID) *http.Request {
-	body, err := json.Marshal(request)
-	if err != nil {
-		t.Fatalf("failed to encode request: %v", err)
-	}
-	return httptest.NewRequest(http.MethodPatch, "/category/"+id.String(), bytes.NewBuffer(body))
-}
-
 func TestCategoryHandlerUpdateCategory(t *testing.T) {
 	tests := []struct {
 		name             string
 		service          *fakeCategoryService
-		id               uuid.UUID
+		id               string
 		request          rest.UpdateCategoryRequest
 		wantHttpStatus   int
 		wantErrorCode    domain.ErrorCode
@@ -192,7 +159,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 					return nil
 				},
 			},
-			id: uuid.New(),
+			id: uuid.NewString(),
 			request: rest.UpdateCategoryRequest{
 				Name: new("New Name"),
 			},
@@ -203,7 +170,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			request: rest.UpdateCategoryRequest{
 				Name: new("na"),
 			},
-			id:               uuid.New(),
+			id:               uuid.NewString(),
 			wantHttpStatus:   http.StatusUnprocessableEntity,
 			wantErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooShort},
@@ -213,7 +180,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			request: rest.UpdateCategoryRequest{
 				Name: new("CategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategoryCategory"),
 			},
-			id:               uuid.New(),
+			id:               uuid.NewString(),
 			wantHttpStatus:   http.StatusUnprocessableEntity,
 			wantErrorCode:    domain.ErrorCodeInvalidCategoryUpdate,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNameTooLong},
@@ -221,12 +188,12 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		{
 			name:           "update has not data",
 			request:        rest.UpdateCategoryRequest{},
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  domain.ErrorCodeNoData,
 		},
 		{
-			name: "category already exists",
+			name: "category name already exists",
 			service: &fakeCategoryService{
 				onUpdateCategory: func(ctx context.Context, request *menu.UpdateCategoryRequest) error {
 					return domain.NewConflictError("category name already used", domain.ErrorCodeCategoryNameConflict, nil)
@@ -235,7 +202,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			request: rest.UpdateCategoryRequest{
 				Name: new("Used name"),
 			},
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			wantHttpStatus: http.StatusConflict,
 			wantErrorCode:  domain.ErrorCodeCategoryNameConflict,
 		},
@@ -253,7 +220,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 					)
 				},
 			},
-			id: uuid.New(),
+			id: uuid.NewString(),
 			request: rest.UpdateCategoryRequest{
 				Name: new("New Name"),
 			},
@@ -261,14 +228,28 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			wantErrorCode:    domain.ErrorCodeCategoryNotFound,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
 		},
+		{
+			name:    "invalid id",
+			service: &fakeCategoryService{},
+			id:      "invalid",
+			request: rest.UpdateCategoryRequest{
+				Name: new("New Name"),
+			},
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createUpdateCategoryRouter(tt.service)
-			request := createUpdateCategoryRequest(t, &tt.request, tt.id)
+			body, err := json.Marshal(tt.request)
+			if err != nil {
+				t.Fatalf("failed to encode request body: %v", err)
+			}
+			router := test.CreateCategoryRouter(tt.service)
+			request := httptest.NewRequest(http.MethodPatch, "/categories/"+tt.id, bytes.NewReader(body))
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -278,26 +259,16 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			if tt.wantHttpStatus == http.StatusNoContent {
 				return
 			}
-
 			test.CheckErrorResponse(t, recorder.Body, tt.wantErrorCode, tt.wantDetailsCodes...)
 		})
 	}
-}
-
-// createUpdateCategoryRouter creates a gin router with /category/:id for [CategoryHandler.DeleteCategory].
-func createDeleteCategoryRouter(service menu.CategoryService) *gin.Engine {
-	handler := rest.NewCategoryHandler(service)
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.DELETE("/category/:id", handler.DeleteCategory)
-	return router
 }
 
 func TestCategoryHandlerDeleteCategory(t *testing.T) {
 	tests := []struct {
 		name             string
 		service          *fakeCategoryService
-		id               uuid.UUID
+		id               string
 		wantHttpStatus   int
 		wantErrorCode    domain.ErrorCode
 		wantDetailsCodes []domain.ErrorCode
@@ -309,7 +280,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 					return nil
 				},
 			},
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			wantHttpStatus: http.StatusOK,
 		},
 		{
@@ -326,7 +297,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 					)
 				},
 			},
-			id:               uuid.New(),
+			id:               uuid.NewString(),
 			wantHttpStatus:   http.StatusNotFound,
 			wantErrorCode:    domain.ErrorCodeCategoryNotFound,
 			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeCategoryNotFoundByID},
@@ -343,9 +314,16 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 				},
 			},
 
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			wantHttpStatus: http.StatusConflict,
 			wantErrorCode:  domain.ErrorCodeCategoryHasLinkedProducts,
+		},
+		{
+			name:           "invalid id",
+			service:        &fakeCategoryService{},
+			id:             "invalid",
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
 		},
 	}
 
@@ -353,8 +331,8 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createDeleteCategoryRouter(tt.service)
-			request := httptest.NewRequest(http.MethodDelete, "/category/"+tt.id.String(), nil)
+			router := test.CreateCategoryRouter(tt.service)
+			request := httptest.NewRequest(http.MethodDelete, "/categories/"+tt.id, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -371,44 +349,19 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 	}
 }
 
-func createGetCategoriesRouter(service menu.CategoryService) *gin.Engine {
-	handler := rest.NewCategoryHandler(service)
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.GET("/categories", handler.GetCategories)
-	return router
-}
-
-func checkGetCategoriesResponse(t *testing.T, body []byte, expectedIds []uuid.UUID) {
-	var response []rest.CategoryResponse
-	if err := json.Unmarshal(body, &response); err != nil {
+func checkGetCategoriesResponse(t *testing.T, body io.Reader, wantIds []uuid.UUID) {
+	var resp []rest.CategoryResponse
+	if err := json.NewDecoder(body).Decode(&resp); err != nil {
 		t.Fatalf("error decoding response body: %s", err)
 	}
 
-	if len(response) != len(expectedIds) {
-		t.Fatalf("expected response to have %d items, got %d", len(expectedIds), len(response))
+	if len(resp) != len(wantIds) {
+		t.Fatalf("expected resp to have %d items, got %d", len(wantIds), len(resp))
 	}
 
-	counter := make(map[uuid.UUID]int)
-	for _, id := range expectedIds {
-		counter[id]++
-	}
-
-	for _, category := range response {
-		if counter[category.Id] == 0 {
-			t.Errorf("unexpected category id: %s", category.Id)
-			continue
-		}
-
-		counter[category.Id]--
-	}
-
-	for id, count := range counter {
-		if count != 0 {
-			t.Errorf("missing category with id: %s", id)
-		}
-	}
-
+	test.CheckEntities(t, wantIds, resp, func(response rest.CategoryResponse) uuid.UUID {
+		return response.Id
+	})
 }
 
 func TestCategoryHandlerGetCategories(t *testing.T) {
@@ -461,7 +414,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createGetCategoriesRouter(tt.service)
+			router := test.CreateCategoryRouter(tt.service)
 			query := url.Values{}
 			if tt.id != nil {
 				query.Set("id", tt.id.String())
@@ -474,7 +427,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 				t.Fatalf("want http status %d, got %d", http.StatusOK, recorder.Code)
 			}
 
-			checkGetCategoriesResponse(t, recorder.Body.Bytes(), tt.wantIds)
+			checkGetCategoriesResponse(t, recorder.Body, tt.wantIds)
 		})
 	}
 }
