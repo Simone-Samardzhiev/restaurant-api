@@ -64,7 +64,7 @@ func MatchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middl
 	}
 }
 
-// CreateCategoryRouter creates a new [gin.Engine] with router for [rest.CategoryHandler].
+// CreateCategoryRouter creates a new [gin.Engine] with routes for [rest.CategoryHandler].
 //
 // Path to each method:
 //   - POST /categories - [rest.CategoryHandler.AddCategory].
@@ -79,5 +79,25 @@ func CreateCategoryRouter(service menu.CategoryService) *gin.Engine {
 	router.PATCH("/categories/:id", handler.UpdateCategory)
 	router.DELETE("/categories/:id", handler.DeleteCategory)
 	router.GET("/categories", handler.GetCategories)
+	return router
+}
+
+// CreateProductRouter creates a new [gin.Engine] with routes for [rest.ProductHandler].
+//
+// Path to each method:
+//   - POST /products - [rest.ProductHandler.AddProduct].
+//   - PATCH /products/:id - [rest.ProductHandler.UpdateProduct]
+//   - PUT /products/:id/image - [rest.ProductHandler.UpdateImage].
+//   - DELETE /products/:id - [rest.ProductHandler.DeleteProduct]
+//   - GET /products - [rest.ProductHandler.GetProducts].
+func CreateProductRouter(service menu.ProductService) *gin.Engine {
+	handler := rest.NewProductHandler(service, "servingPath")
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.POST("/products", handler.AddProduct)
+	router.PATCH("/products/:id", handler.UpdateProduct)
+	router.PUT("/products/:id/image", handler.UpdateImage)
+	router.DELETE("/products/:id", handler.DeleteProduct)
+	router.GET("/products", handler.GetProducts)
 	return router
 }

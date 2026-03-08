@@ -11,13 +11,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"restaurant/internal/adapter/handler/rest"
-	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
 	"restaurant/internal/test"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -70,15 +68,6 @@ func (s *fakeProductService) GetProducts(ctx context.Context, filter *menu.Produ
 //go:embed testdata/product_image.jpg
 var validProductImage []byte
 
-// createAddCategoryRouter creates a gin router with /product path for [ProductHandler.AddProduct].
-func createAddProductRouter(service menu.ProductService) *gin.Engine {
-	handler := rest.NewProductHandler(service, "")
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.POST("/product", handler.AddProduct)
-	return router
-}
-
 func checkAddProductResponse(
 	t *testing.T,
 	body io.Reader,
@@ -130,7 +119,7 @@ func creatAddProductRequest(t *testing.T, product *rest.AddProductRequest, image
 		t.Fatalf("error closing multipart writer: %v", err)
 	}
 
-	request := httptest.NewRequest(http.MethodPost, "/product", &buffer)
+	request := httptest.NewRequest(http.MethodPost, "/products", &buffer)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	return request
 }
@@ -209,7 +198,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createAddProductRouter(tt.service)
+			router := test.CreateProductRouter(tt.service)
 			request := creatAddProductRequest(t, tt.productRequest, tt.image)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -227,32 +216,11 @@ func TestProductHandlerAddProduct(t *testing.T) {
 	}
 }
 
-// createUpdateProductRouter creates a gin router with /product/:id path for
-// [ProductHandler.UpdateProduct].
-func createUpdateProductRouter(service menu.ProductService) *gin.Engine {
-	handler := rest.NewProductHandler(service, "")
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.PATCH("/product/:id", handler.UpdateProduct)
-	return router
-}
-
-func createUpdateProductRequest(t *testing.T, id uuid.UUID, productRequest *rest.UpdateProductRequest) *http.Request {
-	t.Helper()
-
-	body, err := json.Marshal(productRequest)
-	if err != nil {
-		t.Fatalf("error encoding body: %v", err)
-	}
-
-	return httptest.NewRequest(http.MethodPatch, "/product/"+id.String(), bytes.NewBuffer(body))
-}
-
 func TestProductHandlerUpdateProduct(t *testing.T) {
 	tests := []struct {
 		name             string
 		service          *fakeProductService
-		id               uuid.UUID
+		id               string
 		productRequest   *rest.UpdateProductRequest
 		wantHttpStatus   int
 		wantErrorCode    domain.ErrorCode
@@ -265,7 +233,7 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 					return nil
 				},
 			},
-			id: uuid.New(),
+			id: uuid.NewString(),
 			productRequest: &rest.UpdateProductRequest{
 				Name: new("new name"),
 			},
@@ -273,14 +241,14 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 		},
 		{
 			name:           "no data",
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			productRequest: &rest.UpdateProductRequest{},
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  domain.ErrorCodeNoData,
 		},
 		{
 			name: "invalid update",
-			id:   uuid.New(),
+			id:   uuid.NewString(),
 			productRequest: &rest.UpdateProductRequest{
 				Name: new("na"),
 			},
@@ -290,14 +258,27 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 				domain.ErrorCodeProductNameTooShort,
 			},
 		},
+		{
+			name: "invalid id",
+			id:   "invalid",
+			productRequest: &rest.UpdateProductRequest{
+				Name: new("New name"),
+			},
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createUpdateProductRouter(tt.service)
-			request := createUpdateProductRequest(t, tt.id, tt.productRequest)
+			body, err := json.Marshal(tt.productRequest)
+			if err != nil {
+				t.Fatalf("error encoding product: %v", err)
+			}
+			request := httptest.NewRequest(http.MethodPatch, "/products/"+tt.id, bytes.NewReader(body))
+			router := test.CreateProductRouter(tt.service)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -313,21 +294,11 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 	}
 }
 
-// creteUpdateImageRouter creates a gin router with PUT /:id/image
-// for [ProductHandler.UpdateImage].
-func creteUpdateImageRouter(service menu.ProductService) *gin.Engine {
-	handler := rest.NewProductHandler(service, "")
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.PUT("/:id/image", handler.UpdateImage)
-	return router
-}
-
 func TestProductHandlerUpdateImage(t *testing.T) {
 	tests := []struct {
 		name             string
 		service          *fakeProductService
-		id               uuid.UUID
+		id               string
 		image            []byte
 		wantHttpStatus   int
 		wantErrorCode    domain.ErrorCode
@@ -340,13 +311,13 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 					return "new/path", nil
 				},
 			},
-			id:             uuid.New(),
+			id:             uuid.NewString(),
 			image:          validProductImage,
 			wantHttpStatus: http.StatusCreated,
 		},
 		{
-			name:           "invalid request",
-			id:             uuid.New(),
+			name:           "invalid image",
+			id:             uuid.NewString(),
 			image:          []byte("invalid image"),
 			wantHttpStatus: http.StatusUnprocessableEntity,
 			wantErrorCode:  domain.ErrorCodeInvalidImageUpdate,
@@ -354,14 +325,21 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 				domain.ErrorCodeInvalidImageType,
 			},
 		},
+		{
+			name:           "invalid id",
+			id:             "invalid",
+			image:          validProductImage,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  domain.ErrorCodeInvalidUUID,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := creteUpdateImageRouter(tt.service)
-			request := httptest.NewRequest(http.MethodPut, "/"+tt.id.String()+"/image", bytes.NewReader(tt.image))
+			router := test.CreateProductRouter(tt.service)
+			request := httptest.NewRequest(http.MethodPut, "/products/"+tt.id+"/image", bytes.NewReader(tt.image))
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -379,16 +357,6 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 			}
 		})
 	}
-}
-
-// createDeleteProductRouter creates a new gin router with DELETE product/:id
-// for [ProductHandler.DeleteProduct].
-func createDeleteProductRouter(service menu.ProductService) *gin.Engine {
-	handler := rest.NewProductHandler(service, "")
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.DELETE("/product/:id", handler.DeleteProduct)
-	return router
 }
 
 func TestProductHandlerDeleteProduct(t *testing.T) {
@@ -421,8 +389,8 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createDeleteProductRouter(tt.service)
-			request := httptest.NewRequest(http.MethodDelete, "/product/"+tt.id, nil)
+			router := test.CreateProductRouter(tt.service)
+			request := httptest.NewRequest(http.MethodDelete, "/products/"+tt.id, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 			if recorder.Code != tt.wantHttpStatus {
@@ -437,16 +405,6 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 	}
 }
 
-// createGetProductsRouter creates a gin router with GET /product for
-// [ProductHandler.GetProducts].
-func createGetProductsRouter(service menu.ProductService) *gin.Engine {
-	handler := rest.NewProductHandler(service, "")
-	router := gin.New()
-	router.Use(middleware.Error())
-	router.GET("/product", handler.GetProducts)
-	return router
-}
-
 func createGetProductsRequest(id *string, categoryId *string) *http.Request {
 	var query = url.Values{}
 	if id != nil {
@@ -456,7 +414,7 @@ func createGetProductsRequest(id *string, categoryId *string) *http.Request {
 		query.Add("category", *categoryId)
 	}
 
-	return httptest.NewRequest(http.MethodGet, "/product?"+query.Encode(), nil)
+	return httptest.NewRequest(http.MethodGet, "/products?"+query.Encode(), nil)
 }
 
 func TestProductHandlerGetProducts(t *testing.T) {
@@ -480,7 +438,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 			wantHttpStatus: http.StatusOK,
 		},
 		{
-			name:           "invalid request",
+			name:           "invalid id",
 			id:             nil,
 			categoryId:     new(""),
 			wantHttpStatus: http.StatusBadRequest,
@@ -492,7 +450,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := createGetProductsRouter(tt.service)
+			router := test.CreateProductRouter(tt.service)
 			request := createGetProductsRequest(tt.id, tt.categoryId)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
