@@ -6,10 +6,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
@@ -93,39 +91,7 @@ func checkAddProductResponse(
 	}
 }
 
-func creatAddProductRequest(t *testing.T, product *rest.AddProductRequest, image []byte) *http.Request {
-	t.Helper()
-
-	var buffer bytes.Buffer
-	writer := multipart.NewWriter(&buffer)
-
-	productData, err := json.Marshal(product)
-	if err != nil {
-		t.Fatalf("error encoding product: %v", err)
-	}
-	if err = writer.WriteField("product", string(productData)); err != nil {
-		t.Fatalf("error writing product to multipart: %v", err)
-	}
-
-	imageWriter, err := writer.CreateFormFile("image", "image.png")
-	if err != nil {
-		t.Fatalf("error creating image writer: %v", err)
-	}
-
-	if _, err = imageWriter.Write(image); err != nil {
-		t.Fatalf("error writing image: %v", err)
-	}
-	if err = writer.Close(); err != nil {
-		t.Fatalf("error closing multipart writer: %v", err)
-	}
-
-	request := httptest.NewRequest(http.MethodPost, "/products", &buffer)
-	request.Header.Set("Content-Type", writer.FormDataContentType())
-	return request
-}
-
 func TestProductHandlerAddProduct(t *testing.T) {
-
 	tests := []struct {
 		name             string
 		service          *fakeProductService
@@ -199,7 +165,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 			t.Parallel()
 
 			router := test.NewProductRouter(tt.service)
-			request := creatAddProductRequest(t, tt.productRequest, tt.image)
+			request := test.CreatAddProductRequest(t, tt.productRequest, tt.image)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -405,18 +371,6 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 	}
 }
 
-func createGetProductsRequest(id *string, categoryId *string) *http.Request {
-	var query = url.Values{}
-	if id != nil {
-		query.Add("id", *id)
-	}
-	if categoryId != nil {
-		query.Add("category", *categoryId)
-	}
-
-	return httptest.NewRequest(http.MethodGet, "/products?"+query.Encode(), nil)
-}
-
 func TestProductHandlerGetProducts(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -451,7 +405,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 			t.Parallel()
 
 			router := test.NewProductRouter(tt.service)
-			request := createGetProductsRequest(tt.id, tt.categoryId)
+			request := test.CreateGetProductsRequest(tt.id, tt.categoryId)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 			if recorder.Code != tt.wantHttpStatus {

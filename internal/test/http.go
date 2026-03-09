@@ -1,8 +1,13 @@
 package test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
 	"restaurant/internal/domain"
@@ -136,4 +141,49 @@ func NewProductRouterFromHandler(handler *rest.ProductHandler) *gin.Engine {
 	router.DELETE("/products/:id", handler.DeleteProduct)
 	router.GET("/products", handler.GetProducts)
 	return router
+}
+
+// CreatAddProductRequest creates an http.Request for adding a product.
+func CreatAddProductRequest(t testing.TB, product *rest.AddProductRequest, image []byte) *http.Request {
+	t.Helper()
+
+	var buffer bytes.Buffer
+	writer := multipart.NewWriter(&buffer)
+
+	productData, err := json.Marshal(product)
+	if err != nil {
+		t.Fatalf("error encoding product: %v", err)
+	}
+	if err = writer.WriteField("product", string(productData)); err != nil {
+		t.Fatalf("error writing product to multipart: %v", err)
+	}
+
+	imageWriter, err := writer.CreateFormFile("image", "image.png")
+	if err != nil {
+		t.Fatalf("error creating image writer: %v", err)
+	}
+
+	if _, err = imageWriter.Write(image); err != nil {
+		t.Fatalf("error writing image: %v", err)
+	}
+	if err = writer.Close(); err != nil {
+		t.Fatalf("error closing multipart writer: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/products", &buffer)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	return request
+}
+
+// CreateGetProductsRequest creates an http.Request for fetching the products.
+func CreateGetProductsRequest(id *string, categoryId *string) *http.Request {
+	var query = url.Values{}
+	if id != nil {
+		query.Add("id", *id)
+	}
+	if categoryId != nil {
+		query.Add("category", *categoryId)
+	}
+
+	return httptest.NewRequest(http.MethodGet, "/products?"+query.Encode(), nil)
 }
