@@ -9,7 +9,8 @@ import (
 //go:embed testdata/seeds/menu.sql
 var menuSeed string
 
-// SeedMenuTables seeds table for products and product categories with [menuSeed].
+// SeedMenuTables seeds table for products and product categories.
+// It automatically truncates tables before inserting new rows.
 func SeedMenuTables(t testing.TB, db *sql.DB) {
 	t.Helper()
 
@@ -24,7 +25,8 @@ func SeedMenuTables(t testing.TB, db *sql.DB) {
 //go:embed testdata/seeds/orders.sql
 var orderSeed string
 
-// SeedOrderTables seed the table order sessions and ordered products with [orderSeed].
+// SeedOrderTables seed the table order sessions and ordered products.
+// It automatically truncates tables before inserting new rows.
 func SeedOrderTables(t testing.TB, db *sql.DB) {
 	t.Helper()
 

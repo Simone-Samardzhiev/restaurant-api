@@ -15,7 +15,7 @@ import (
 // CheckErrorResponse checks if the response is [middleware.ErrorResponse] and
 // the error code and details code match the arguments
 func CheckErrorResponse(
-	t *testing.T,
+	t testing.TB,
 	body io.Reader,
 	expectedCode domain.ErrorCode,
 	expectedCodes ...domain.ErrorCode,
@@ -37,7 +37,7 @@ func CheckErrorResponse(
 }
 
 // MatchErrorCodes checks if error codes in match the error codes in the details, in any order.
-func MatchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middleware.ErrorDetailsResponse) {
+func MatchErrorCodes(t testing.TB, wantCodes []domain.ErrorCode, details []middleware.ErrorDetailsResponse) {
 	t.Helper()
 
 	if len(details) != len(details) {
@@ -64,14 +64,14 @@ func MatchErrorCodes(t *testing.T, wantCodes []domain.ErrorCode, details []middl
 	}
 }
 
-// CreateCategoryRouter creates a new [gin.Engine] with routes for [rest.CategoryHandler].
+// NewCategoryRouter creates a new [gin.Engine] with routes for [rest.CategoryHandler].
 //
 // Path to each method:
 //   - POST /categories - [rest.CategoryHandler.AddCategory].
 //   - PATCH /categories/:id - [rest.CategoryHandler.UpdateCategory].
 //   - DELETE /categories/:id - [rest.CategoryHandler.DeleteCategory].
 //   - GET /categories - [rest.CategoryHandler.GetCategories].
-func CreateCategoryRouter(service menu.CategoryService) *gin.Engine {
+func NewCategoryRouter(service menu.CategoryService) *gin.Engine {
 	handler := rest.NewCategoryHandler(service)
 	router := gin.New()
 	router.Use(middleware.Error())
@@ -82,7 +82,24 @@ func CreateCategoryRouter(service menu.CategoryService) *gin.Engine {
 	return router
 }
 
-// CreateProductRouter creates a new [gin.Engine] with routes for [rest.ProductHandler].
+// NewCategoryRouterFromHandler creates a new [gin.Engine] with routes for the provided [rest.CategoryHandler].
+//
+// Path to each method:
+//   - POST /categories - [rest.CategoryHandler.AddCategory].
+//   - PATCH /categories/:id - [rest.CategoryHandler.UpdateCategory].
+//   - DELETE /categories/:id - [rest.CategoryHandler.DeleteCategory].
+//   - GET /categories - [rest.CategoryHandler.GetCategories].
+func NewCategoryRouterFromHandler(handler *rest.CategoryHandler) *gin.Engine {
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.POST("/categories", handler.AddCategory)
+	router.PATCH("/categories/:id", handler.UpdateCategory)
+	router.DELETE("/categories/:id", handler.DeleteCategory)
+	router.GET("/categories", handler.GetCategories)
+	return router
+}
+
+// NewProductRouter creates a new [gin.Engine] with routes for [rest.ProductHandler].
 //
 // Path to each method:
 //   - POST /products - [rest.ProductHandler.AddProduct].
@@ -90,8 +107,27 @@ func CreateCategoryRouter(service menu.CategoryService) *gin.Engine {
 //   - PUT /products/:id/image - [rest.ProductHandler.UpdateImage].
 //   - DELETE /products/:id - [rest.ProductHandler.DeleteProduct]
 //   - GET /products - [rest.ProductHandler.GetProducts].
-func CreateProductRouter(service menu.ProductService) *gin.Engine {
+func NewProductRouter(service menu.ProductService) *gin.Engine {
 	handler := rest.NewProductHandler(service, "servingPath")
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.POST("/products", handler.AddProduct)
+	router.PATCH("/products/:id", handler.UpdateProduct)
+	router.PUT("/products/:id/image", handler.UpdateImage)
+	router.DELETE("/products/:id", handler.DeleteProduct)
+	router.GET("/products", handler.GetProducts)
+	return router
+}
+
+// NewProductRouterFromHandler creates a new [gin.Engine] with routes for the provided [rest.ProductHandler].
+//
+// Path to each method:
+//   - POST /products - [rest.ProductHandler.AddProduct].
+//   - PATCH /products/:id - [rest.ProductHandler.UpdateProduct]
+//   - PUT /products/:id/image - [rest.ProductHandler.UpdateImage].
+//   - DELETE /products/:id - [rest.ProductHandler.DeleteProduct]
+//   - GET /products - [rest.ProductHandler.GetProducts].
+func NewProductRouterFromHandler(handler *rest.ProductHandler) *gin.Engine {
 	router := gin.New()
 	router.Use(middleware.Error())
 	router.POST("/products", handler.AddProduct)
