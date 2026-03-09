@@ -125,7 +125,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			}
 
 			request := httptest.NewRequest(http.MethodPost, "/categories", bytes.NewReader(body))
-			router := test.CreateCategoryRouter(tt.service)
+			router := test.NewCategoryRouter(tt.service)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -248,7 +248,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to encode request body: %v", err)
 			}
-			router := test.CreateCategoryRouter(tt.service)
+			router := test.NewCategoryRouter(tt.service)
 			request := httptest.NewRequest(http.MethodPatch, "/categories/"+tt.id, bytes.NewReader(body))
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -331,7 +331,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateCategoryRouter(tt.service)
+			router := test.NewCategoryRouter(tt.service)
 			request := httptest.NewRequest(http.MethodDelete, "/categories/"+tt.id, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -414,7 +414,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateCategoryRouter(tt.service)
+			router := test.NewCategoryRouter(tt.service)
 			query := url.Values{}
 			if tt.id != nil {
 				query.Set("id", tt.id.String())

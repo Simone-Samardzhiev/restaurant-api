@@ -198,7 +198,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateProductRouter(tt.service)
+			router := test.NewProductRouter(tt.service)
 			request := creatAddProductRequest(t, tt.productRequest, tt.image)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -278,7 +278,7 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 				t.Fatalf("error encoding product: %v", err)
 			}
 			request := httptest.NewRequest(http.MethodPatch, "/products/"+tt.id, bytes.NewReader(body))
-			router := test.CreateProductRouter(tt.service)
+			router := test.NewProductRouter(tt.service)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -338,7 +338,7 @@ func TestProductHandlerUpdateImage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateProductRouter(tt.service)
+			router := test.NewProductRouter(tt.service)
 			request := httptest.NewRequest(http.MethodPut, "/products/"+tt.id+"/image", bytes.NewReader(tt.image))
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -389,7 +389,7 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateProductRouter(tt.service)
+			router := test.NewProductRouter(tt.service)
 			request := httptest.NewRequest(http.MethodDelete, "/products/"+tt.id, nil)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
@@ -450,7 +450,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := test.CreateProductRouter(tt.service)
+			router := test.NewProductRouter(tt.service)
 			request := createGetProductsRequest(tt.id, tt.categoryId)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
