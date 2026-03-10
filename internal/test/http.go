@@ -143,8 +143,8 @@ func NewProductRouterFromHandler(handler *rest.ProductHandler) *gin.Engine {
 	return router
 }
 
-// CreatAddProductRequest creates an http.Request for adding a product.
-func CreatAddProductRequest(t testing.TB, product *rest.AddProductRequest, image []byte) *http.Request {
+// NewAddProductRequest creates an http.Request for adding a product.
+func NewAddProductRequest(t testing.TB, product *rest.AddProductRequest, image []byte) *http.Request {
 	t.Helper()
 
 	var buffer bytes.Buffer
@@ -175,8 +175,8 @@ func CreatAddProductRequest(t testing.TB, product *rest.AddProductRequest, image
 	return request
 }
 
-// CreateGetProductsRequest creates an http.Request for fetching the products.
-func CreateGetProductsRequest(id *string, categoryId *string) *http.Request {
+// NewGetProductsRequest creates an http.Request for fetching the products.
+func NewGetProductsRequest(id *string, categoryId *string) *http.Request {
 	var query = url.Values{}
 	if id != nil {
 		query.Add("id", *id)

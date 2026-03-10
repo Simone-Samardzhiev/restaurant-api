@@ -63,9 +63,13 @@ func (s *fakeProductService) GetProducts(ctx context.Context, filter *menu.Produ
 	return s.onGetProducts(ctx, filter)
 }
 
+// slice holding valid image data.
+//
 //go:embed testdata/product_image.jpg
 var validProductImage []byte
 
+// checkAddProductResponse checks if the data provided by the request for adding category
+// matches the returned category.
 func checkAddProductResponse(
 	t *testing.T,
 	body io.Reader,
@@ -165,7 +169,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 			t.Parallel()
 
 			router := test.NewProductRouter(tt.service)
-			request := test.CreatAddProductRequest(t, tt.productRequest, tt.image)
+			request := test.NewAddProductRequest(t, tt.productRequest, tt.image)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 
@@ -405,7 +409,7 @@ func TestProductHandlerGetProducts(t *testing.T) {
 			t.Parallel()
 
 			router := test.NewProductRouter(tt.service)
-			request := test.CreateGetProductsRequest(tt.id, tt.categoryId)
+			request := test.NewGetProductsRequest(tt.id, tt.categoryId)
 			recorder := httptest.NewRecorder()
 			router.ServeHTTP(recorder, request)
 			if recorder.Code != tt.wantHttpStatus {
