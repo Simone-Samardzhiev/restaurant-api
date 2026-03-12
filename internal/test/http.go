@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
+	"restaurant/internal/adapter/handler/translator"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
 	"testing"
@@ -37,12 +38,12 @@ func CheckErrorResponse(
 	}
 
 	if len(expectedCodes) > 0 {
-		MatchErrorCodes(t, expectedCodes, resp.Details)
+		matchErrorCodes(t, expectedCodes, resp.Details)
 	}
 }
 
-// MatchErrorCodes checks if error codes in match the error codes in the details, in any order.
-func MatchErrorCodes(t testing.TB, wantCodes []domain.ErrorCode, details []middleware.ErrorDetailsResponse) {
+// matchErrorCodes checks if error codes in match the error codes in the details, in any order.
+func matchErrorCodes(t testing.TB, wantCodes []domain.ErrorCode, details []translator.ErrorResponseDetail) {
 	t.Helper()
 
 	if len(details) != len(details) {

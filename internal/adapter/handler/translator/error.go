@@ -1,30 +1,23 @@
 package translator
 
 import (
-	"errors"
-	"net/http"
 	"restaurant/internal/domain"
 
 	"go.uber.org/zap"
 )
 
-// mapErrorKind is used to map [domain.ErrorKind] to http status codes.
-var mapErrorKind = map[domain.ErrorKind]int{
-	domain.ErrorKindInternal:   http.StatusInternalServerError,
-	domain.ErrorKindValidation: http.StatusUnprocessableEntity,
-	domain.ErrorKindConflict:   http.StatusConflict,
-	domain.ErrorKindBadRequest: http.StatusBadRequest,
-	domain.ErrorKindNotFound:   http.StatusNotFound,
+// ErrorResponse represents an API error response.
+type ErrorResponse struct {
+	Code    string                `json:"code"`
+	Message string                `json:"message"`
+	Details []ErrorResponseDetail `json:"details,omitempty"`
 }
 
-// mapErrorKindHttpCode maps [domain.ErrorKind] to http status codes.
-// If the kind is not found [http.StatusInternalServerError] is returned.
-func mapErrorKindHttpCode(kind domain.ErrorKind) int {
-	result, ok := mapErrorKind[kind]
-	if !ok {
-		return http.StatusInternalServerError
-	}
-	return result
+// ErrorResponseDetail represents error details response.
+type ErrorResponseDetail struct {
+	Code     string         `json:"code"`
+	Message  string         `json:"message"`
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // mapErrorCode is used to map [domain.ErrorCode] to user message.
@@ -44,7 +37,7 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeImageNotFound:      "Image not found.",
 	domain.ErrorCodeInvalidImageUpdate: "Invalid image update.",
 
-	domain.ErrorCodeInvalidProduct:             "Invalid product.",
+	domain.ErrorCodeInvalidProduct:             "Provided product contains invalid data.",
 	domain.ErrorCodeProductNameTooShort:        "Product name is too short.",
 	domain.ErrorCodeProductNameTooLong:         "Product name is too long.",
 	domain.ErrorCodeProductDescriptionTooShort: "Product description is too short.",
@@ -71,53 +64,29 @@ func mapErrorCodeToMessage(code domain.ErrorCode) string {
 	return result
 }
 
-// ErrorResponse represents an api error response.
-type ErrorResponse struct {
-	Status  int                    `json:"status"`
-	Code    string                 `json:"code"`
-	Message string                 `json:"message"`
-	Details []ErrorDetailsResponse `json:"details,omitempty"`
-}
-
-// ErrorDetailsResponse represents more details about an error.
-type ErrorDetailsResponse struct {
-	Code     string         `json:"code"`
-	Message  string         `json:"message"`
-	Metadata map[string]any `json:"metadata"`
-}
-
-// TranslateError translates errors into [ErrorResponse].
-// If the error type is not [domain.Error] or the [domain.ErrorKind]
-// is internal, the error is logged automatically.
-func TranslateError(err error) ErrorResponse {
-	domainErr, ok := errors.AsType[*domain.Error](err)
-	if !ok {
-		zap.L().Error("unknown error", zap.Error(err))
-
+// DomainError translates [domain.Error] into ErrorResponse.
+func DomainError(err *domain.Error) ErrorResponse {
+	if err.Kind == domain.ErrorKindInternal {
+		zap.L().Error("internal server error", zap.Error(err), zap.NamedError("cause", err.Cause))
 		return ErrorResponse{
-			Status:  http.StatusInternalServerError,
 			Code:    domain.ErrorCodeInternal.String(),
-			Message: mapErrorCodeToMessage(domain.ErrorCodeInternal),
+			Message: "Internal server error.",
 		}
 	}
 
-	if domainErr.Kind == domain.ErrorKindInternal {
-		zap.L().Error("internal error", zap.Error(err), zap.NamedError("cause", domainErr.Cause))
-	}
-
 	resp := ErrorResponse{
-		Status:  mapErrorKindHttpCode(domainErr.Kind),
-		Code:    domainErr.Code.String(),
-		Message: mapErrorCodeToMessage(domainErr.Code),
-		Details: make([]ErrorDetailsResponse, 0, len(domainErr.Details)),
+		Code:    err.Code.String(),
+		Message: mapErrorCodeToMessage(err.Code),
+		Details: make([]ErrorResponseDetail, 0, len(err.Details)),
 	}
 
-	for _, details := range domainErr.Details {
-		resp.Details = append(resp.Details, ErrorDetailsResponse{
-			Code:     mapErrorCodeToMessage(details.Code),
-			Message:  details.Message,
-			Metadata: details.Metadata,
+	for _, detail := range err.Details {
+		resp.Details = append(resp.Details, ErrorResponseDetail{
+			Code:     detail.Code.String(),
+			Message:  mapErrorCodeToMessage(detail.Code),
+			Metadata: detail.Metadata,
 		})
 	}
+
 	return resp
 }

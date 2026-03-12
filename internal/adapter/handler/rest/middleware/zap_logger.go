@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ZapLogger returns a middleware used for login request.
+// ZapLogger returns a middleware used for logging request.
 func ZapLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
