@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"restaurant/internal/adapter/config"
@@ -58,7 +59,11 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT)
 
 	go func() {
-		router.Run()
+		_ = router.Run()
+	}()
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	<-signalChan
