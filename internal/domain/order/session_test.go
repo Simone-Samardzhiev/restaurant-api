@@ -140,3 +140,60 @@ func TestParseSession(t *testing.T) {
 		})
 	}
 }
+
+func TestParseAddSessionRequest(t *testing.T) {
+	tests := []struct {
+		name             string
+		status           string
+		tableNumber      int
+		wantErr          bool
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name:        "valid",
+			status:      "open",
+			tableNumber: 1,
+		},
+		{
+			name:             "invalid table number",
+			status:           "open",
+			tableNumber:      -1,
+			wantErr:          true,
+			wantErrorCode:    domain.ErrorCodeInvalidSession,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionTable},
+		},
+		{
+			name:             "invalid status",
+			status:           "invalid",
+			tableNumber:      1,
+			wantErr:          true,
+			wantErrorCode:    domain.ErrorCodeInvalidSession,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionStatus},
+		},
+		{
+			name:             "invalid table number and status",
+			tableNumber:      -1,
+			status:           "invalid",
+			wantErr:          true,
+			wantErrorCode:    domain.ErrorCodeInvalidSession,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionStatus, domain.ErrorCodeInvalidSessionTable},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := ParseAddSessionRequest(tt.tableNumber, tt.status)
+			if tt.wantErr {
+				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
+				return
+			}
+
+			if err != nil {
+				t.Errorf("want no error got %v", err)
+			}
+		})
+	}
+}
