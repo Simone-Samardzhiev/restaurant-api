@@ -8,6 +8,7 @@ import (
 	"restaurant/internal/adapter/config"
 	"restaurant/internal/adapter/handler"
 	"restaurant/internal/adapter/handler/rest"
+	"restaurant/internal/adapter/handler/websocket"
 	"restaurant/internal/adapter/logger"
 	"restaurant/internal/adapter/storage/local"
 	"restaurant/internal/adapter/storage/postgres"
@@ -45,6 +46,9 @@ func main() {
 	productService := menu.NewDefaultProductService(productRepository, imageRepository)
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
+	// Orders
+	orderHandler := websocket.NewHandler()
+
 	// start up tasks
 	if err = imageRepository.CreateSavePath(); err != nil {
 		log.Fatalf("error creating save path for images: %v", err)
@@ -53,6 +57,7 @@ func main() {
 	router := handler.NewRouter(container, handler.Handlers{
 		CategoryHandler: categoryHandler,
 		ProductHandler:  productHandler,
+		OrderHandler:    orderHandler,
 	})
 
 	signalChan := make(chan os.Signal, 1)

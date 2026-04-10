@@ -5,6 +5,7 @@ import (
 	"restaurant/internal/adapter/config"
 	"restaurant/internal/adapter/handler/rest"
 	"restaurant/internal/adapter/handler/rest/middleware"
+	"restaurant/internal/adapter/handler/websocket"
 
 	"context"
 
@@ -15,6 +16,7 @@ import (
 type Handlers struct {
 	CategoryHandler *rest.CategoryHandler
 	ProductHandler  *rest.ProductHandler
+	OrderHandler    *websocket.Handler
 }
 
 // Router routes all http request to the specific handler function.
@@ -58,6 +60,10 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 				products.PUT("/:id/image", handlers.ProductHandler.UpdateImage)
 				products.DELETE("/:id", handlers.ProductHandler.DeleteProduct)
 			}
+		}
+		{
+			order := admin.Group("/orders")
+			order.GET("", handlers.OrderHandler.ConnectAsAdmin)
 		}
 	}
 	{
