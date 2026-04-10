@@ -58,6 +58,10 @@ const (
 	ErrorCodeProductNotFoundByID
 	ErrorCodeProductHasLinkedOrders
 
+	ErrorCodeInvalidSession
+	ErrorCodeInvalidSessionTable
+	ErrorCodeInvalidSessionStatus
+
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
 	ErrorCodeInvalidUUID
@@ -89,6 +93,10 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeProductNotFound:            "PRODUCT_NOT_FOUND",
 	ErrorCodeProductNotFoundByID:        "PRODUCT_NOT_FOUND_BY_ID",
 	ErrorCodeProductHasLinkedOrders:     "PRODUCT_HAS_LINKED_ORDERS",
+
+	ErrorCodeInvalidSession:       "INVALID_SESSION",
+	ErrorCodeInvalidSessionTable:  "INVALID_SESSION_TABLE",
+	ErrorCodeInvalidSessionStatus: "INVALID_SESSION_STATUS",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",
