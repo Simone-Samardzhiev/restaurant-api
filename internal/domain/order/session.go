@@ -28,6 +28,10 @@ func ParseSessionTable(number int) (SessionTable, error) {
 	return SessionTable{number: number}, nil
 }
 
+func (t SessionTable) Number() int {
+	return t.number
+}
+
 const (
 	OpenSession  string = "open"
 	CloseSession string = "closed"
@@ -61,6 +65,10 @@ func (s SessionStatus) Equal(session string) bool {
 	return s.raw == session
 }
 
+func (s SessionStatus) String() string {
+	return s.raw
+}
+
 // Session represents a valid session entity.
 type Session struct {
 	Id     uuid.UUID
@@ -71,7 +79,7 @@ type Session struct {
 // ParseSession parses [Session] from table number and status.
 //
 // If the session is invalid the error will be of type [domain.Error].
-func ParseSession(id uuid.UUID, table int, status string) (Session, error) {
+func ParseSession(id uuid.UUID, table int, status string) (*Session, error) {
 	errs := make([]domain.ErrorDetail, 0)
 	parsedTable, err := ParseSessionTable(table)
 	if err != nil {
@@ -92,11 +100,50 @@ func ParseSession(id uuid.UUID, table int, status string) (Session, error) {
 	}
 
 	if len(errs) > 0 {
-		return Session{}, domain.NewValidationError("invalid session", domain.ErrorCodeInvalidSession, errs...)
+		return nil, domain.NewValidationError("invalid session", domain.ErrorCodeInvalidSession, errs...)
 	}
 
-	return Session{
+	return &Session{
 		Id:     id,
+		Table:  parsedTable,
+		Status: parsedStatus,
+	}, nil
+}
+
+// AddSessionRequest represents a request for adding a new order session.
+type AddSessionRequest struct {
+	Table  SessionTable
+	Status SessionStatus
+}
+
+// ParseAddSessionRequest parses [AddSessionRequest] for table number and status.
+//
+// If any of the fields are invalid the error will be of type [domain.Error].
+func ParseAddSessionRequest(table int, status string) (*AddSessionRequest, error) {
+	errs := make([]domain.ErrorDetail, 0)
+	parsedTable, err := ParseSessionTable(table)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			errs = append(errs, domain.ErrorDetail{})
+		}
+	}
+
+	parsedStatus, err := ParseSessionStatus(status)
+	if err != nil {
+		if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+			errs = append(errs, *detailErr)
+		} else {
+			errs = append(errs, domain.ErrorDetail{})
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid session", domain.ErrorCodeInvalidSession, errs...)
+	}
+
+	return &AddSessionRequest{
 		Table:  parsedTable,
 		Status: parsedStatus,
 	}, nil

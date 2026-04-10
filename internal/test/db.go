@@ -6,6 +6,16 @@ import (
 	"testing"
 )
 
+// TruncateMenuTables truncates tables for products and product categories.
+func TruncateMenuTables(t testing.TB, db *sql.DB) {
+	t.Helper()
+
+	_, err := db.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE`)
+	if err != nil {
+		t.Fatalf("error truncating menu tables: %v", err)
+	}
+}
+
 //go:embed testdata/seeds/menu.sql
 var menuSeed string
 
@@ -14,11 +24,18 @@ var menuSeed string
 func SeedMenuTables(t testing.TB, db *sql.DB) {
 	t.Helper()
 
-	if _, err := db.Exec(`TRUNCATE TABLE products, product_categories RESTART IDENTITY CASCADE `); err != nil {
-		t.Fatalf("error truncating tables: %v", err)
-	}
+	TruncateMenuTables(t, db)
 	if _, err := db.Exec(menuSeed); err != nil {
 		t.Fatalf("error seeding menu tables: %v", err)
+	}
+}
+
+// TruncateOrderTables truncates tables for ordered products and order sessions.
+func TruncateOrderTables(t testing.TB, db *sql.DB) {
+	t.Helper()
+
+	if _, err := db.Exec(`TRUNCATE TABLE ordered_products, order_sessions RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatalf("error truncating order tables: %v", err)
 	}
 }
 
@@ -30,9 +47,7 @@ var orderSeed string
 func SeedOrderTables(t testing.TB, db *sql.DB) {
 	t.Helper()
 
-	if _, err := db.Exec(`TRUNCATE TABLE ordered_products, order_sessions RESTART IDENTITY CASCADE`); err != nil {
-		t.Fatalf("error truncating tables: %v", err)
-	}
+	TruncateOrderTables(t, db)
 	if _, err := db.Exec(orderSeed); err != nil {
 		t.Fatalf("error seeding order tables: %v", err)
 	}
