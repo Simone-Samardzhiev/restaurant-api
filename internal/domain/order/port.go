@@ -7,3 +7,9 @@ type SessionRepository interface {
 	// Save saves a new session.
 	Save(ctx context.Context, request *AddSessionRequest) (*Session, error)
 }
+
+// SessionService describes how session business logic is access.
+type SessionService interface {
+	// AddSession adds a new session.
+	AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error)
+}
