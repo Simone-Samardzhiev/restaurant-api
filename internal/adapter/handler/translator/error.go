@@ -48,6 +48,10 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeProductNotFoundByID:        "Product with provided id not found.",
 	domain.ErrorCodeProductHasLinkedOrders:     "Product cannot be deleted as it has linked orders.",
 
+	domain.ErrorCodeInvalidSession:       "Provided session contains invalid data.",
+	domain.ErrorCodeInvalidSessionTable:  "Invalid session table.",
+	domain.ErrorCodeInvalidSessionStatus: "Invalid session status.",
+
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",
 	domain.ErrorCodeInvalidUUID:      "Invalid UUID.",

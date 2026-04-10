@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"restaurant/internal/domain/order"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -8,18 +10,20 @@ import (
 
 // Handler handles order related requests.
 type Handler struct {
-	upgrader websocket.Upgrader
-	hub      *Hub
+	upgrader       websocket.Upgrader
+	sessionService order.SessionService
+	hub            *Hub
 }
 
 // NewHandler allocates and creates a new [Handler].
-func NewHandler() *Handler {
+func NewHandler(sessionService order.SessionService) *Handler {
 	return &Handler{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
-		hub: NewHub(),
+		sessionService: sessionService,
+		hub:            NewHub(),
 	}
 }
 
@@ -30,7 +34,7 @@ func (h *Handler) ConnectAsAdmin(ctx *gin.Context) {
 		return
 	}
 
-	admin := NewAdmin(uuid.New(), conn)
+	admin := NewAdmin(uuid.New(), conn, h.sessionService, h.hub)
 	h.hub.AddAdmin(admin)
 
 	go func() {

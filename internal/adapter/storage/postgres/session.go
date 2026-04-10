@@ -18,8 +18,8 @@ type SessionRepository struct {
 var _ order.SessionRepository = (*SessionRepository)(nil)
 
 // NewSessionRepository allocates and creates a new [SessionRepository].
-func NewSessionRepository(db *sql.DB) SessionRepository {
-	return SessionRepository{
+func NewSessionRepository(db *sql.DB) *SessionRepository {
+	return &SessionRepository{
 		db: db,
 	}
 }

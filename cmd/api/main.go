@@ -13,6 +13,7 @@ import (
 	"restaurant/internal/adapter/storage/local"
 	"restaurant/internal/adapter/storage/postgres"
 	"restaurant/internal/domain/menu"
+	"restaurant/internal/domain/order"
 	"syscall"
 	"time"
 
@@ -47,7 +48,11 @@ func main() {
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
 	// Orders
-	orderHandler := websocket.NewHandler()
+	sessionRepository := postgres.NewSessionRepository(db)
+	sessionService := order.NewDefaultSessionService(sessionRepository)
+
+	// Orders
+	orderHandler := websocket.NewHandler(sessionService)
 
 	// start up tasks
 	if err = imageRepository.CreateSavePath(); err != nil {
