@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"restaurant/internal/domain"
 	"restaurant/internal/domain/order"
 
 	"github.com/gin-gonic/gin"
@@ -39,11 +40,48 @@ func (h *Handler) ConnectAsAdmin(ctx *gin.Context) {
 
 	go func() {
 		admin.WritePump()
-		h.hub.RemoveAdmin(admin.Id)
+		h.hub.DeleteAdmin(admin.Id)
 	}()
 
 	go func() {
 		admin.ReadPump()
-		h.hub.RemoveAdmin(admin.Id)
+		h.hub.DeleteAdmin(admin.Id)
+	}()
+}
+
+// ConnectAsClient handles connecting as client.
+func (h *Handler) ConnectAsClient(ctx *gin.Context) {
+	sessionId, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err)).
+			SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	if !h.hub.IsSessionOpen(sessionId) {
+		ctx.Error(
+			domain.NewBadRequestError(
+				"cannot connect to non open session",
+				domain.ErrorCodeSessionNotOpened,
+				nil),
+		).SetType(gin.ErrorTypeBind)
+		return
+	}
+
+	conn, err := h.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+	if err != nil {
+		return
+	}
+
+	client := NewClient(uuid.New(), sessionId, conn)
+	h.hub.AddClientToSession(sessionId, client)
+
+	go func() {
+		client.ReadPump()
+		h.hub.DeleteClient(sessionId, client.Id)
+	}()
+	go func() {
+		client.WritePump()
+		h.hub.DeleteClient(sessionId, client.Id)
 	}()
 }

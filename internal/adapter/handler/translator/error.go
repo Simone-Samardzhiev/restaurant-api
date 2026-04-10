@@ -51,6 +51,7 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInvalidSession:       "Provided session contains invalid data.",
 	domain.ErrorCodeInvalidSessionTable:  "Invalid session table.",
 	domain.ErrorCodeInvalidSessionStatus: "Invalid session status.",
+	domain.ErrorCodeSessionNotOpened:     "Session is not opened.",
 
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",

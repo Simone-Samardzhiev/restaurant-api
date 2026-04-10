@@ -61,6 +61,7 @@ const (
 	ErrorCodeInvalidSession
 	ErrorCodeInvalidSessionTable
 	ErrorCodeInvalidSessionStatus
+	ErrorCodeSessionNotOpened
 
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
@@ -97,6 +98,7 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidSession:       "INVALID_SESSION",
 	ErrorCodeInvalidSessionTable:  "INVALID_SESSION_TABLE",
 	ErrorCodeInvalidSessionStatus: "INVALID_SESSION_STATUS",
+	ErrorCodeSessionNotOpened:     "SESSION_NOT_OPENED",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

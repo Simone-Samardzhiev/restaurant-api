@@ -71,6 +71,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 		public.GET("/categories", handlers.CategoryHandler.GetCategories)
 		public.GET("/products", handlers.ProductHandler.GetProducts)
 		public.Static("images", container.AppConfig.ImageSavePath)
+		public.GET("/orders/:id", handlers.OrderHandler.ConnectAsClient)
 	}
 
 	server := &http.Server{

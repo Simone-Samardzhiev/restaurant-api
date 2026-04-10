@@ -35,8 +35,8 @@ func (h *Hub) AddAdmin(admin *Admin) {
 	h.admins[admin.Id] = admin
 }
 
-// RemoveAdmin removes an admin by id.
-func (h *Hub) RemoveAdmin(id uuid.UUID) {
+// DeleteAdmin removes an admin by id.
+func (h *Hub) DeleteAdmin(id uuid.UUID) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if admin, ok := h.admins[id]; ok {
@@ -46,6 +46,27 @@ func (h *Hub) RemoveAdmin(id uuid.UUID) {
 	}
 }
 
+func (h *Hub) IsSessionOpen(id uuid.UUID) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	session, ok := h.sessions[id]
+	if !ok {
+		return false
+	}
+
+	return session.Status.Equal("open")
+}
+
+func (h *Hub) AddClientToSession(sessionId uuid.UUID, client *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	session, ok := h.sessions[sessionId]
+	if !ok {
+		return
+	}
+	session.AddClient(client)
+}
+
 // AddSession adds a session.
 func (h *Hub) AddSession(session *Session) {
 	h.mu.Lock()
@@ -53,11 +74,15 @@ func (h *Hub) AddSession(session *Session) {
 	h.sessions[session.Id] = session
 }
 
-// RemoveSession removes a session by id.
-func (h *Hub) RemoveSession(id uuid.UUID) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.sessions, id)
+// DeleteClient removes a client from session by session id and client id.
+func (h *Hub) DeleteClient(sessionId uuid.UUID, clientId uuid.UUID) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	session, ok := h.sessions[sessionId]
+	if !ok {
+		return
+	}
+	session.DeleteClient(clientId)
 }
 
 // Broadcast sends a message to all admins and all client by the specified session.
