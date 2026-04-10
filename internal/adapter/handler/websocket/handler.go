@@ -16,14 +16,14 @@ type Handler struct {
 }
 
 // NewHandler allocates and creates a new [Handler].
-func NewHandler(sessionService order.SessionService) *Handler {
+func NewHandler(sessionService order.SessionService, hub *Hub) *Handler {
 	return &Handler{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
 		sessionService: sessionService,
-		hub:            NewHub(),
+		hub:            hub,
 	}
 }
 

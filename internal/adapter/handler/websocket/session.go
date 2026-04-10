@@ -1,22 +1,25 @@
 package websocket
 
 import (
+	"restaurant/internal/domain/order"
 	"sync"
 
 	"github.com/google/uuid"
 )
 
-// Session represents a order session with connected clients.
+// Session represents an order session with connected clients.
 type Session struct {
 	Id      uuid.UUID
+	Status  order.SessionStatus
 	mu      sync.RWMutex
 	clients map[uuid.UUID]*Client
 }
 
 // NewSession allocates and creates a new [Session].
-func NewSession(id uuid.UUID) *Session {
+func NewSession(id uuid.UUID, status order.SessionStatus) *Session {
 	return &Session{
 		Id:      id,
+		Status:  status,
 		clients: make(map[uuid.UUID]*Client),
 	}
 }

@@ -51,8 +51,11 @@ func main() {
 	sessionRepository := postgres.NewSessionRepository(db)
 	sessionService := order.NewDefaultSessionService(sessionRepository)
 
-	// Orders
-	orderHandler := websocket.NewHandler(sessionService)
+	sessions, err := sessionRepository.Get(context.Background())
+	if err != nil {
+		log.Fatalf("error getting sessions: %v", err)
+	}
+	orderHandler := websocket.NewHandler(sessionService, websocket.NewHub(sessions...))
 
 	// start up tasks
 	if err = imageRepository.CreateSavePath(); err != nil {

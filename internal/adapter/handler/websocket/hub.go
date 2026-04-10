@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"restaurant/internal/domain/order"
 	"sync"
 
 	"github.com/google/uuid"
@@ -13,11 +14,17 @@ type Hub struct {
 	sessions map[uuid.UUID]*Session
 }
 
-// NewHub allocates and creates a new [Hub].
-func NewHub() *Hub {
+// NewHub allocates and creates a new [Hub] with sessions.
+func NewHub(sessions ...order.Session) *Hub {
+	sessionsMap := make(map[uuid.UUID]*Session, len(sessions))
+	for _, session := range sessions {
+		s := NewSession(session.Id, session.Status)
+		sessionsMap[s.Id] = s
+	}
+
 	return &Hub{
 		admins:   make(map[uuid.UUID]*Admin),
-		sessions: make(map[uuid.UUID]*Session),
+		sessions: sessionsMap,
 	}
 }
 
@@ -37,6 +44,20 @@ func (h *Hub) RemoveAdmin(id uuid.UUID) {
 		admin.conn.Close()
 		close(admin.send)
 	}
+}
+
+// AddSession adds a session.
+func (h *Hub) AddSession(session *Session) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.sessions[session.Id] = session
+}
+
+// RemoveSession removes a session by id.
+func (h *Hub) RemoveSession(id uuid.UUID) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.sessions, id)
 }
 
 // Broadcast sends a message to all admins and all client by the specified session.

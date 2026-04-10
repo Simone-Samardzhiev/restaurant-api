@@ -46,7 +46,7 @@ type AddSessionRequest struct {
 	Status string `json:"status"`
 }
 
-// AddSessionResponse represents the response data of a order session.
+// AddSessionResponse represents the response data of an order session.
 type AddSessionResponse struct {
 	Id     uuid.UUID `json:"id"`
 	Table  int       `json:"table"`
@@ -72,6 +72,7 @@ func (a *Admin) addSession(message *Message) {
 		a.send <- handleDomainError(err)
 		return
 	}
+	a.hub.AddSession(NewSession(result.Id, result.Status))
 
 	data, err := json.Marshal(AddSessionResponse{
 		Id:     result.Id,
