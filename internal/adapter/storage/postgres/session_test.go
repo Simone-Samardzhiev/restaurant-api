@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"context"
+
+	"github.com/google/uuid"
 )
 
 func TestSessionRepositorySave(t *testing.T) {
@@ -30,4 +32,26 @@ func TestSessionRepositorySave(t *testing.T) {
 	if session.Status.String() != status {
 		t.Errorf("want status %s, got %s", status, session.Status.String())
 	}
+}
+
+func TestSessionRepositoryGet(t *testing.T) {
+	test.SeedOrderTables(t, database)
+	repository := postgres.NewSessionRepository(database)
+
+	sessions, err := repository.Get(context.Background())
+	if err != nil {
+		t.Fatalf("want no error, got: %v", err)
+	}
+
+	ids := []uuid.UUID{
+		uuid.MustParse("88888888-8888-8888-8888-000000000001"),
+		uuid.MustParse("88888888-8888-8888-8888-000000000002"),
+		uuid.MustParse("88888888-8888-8888-8888-000000000003"),
+		uuid.MustParse("88888888-8888-8888-8888-000000000004"),
+		uuid.MustParse("88888888-8888-8888-8888-000000000005"),
+	}
+
+	test.CheckEntities(t, ids, sessions, func(session order.Session) uuid.UUID {
+		return session.Id
+	})
 }

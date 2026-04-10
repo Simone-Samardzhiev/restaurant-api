@@ -45,3 +45,30 @@ func (r *SessionRepository) Save(ctx context.Context, request *order.AddSessionR
 
 	return session, nil
 }
+
+func (r *SessionRepository) Get(ctx context.Context) ([]order.Session, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id, table_number, status FROM order_sessions`)
+	if err != nil {
+		return nil, domain.NewInternalError("error getting sessions", err)
+	}
+	defer rows.Close()
+
+	sessions := make([]order.Session, 0)
+	for rows.Next() {
+		var id uuid.UUID
+		var table int
+		var status string
+
+		if err := rows.Scan(&id, &table, &status); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		session, err := order.ParseSession(id, table, status)
+		if err != nil {
+			return nil, domain.NewInternalError("error parsing session", err)
+		}
+		sessions = append(sessions, *session)
+	}
+
+	return sessions, nil
+}
