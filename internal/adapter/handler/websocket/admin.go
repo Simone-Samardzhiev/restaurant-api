@@ -95,18 +95,21 @@ func (a *Admin) addSession(message *Message) {
 	a.hub.Broadcast(uuid.Nil, body)
 }
 
+// UpdateSessionRequest represents the request data for updating a session.
 type UpdateSessionRequest struct {
 	Id     uuid.UUID `json:"id"`
 	Table  *int      `json:"table"`
 	Status *string   `json:"status"`
 }
 
+// UpdateSessionResponse represents the response data of successfully updated session.
 type UpdateSessionResponse struct {
 	Id     uuid.UUID `json:"id"`
 	Table  *int      `json:"table,omitempty"`
 	Status *string   `json:"status,omitempty"`
 }
 
+// updateSession handles [UpdateSessionEvent].
 func (a *Admin) updateSession(message *Message) {
 	var req UpdateSessionRequest
 	if err := json.Unmarshal(message.Data, &req); err != nil {
