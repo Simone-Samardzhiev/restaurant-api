@@ -6,9 +6,13 @@ import "encoding/json"
 type Event string
 
 const (
+	ErrorEvent Event = "error"
+
 	AddSessionEvent   Event = "add_session"
 	SessionAddedEvent Event = "session_added"
-	ErrorEvent        Event = "error"
+
+	UpdateSessionEvent  Event = "update_session"
+	SessionUpdatedEvent Event = "session_updated"
 )
 
 // Message represent a websocket message.

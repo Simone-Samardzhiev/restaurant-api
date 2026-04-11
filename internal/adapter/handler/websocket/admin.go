@@ -95,6 +95,56 @@ func (a *Admin) addSession(message *Message) {
 	a.hub.Broadcast(uuid.Nil, body)
 }
 
+type UpdateSessionRequest struct {
+	Id     uuid.UUID `json:"id"`
+	Table  *int      `json:"table"`
+	Status *string   `json:"status"`
+}
+
+type UpdateSessionResponse struct {
+	Id     uuid.UUID `json:"id"`
+	Table  *int      `json:"table,omitempty"`
+	Status *string   `json:"status,omitempty"`
+}
+
+func (a *Admin) updateSession(message *Message) {
+	var req UpdateSessionRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		a.send <- handleInvalidJSON(err)
+		return
+	}
+
+	domainRequest, err := order.ParseUpdateSessionRequest(req.Id, req.Table, req.Status)
+	if err != nil {
+		a.send <- handleDomainError(err)
+		return
+	}
+
+	if err = a.sessionService.UpdateSession(context.Background(), domainRequest); err != nil {
+		a.send <- handleDomainError(err)
+		return
+	}
+
+	data, err := json.Marshal(UpdateSessionResponse{
+		Id:     domainRequest.Id,
+		Table:  req.Table,
+		Status: req.Status,
+	})
+	if err != nil {
+		zap.L().Error("error encoding data", zap.Error(err))
+	}
+
+	response := Message{
+		Event: SessionUpdatedEvent,
+		Data:  data,
+	}
+	body, err := json.Marshal(response)
+	if err != nil {
+		zap.L().Error("error encoding body", zap.Error(err))
+	}
+	a.hub.Broadcast(uuid.Nil, body)
+}
+
 // ReadPump reads events from websocket connection.
 func (a *Admin) ReadPump() {
 	for {
@@ -113,6 +163,8 @@ func (a *Admin) ReadPump() {
 		switch message.Event {
 		case AddSessionEvent:
 			a.addSession(&message)
+		case UpdateSessionEvent:
+			a.updateSession(&message)
 		default:
 			a.send <- handleInvalidEvent()
 		}
