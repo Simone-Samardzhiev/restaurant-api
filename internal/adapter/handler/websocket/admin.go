@@ -142,7 +142,8 @@ func (a *Admin) updateSession(message *Message) {
 	if err != nil {
 		zap.L().Error("error encoding body", zap.Error(err))
 	}
-	a.hub.Broadcast(uuid.Nil, body)
+
+	a.hub.Broadcast(domainRequest.Id, body)
 }
 
 // ReadPump reads events from websocket connection.
