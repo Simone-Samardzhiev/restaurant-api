@@ -148,3 +148,54 @@ func ParseAddSessionRequest(table int, status string) (*AddSessionRequest, error
 		Status: parsedStatus,
 	}, nil
 }
+
+// UpdateSessionRequest represents a request for updating a session.
+type UpdateSessionRequest struct {
+	Id     uuid.UUID
+	Table  *SessionTable
+	Status *SessionStatus
+}
+
+// ParseUpdateSessionRequest parses [UpdateSessionRequest] from id, table and status.
+//
+// If any of the fields is invalid or the update is empty the error will be of type [domain.Error].
+func ParseUpdateSessionRequest(id uuid.UUID, table *int, status *string) (*UpdateSessionRequest, error) {
+	if table == nil && status == nil {
+		return nil, domain.NewBadRequestError("update does not have data", domain.ErrorCodeNoData, nil)
+	}
+
+	errs := make([]domain.ErrorDetail, 0)
+	var update = &UpdateSessionRequest{
+		Id: id,
+	}
+
+	if table != nil {
+		parsedTable, err := ParseSessionTable(*table)
+		if err != nil {
+			if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+				errs = append(errs, *detailErr)
+			} else {
+				return nil, err
+			}
+		}
+		update.Table = &parsedTable
+	}
+
+	if status != nil {
+		parsedStatus, err := ParseSessionStatus(*status)
+		if err != nil {
+			if detailErr, ok := errors.AsType[*domain.ErrorDetail](err); ok {
+				errs = append(errs, *detailErr)
+			} else {
+				return nil, err
+			}
+		}
+		update.Status = &parsedStatus
+	}
+
+	if len(errs) > 0 {
+		return nil, domain.NewValidationError("invalid session update", domain.ErrorCodeInvalidSessionUpdate, errs...)
+	}
+
+	return update, nil
+}

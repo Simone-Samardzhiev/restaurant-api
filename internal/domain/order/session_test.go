@@ -197,3 +197,73 @@ func TestParseAddSessionRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestParseUpdateSessionRequest(t *testing.T) {
+	tests := []struct {
+		name             string
+		table            *int
+		status           *string
+		wantErr          bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name:   "valid",
+			table:  new(10),
+			status: new("open"),
+		},
+		{
+			name:             "invalid table",
+			table:            new(-10),
+			status:           new("open"),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindValidation,
+			wantErrorCode:    domain.ErrorCodeInvalidSessionUpdate,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionTable},
+		},
+		{
+			name:             "invalid status",
+			table:            new(10),
+			status:           new("invalid"),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindValidation,
+			wantErrorCode:    domain.ErrorCodeInvalidSessionUpdate,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionStatus},
+		},
+		{
+			name:             "invalid table number and status",
+			table:            new(-10),
+			status:           new("invalid"),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindValidation,
+			wantErrorCode:    domain.ErrorCodeInvalidSessionUpdate,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeInvalidSessionTable, domain.ErrorCodeInvalidSessionStatus},
+		},
+		{
+			name:             "empty update",
+			table:            nil,
+			status:           nil,
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindBadRequest,
+			wantErrorCode:    domain.ErrorCodeNoData,
+			wantDetailsCodes: []domain.ErrorCode{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := ParseUpdateSessionRequest(uuid.New(), tt.table, tt.status)
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("want no error got %v", err)
+			}
+		})
+	}
+}
