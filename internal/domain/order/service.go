@@ -21,3 +21,7 @@ func NewDefaultSessionService(repository SessionRepository) *DefaultSessionServi
 func (s *DefaultSessionService) AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error) {
 	return s.repository.Save(ctx, request)
 }
+
+func (s *DefaultSessionService) UpdateSession(ctx context.Context, request *UpdateSessionRequest) error {
+	return s.repository.Update(ctx, request)
+}
