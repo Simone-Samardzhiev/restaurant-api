@@ -86,7 +86,7 @@ func (h *Hub) DeleteClient(sessionId uuid.UUID, clientId uuid.UUID) {
 }
 
 // Broadcast sends a message to all admins and all client by the specified session.
-// If the session is [uuid.Nil] the message will be only send
+// If the session is [uuid.Nil] the message will be only send to admins.
 func (h *Hub) Broadcast(sessionId uuid.UUID, message []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
