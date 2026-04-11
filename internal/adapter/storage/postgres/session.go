@@ -72,3 +72,44 @@ func (r *SessionRepository) Get(ctx context.Context) ([]order.Session, error) {
 
 	return sessions, nil
 }
+
+func (r *SessionRepository) Update(ctx context.Context, request *order.UpdateSessionRequest) error {
+	var table sql.Null[int]
+	if request.Table != nil {
+		table.Valid = true
+		table.V = request.Table.Number()
+	}
+
+	var status sql.NullString
+	if request.Status != nil {
+		status.Valid = true
+		status.String = request.Status.String()
+	}
+
+	result, err := r.db.ExecContext(
+		ctx,
+		`UPDATE order_sessions SET table_number = $1, status = $2 WHERE id = $3`,
+		table, status, request.Id,
+	)
+	if err != nil {
+		return domain.NewInternalError("error updating session", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewInternalError("error getting rows affected", err)
+	}
+
+	if rows == 0 {
+		return domain.NewNotFoundError(
+			"order session not found",
+			domain.ErrorCodeSessionNotFound,
+			domain.ErrorDetail{
+				Code:     domain.ErrorCodeSessionNotFoundByID,
+				Message:  "order session not found by id",
+				Metadata: map[string]any{"id": request.Id},
+			})
+	}
+
+	return nil
+}

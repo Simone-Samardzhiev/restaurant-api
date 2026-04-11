@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"restaurant/internal/adapter/storage/postgres"
+	"restaurant/internal/domain"
 	"restaurant/internal/domain/order"
 	"restaurant/internal/test"
 	"testing"
@@ -12,9 +13,7 @@ import (
 )
 
 func TestSessionRepositorySave(t *testing.T) {
-	t.Cleanup(func() {
-		test.TruncateOrderTables(t, database)
-	})
+	test.TruncateOrderTables(t, database)
 	repository := postgres.NewSessionRepository(database)
 
 	const tableNumber = 10
@@ -54,4 +53,44 @@ func TestSessionRepositoryGet(t *testing.T) {
 	test.CheckEntities(t, ids, sessions, func(session order.Session) uuid.UUID {
 		return session.Id
 	})
+}
+
+func TestSessionRepositoryUpdate(t *testing.T) {
+	tests := []struct {
+		name             string
+		request          *order.UpdateSessionRequest
+		wantErr          bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name:    "success",
+			request: test.Must(order.ParseUpdateSessionRequest(uuid.MustParse("88888888-8888-8888-8888-000000000001"), new(10), new("closed"))),
+		},
+		{
+			name:             "not found",
+			request:          test.Must(order.ParseUpdateSessionRequest(uuid.New(), new(10), new("closed"))),
+			wantErr:          true,
+			wantErrorKind:    domain.ErrorKindNotFound,
+			wantErrorCode:    domain.ErrorCodeSessionNotFound,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeSessionNotFoundByID},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			test.SeedOrderTables(t, database)
+			repository := postgres.NewSessionRepository(database)
+			err := repository.Update(context.Background(), tt.request)
+
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
+				return
+			}
+			if err != nil {
+				t.Errorf("want no error, got: %v", err)
+			}
+		})
+	}
 }

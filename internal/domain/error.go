@@ -63,6 +63,8 @@ const (
 	ErrorCodeInvalidSessionStatus
 	ErrorCodeSessionNotOpened
 	ErrorCodeInvalidSessionUpdate
+	ErrorCodeSessionNotFound
+	ErrorCodeSessionNotFoundByID
 
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
@@ -101,6 +103,8 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidSessionStatus: "INVALID_SESSION_STATUS",
 	ErrorCodeSessionNotOpened:     "SESSION_NOT_OPENED",
 	ErrorCodeInvalidSessionUpdate: "INVALID_SESSION_UPDATE",
+	ErrorCodeSessionNotFound:      "SESSION_NOT_FOUND",
+	ErrorCodeSessionNotFoundByID:  "SESSION_NOT_FOUND_BY_ID",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

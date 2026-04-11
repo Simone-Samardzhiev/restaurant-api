@@ -11,6 +11,9 @@ type SessionRepository interface {
 
 	// Get fetches all sessions
 	Get(ctx context.Context) ([]Session, error)
+
+	// Update updates a session by id.
+	Update(ctx context.Context, request *UpdateSessionRequest) error
 }
 
 // SessionService describes how session business logic is access.
