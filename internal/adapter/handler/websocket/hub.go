@@ -58,8 +58,8 @@ func (h *Hub) IsSessionOpen(id uuid.UUID) bool {
 }
 
 func (h *Hub) AddClientToSession(sessionId uuid.UUID, client *Client) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	h.mu.RLock()
+	defer h.mu.RLock()
 	session, ok := h.sessions[sessionId]
 	if !ok {
 		return
@@ -83,6 +83,23 @@ func (h *Hub) DeleteClient(sessionId uuid.UUID, clientId uuid.UUID) {
 		return
 	}
 	session.DeleteClient(clientId)
+}
+
+// UpdateSessionStatus updates the status of a session by id.
+func (h *Hub) UpdateSessionStatus(id uuid.UUID, status order.SessionStatus) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	session, ok := h.sessions[id]
+	if !ok {
+		return
+	}
+
+	// if the new status is closed or paid, kick all clients
+	if status.Equal(order.PaidSession) || status.Equal(order.CloseSession) {
+		session.DeleteAllClients()
+	}
+
+	session.Status = status
 }
 
 // Broadcast sends a message to all admins and all client by the specified session.

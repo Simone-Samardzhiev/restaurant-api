@@ -31,13 +31,25 @@ func (s *Session) AddClient(client *Client) {
 	s.clients[client.Id] = client
 }
 
-// DeleteClient deletes a new client.
+// DeleteClient deletes a client.
 func (s *Session) DeleteClient(id uuid.UUID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if client, ok := s.clients[id]; ok {
 		delete(s.clients, id)
+		client.conn.Close()
+		close(client.send)
+	}
+}
+
+// DeleteAllClients all clients in the session.
+func (s *Session) DeleteAllClients() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, client := range s.clients {
+		delete(s.clients, client.Id)
 		client.conn.Close()
 		close(client.send)
 	}

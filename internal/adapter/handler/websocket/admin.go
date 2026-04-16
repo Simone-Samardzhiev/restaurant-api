@@ -147,6 +147,11 @@ func (a *Admin) updateSession(message *Message) {
 	}
 
 	a.hub.Broadcast(domainRequest.Id, body)
+
+	// if the session status is changed, update the memory variant
+	if domainRequest.Status != nil {
+		a.hub.UpdateSessionStatus(domainRequest.Id, *domainRequest.Status)
+	}
 }
 
 // ReadPump reads events from websocket connection.
