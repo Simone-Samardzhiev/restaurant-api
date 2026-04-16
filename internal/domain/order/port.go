@@ -16,7 +16,7 @@ type SessionRepository interface {
 	Update(ctx context.Context, request *UpdateSessionRequest) error
 }
 
-// SessionService describes how session business logic is access.
+// SessionService describes how session business logic is accessed.
 type SessionService interface {
 	// AddSession adds a new session.
 	AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error)
@@ -29,4 +29,10 @@ type SessionService interface {
 type OrderedProductRepository interface {
 	// Save saves a new ordered product.
 	Save(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error)
+}
+
+// OrderedProductService describes how ordered products business logic is accessed.
+type OrderedProductService interface {
+	// PlaceOrder places a new order to a session.
+	PlaceOrder(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error)
 }
