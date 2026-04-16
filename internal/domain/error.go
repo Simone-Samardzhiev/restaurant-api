@@ -66,6 +66,9 @@ const (
 	ErrorCodeSessionNotFound
 	ErrorCodeSessionNotFoundByID
 
+	ErrorCodeInvalidOrderedProduct
+	ErrorCodeInvalidOrderedProductStatus
+
 	ErrorCodeMalformedRequest
 	ErrorCodeNoData
 	ErrorCodeInvalidUUID
@@ -105,6 +108,9 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidSessionUpdate: "INVALID_SESSION_UPDATE",
 	ErrorCodeSessionNotFound:      "SESSION_NOT_FOUND",
 	ErrorCodeSessionNotFoundByID:  "SESSION_NOT_FOUND_BY_ID",
+
+	ErrorCodeInvalidOrderedProduct:       "INVALID_ORDERED_PRODUCT",
+	ErrorCodeInvalidOrderedProductStatus: "INVALID_ORDER_PRODUCT_STATUS",
 
 	ErrorCodeMalformedRequest: "MALFORMED_REQUEST",
 	ErrorCodeNoData:           "NO_DATA",

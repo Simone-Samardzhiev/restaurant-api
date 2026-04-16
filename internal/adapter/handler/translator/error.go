@@ -56,6 +56,9 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeSessionNotFound:      "Session not found.",
 	domain.ErrorCodeSessionNotFoundByID:  "Session with provided id not found.",
 
+	domain.ErrorCodeInvalidOrderedProduct:       "Provided order contains invalid data.",
+	domain.ErrorCodeInvalidOrderedProductStatus: "Invalid order status.",
+
 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
 	domain.ErrorCodeNoData:           "Request does not have any data.",
 	domain.ErrorCodeInvalidUUID:      "Invalid UUID.",
