@@ -48,14 +48,19 @@ func main() {
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
 	// Orders
+	// Sessions
 	sessionRepository := postgres.NewSessionRepository(db)
 	sessionService := order.NewDefaultSessionService(sessionRepository)
+
+	// Ordered products
+	orderedProductRepository := postgres.NewOrderedProductRepository(db)
+	orderedProductService := order.NewDefaultOrderedProductService(orderedProductRepository)
 
 	sessions, err := sessionRepository.Get(context.Background())
 	if err != nil {
 		log.Fatalf("error getting sessions: %v", err)
 	}
-	orderHandler := websocket.NewHandler(sessionService, websocket.NewHub(sessions...))
+	orderHandler := websocket.NewHandler(sessionService, orderedProductService, websocket.NewHub(sessions...))
 
 	// start up tasks
 	if err = imageRepository.CreateSavePath(); err != nil {

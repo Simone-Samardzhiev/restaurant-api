@@ -59,7 +59,7 @@ func (h *Hub) IsSessionOpen(id uuid.UUID) bool {
 
 func (h *Hub) AddClientToSession(sessionId uuid.UUID, client *Client) {
 	h.mu.RLock()
-	defer h.mu.RLock()
+	defer h.mu.RUnlock()
 	session, ok := h.sessions[sessionId]
 	if !ok {
 		return

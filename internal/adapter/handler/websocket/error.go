@@ -12,7 +12,7 @@ import (
 // handleInvalidJSON translates the error into [Message] and encodes it into JSON.
 func handleInvalidJSON(err error) []byte {
 	var message Message
-	message.Event = AddSessionEvent
+	message.Event = EventAddSession
 
 	data, err := json.Marshal(translator.DomainError(domain.NewBadRequestError("invalid json", domain.ErrorCodeMalformedRequest, err)))
 	if err != nil {
@@ -32,7 +32,7 @@ func handleInvalidJSON(err error) []byte {
 // If the error is not of type [domain.Error], the error will be logged.
 func handleDomainError(err error) []byte {
 	var message Message
-	message.Event = ErrorEvent
+	message.Event = EventError
 
 	domainErr, ok := errors.AsType[*domain.Error](err)
 	if !ok {
@@ -55,7 +55,7 @@ func handleDomainError(err error) []byte {
 // handleInvalidEvent translated invalid event into [Message] and encodes it into JSON.
 func handleInvalidEvent() []byte {
 	var message Message
-	message.Event = ErrorEvent
+	message.Event = EventError
 
 	data, err := json.Marshal(translator.ErrorResponse{
 		Code:    "INVALID_EVENT",

@@ -12,21 +12,25 @@ import (
 
 // Admin represents a connected admin.
 type Admin struct {
-	Id             uuid.UUID
-	conn           *websocket.Conn
+	Id   uuid.UUID
+	conn *websocket.Conn
+
 	sessionService order.SessionService
 	hub            *Hub
-	send           chan []byte
+
+	send chan []byte
 }
 
 // NewAdmin allocates and creates a new [Admin].
 func NewAdmin(id uuid.UUID, conn *websocket.Conn, sessionService order.SessionService, hub *Hub) *Admin {
 	return &Admin{
-		Id:             id,
-		conn:           conn,
+		Id:   id,
+		conn: conn,
+
 		sessionService: sessionService,
 		hub:            hub,
-		send:           make(chan []byte, 256),
+
+		send: make(chan []byte, 256),
 	}
 }
 
@@ -53,7 +57,7 @@ type AddSessionResponse struct {
 	Status string    `json:"status"`
 }
 
-// addSession handles [AddSessionEvent].
+// addSession handles [EventAddSession].
 func (a *Admin) addSession(message *Message) {
 	var req AddSessionRequest
 	if err := json.Unmarshal(message.Data, &req); err != nil {
@@ -84,7 +88,7 @@ func (a *Admin) addSession(message *Message) {
 	}
 
 	response := Message{
-		Event: SessionAddedEvent,
+		Event: EventSessionAdded,
 		Data:  data,
 	}
 
@@ -109,7 +113,7 @@ type UpdateSessionResponse struct {
 	Status *string   `json:"status,omitempty"`
 }
 
-// updateSession handles [UpdateSessionEvent].
+// updateSession handles [EventUpdateSession].
 func (a *Admin) updateSession(message *Message) {
 	var req UpdateSessionRequest
 	if err := json.Unmarshal(message.Data, &req); err != nil {
@@ -138,7 +142,7 @@ func (a *Admin) updateSession(message *Message) {
 	}
 
 	response := Message{
-		Event: SessionUpdatedEvent,
+		Event: EventSessionUpdated,
 		Data:  data,
 	}
 	body, err := json.Marshal(response)
@@ -170,9 +174,9 @@ func (a *Admin) ReadPump() {
 		}
 
 		switch message.Event {
-		case AddSessionEvent:
+		case EventAddSession:
 			a.addSession(&message)
-		case UpdateSessionEvent:
+		case EventUpdateSession:
 			a.updateSession(&message)
 		default:
 			a.send <- handleInvalidEvent()
