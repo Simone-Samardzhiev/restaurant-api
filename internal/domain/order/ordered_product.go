@@ -82,3 +82,17 @@ func ParseOrderedProduct(id, productId, sessionId uuid.UUID, status string) (*Or
 		Status:    parsedStatus,
 	}, nil
 }
+
+// AddOrderedProductRequest represents a request for adding a new ordered product.
+type AddOrderedProductRequest struct {
+	ProductId uuid.UUID
+	SessionId uuid.UUID
+}
+
+// NewAddOrderedProductRequest allocates and creates new [AddOrderedProductRequest].
+func NewAddOrderedProductRequest(productId uuid.UUID, sessionId uuid.UUID) *AddOrderedProductRequest {
+	return &AddOrderedProductRequest{
+		ProductId: productId,
+		SessionId: sessionId,
+	}
+}

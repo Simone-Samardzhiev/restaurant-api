@@ -24,3 +24,9 @@ type SessionService interface {
 	// UpdateSession updates a session.
 	UpdateSession(ctx context.Context, request *UpdateSessionRequest) error
 }
+
+// OrderedProductRepository describes how ordered products data is managed.
+type OrderedProductRepository interface {
+	// Save saves a new ordered product.
+	Save(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error)
+}
