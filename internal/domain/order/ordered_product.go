@@ -7,15 +7,23 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	ProductPending   = "pending"
-	ProductPreparing = "preparing"
-	ProductDone      = "done"
+var (
+	StatusPending   = OrderedProductStatus{"pending"}
+	StatusPreparing = OrderedProductStatus{"preparing"}
+	StatusDone      = OrderedProductStatus{"done"}
 )
 
 // OrderedProductStatus represents a valid ordered product status.
 type OrderedProductStatus struct {
-	status string
+	raw string
+}
+
+func (s *OrderedProductStatus) String() string {
+	return s.raw
+}
+
+func (s *OrderedProductStatus) Equals(status OrderedProductStatus) bool {
+	return s.raw == status.raw
 }
 
 // ParseOrderedProductStatus parses [OrderedProductStatus] from string.
@@ -23,13 +31,20 @@ type OrderedProductStatus struct {
 // If the status is invalid the error will be of type [domain.ErrorDetail]
 func ParseOrderedProductStatus(status string) (OrderedProductStatus, error) {
 	switch status {
-	case ProductPending, ProductPreparing, ProductDone:
+	case StatusPending.raw, StatusPreparing.raw, StatusDone.raw:
 		return OrderedProductStatus{status}, nil
 	default:
 		return OrderedProductStatus{}, &domain.ErrorDetail{
-			Code:     domain.ErrorCodeInvalidOrderedProductStatus,
-			Message:  "invalid ordered product status",
-			Metadata: map[string]any{"actual": status, "supported": []string{ProductPending, ProductPreparing, ProductDone}},
+			Code:    domain.ErrorCodeInvalidOrderedProductStatus,
+			Message: "invalid ordered product status",
+			Metadata: map[string]any{
+				"actual": status,
+				"supported": []string{
+					StatusPending.raw,
+					StatusPreparing.raw,
+					StatusDone.raw,
+				},
+			},
 		}
 	}
 }

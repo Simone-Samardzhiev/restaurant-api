@@ -32,10 +32,10 @@ func (t SessionTable) Number() int {
 	return t.number
 }
 
-const (
-	OpenSession  string = "open"
-	CloseSession string = "closed"
-	PaidSession  string = "paid"
+var (
+	StatusOpen   = SessionStatus{"open"}
+	StatusClosed = SessionStatus{"closed"}
+	StatusPaid   = SessionStatus{"paid"}
 )
 
 // SessionStatus represents a valid table status that is either
@@ -49,20 +49,20 @@ type SessionStatus struct {
 // If the status is invalid the error will be of type [domain.ErrorDetail].
 func ParseSessionStatus(status string) (SessionStatus, error) {
 	switch status {
-	case OpenSession, CloseSession, PaidSession:
+	case StatusOpen.raw, StatusClosed.raw, StatusPaid.raw:
 		return SessionStatus{raw: status}, nil
 	default:
 		return SessionStatus{}, &domain.ErrorDetail{
 			Code:     domain.ErrorCodeInvalidSessionStatus,
 			Message:  "invalid session status",
-			Metadata: map[string]any{"actual": status, "supported": []string{OpenSession, CloseSession, PaidSession}},
+			Metadata: map[string]any{"actual": status, "supported": []string{StatusOpen.raw, StatusClosed.raw, StatusPaid.raw}},
 		}
 	}
 }
 
 // Equal checks if the session is equals to string.
-func (s SessionStatus) Equal(session string) bool {
-	return s.raw == session
+func (s SessionStatus) Equal(status SessionStatus) bool {
+	return s.raw == status.raw
 }
 
 func (s SessionStatus) String() string {

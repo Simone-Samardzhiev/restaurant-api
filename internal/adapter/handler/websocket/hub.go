@@ -54,7 +54,7 @@ func (h *Hub) IsSessionOpen(id uuid.UUID) bool {
 		return false
 	}
 
-	return session.Status.Equal("open")
+	return session.Status.Equal(order.StatusOpen)
 }
 
 func (h *Hub) AddClientToSession(sessionId uuid.UUID, client *Client) {
@@ -95,7 +95,7 @@ func (h *Hub) UpdateSessionStatus(id uuid.UUID, status order.SessionStatus) {
 	}
 
 	// if the new status is closed or paid, kick all clients
-	if status.Equal(order.PaidSession) || status.Equal(order.CloseSession) {
+	if status.Equal(order.StatusPaid) || status.Equal(order.StatusClosed) {
 		session.DeleteAllClients()
 	}
 
