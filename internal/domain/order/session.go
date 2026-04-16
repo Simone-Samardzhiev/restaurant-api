@@ -199,3 +199,9 @@ func ParseUpdateSessionRequest(id uuid.UUID, table *int, status *string) (*Updat
 
 	return update, nil
 }
+
+// SessionDetails represents details about a session.
+type SessionDetails struct {
+	Session
+	OrderedProducts []OrderedProduct
+}
