@@ -201,3 +201,14 @@ func NewSessionRouter(service order.SessionService) *gin.Engine {
 	router.GET("/sessions/:id", handler.GetSessionDetails)
 	return router
 }
+
+// NewSessionRouterFromHandler creates a new [gin.Engine] with routes for the provided [rest.SessionHandler]
+//
+// Path to each method:
+//   - GET /sessions/:id - [rest.SessionHandler.GetSessionDetails]
+func NewSessionRouterFromHandler(handler *rest.SessionHandler) *gin.Engine {
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.GET("/sessions/:id", handler.GetSessionDetails)
+	return router
+}
