@@ -48,19 +48,20 @@ func main() {
 	productHandler := rest.NewProductHandler(productService, container.AppConfig.ImageServingPath)
 
 	// Orders
-	// Sessions
-	sessionRepository := postgres.NewSessionRepository(db)
-	sessionService := order.NewDefaultSessionService(sessionRepository)
-
 	// Ordered products
 	orderedProductRepository := postgres.NewOrderedProductRepository(db)
 	orderedProductService := order.NewDefaultOrderedProductService(orderedProductRepository)
+
+	// Sessions
+	sessionRepository := postgres.NewSessionRepository(db)
+	sessionService := order.NewDefaultSessionService(sessionRepository, orderedProductRepository)
+	sessionHandler := rest.NewSessionHandler(sessionService)
 
 	sessions, err := sessionRepository.Get(context.Background())
 	if err != nil {
 		log.Fatalf("error getting sessions: %v", err)
 	}
-	orderHandler := websocket.NewHandler(sessionService, orderedProductService, websocket.NewHub(sessions...))
+	websocketHandler := websocket.NewHandler(sessionService, orderedProductService, websocket.NewHub(sessions...))
 
 	// start up tasks
 	if err = imageRepository.CreateSavePath(); err != nil {
@@ -68,9 +69,10 @@ func main() {
 	}
 
 	router := handler.NewRouter(container, handler.Handlers{
-		CategoryHandler: categoryHandler,
-		ProductHandler:  productHandler,
-		OrderHandler:    orderHandler,
+		CategoryHandler:  categoryHandler,
+		ProductHandler:   productHandler,
+		SessionHandler:   sessionHandler,
+		WebsocketHandler: websocketHandler,
 	})
 
 	signalChan := make(chan os.Signal, 1)

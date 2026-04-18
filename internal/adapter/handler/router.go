@@ -14,9 +14,10 @@ import (
 
 // Handlers holds all rest handlers.
 type Handlers struct {
-	CategoryHandler *rest.CategoryHandler
-	ProductHandler  *rest.ProductHandler
-	OrderHandler    *websocket.Handler
+	CategoryHandler  *rest.CategoryHandler
+	ProductHandler   *rest.ProductHandler
+	SessionHandler   *rest.SessionHandler
+	WebsocketHandler *websocket.Handler
 }
 
 // Router routes all http request to the specific handler function.
@@ -63,7 +64,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 		}
 		{
 			order := admin.Group("/orders")
-			order.GET("", handlers.OrderHandler.ConnectAsAdmin)
+			order.GET("", handlers.WebsocketHandler.ConnectAsAdmin)
 		}
 	}
 	{
@@ -71,7 +72,8 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 		public.GET("/categories", handlers.CategoryHandler.GetCategories)
 		public.GET("/products", handlers.ProductHandler.GetProducts)
 		public.Static("images", container.AppConfig.ImageSavePath)
-		public.GET("/orders/:id", handlers.OrderHandler.ConnectAsClient)
+		public.GET("/orders/:id", handlers.WebsocketHandler.ConnectAsClient)
+		public.GET("/sessions/:id", handlers.SessionHandler.GetSessionDetails)
 	}
 
 	server := &http.Server{
