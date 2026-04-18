@@ -2,28 +2,49 @@ package order
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 // DefaultSessionService is the default implementation of [SessionService].
 type DefaultSessionService struct {
-	repository SessionRepository
+	sessionRepository        SessionRepository
+	orderedProductRepository OrderedProductRepository
 }
 
 var _ SessionService = (*DefaultSessionService)(nil)
 
 // NewDefaultSessionService allocates and creates a new [DefaultSessionService].
-func NewDefaultSessionService(repository SessionRepository) *DefaultSessionService {
+func NewDefaultSessionService(sessionRepository SessionRepository, orderedProductRepository OrderedProductRepository) *DefaultSessionService {
 	return &DefaultSessionService{
-		repository,
+		sessionRepository:        sessionRepository,
+		orderedProductRepository: orderedProductRepository,
 	}
 }
 
 func (s *DefaultSessionService) AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error) {
-	return s.repository.Save(ctx, request)
+	return s.sessionRepository.Save(ctx, request)
 }
 
 func (s *DefaultSessionService) UpdateSession(ctx context.Context, request *UpdateSessionRequest) error {
-	return s.repository.Update(ctx, request)
+	return s.sessionRepository.Update(ctx, request)
+}
+
+func (s *DefaultSessionService) GetSessionDetails(ctx context.Context, id uuid.UUID) (*SessionDetails, error) {
+	session, err := s.sessionRepository.GetById(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	products, err := s.orderedProductRepository.GetBySessionId(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SessionDetails{
+		Session:         *session,
+		OrderedProducts: products,
+	}, nil
 }
 
 // DefaultOrderedProductService is the default implementation of [OrderedProductService].

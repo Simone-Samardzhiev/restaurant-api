@@ -1,7 +1,8 @@
-package order
+package order_test
 
 import (
 	"restaurant/internal/domain"
+	"restaurant/internal/domain/order"
 	"restaurant/internal/test"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestParseOrderedProductStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ParseOrderedProductStatus(tt.status)
+			_, err := order.ParseOrderedProductStatus(tt.status)
 			if tt.wantErr {
 				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
@@ -69,7 +70,7 @@ func TestParseOrderedProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ParseOrderedProduct(uuid.Nil, uuid.Nil, uuid.Nil, tt.status)
+			_, err := order.ParseOrderedProduct(uuid.Nil, uuid.Nil, uuid.Nil, tt.status)
 			if tt.wantErr {
 				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return

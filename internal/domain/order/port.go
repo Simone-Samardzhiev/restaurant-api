@@ -28,6 +28,9 @@ type SessionService interface {
 
 	// UpdateSession updates a session.
 	UpdateSession(ctx context.Context, request *UpdateSessionRequest) error
+
+	// GetSessionDetails fetches session details by id.
+	GetSessionDetails(ctx context.Context, id uuid.UUID) (*SessionDetails, error)
 }
 
 // OrderedProductRepository describes how ordered products data is managed.

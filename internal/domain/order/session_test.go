@@ -1,7 +1,8 @@
-package order
+package order_test
 
 import (
 	"restaurant/internal/domain"
+	"restaurant/internal/domain/order"
 	"restaurant/internal/test"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestParseSessionTable(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := ParseSessionTable(tt.tableNumber)
+			_, err := order.ParseSessionTable(tt.tableNumber)
 			if tt.wantErr {
 				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
@@ -71,7 +72,7 @@ func TestParseSessionStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := ParseSessionStatus(tt.status)
+			_, err := order.ParseSessionStatus(tt.status)
 			if tt.wantErr {
 				test.AssertErrorDetail(t, err, tt.wantErrorCode)
 				return
@@ -128,7 +129,7 @@ func TestParseSession(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ParseSession(uuid.New(), tt.tableNumber, tt.status)
+			_, err := order.ParseSession(uuid.New(), tt.tableNumber, tt.status)
 			if tt.wantErr {
 				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
@@ -185,7 +186,7 @@ func TestParseAddSessionRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ParseAddSessionRequest(tt.tableNumber, tt.status)
+			_, err := order.ParseAddSessionRequest(tt.tableNumber, tt.status)
 			if tt.wantErr {
 				test.AssertError(t, err, domain.ErrorKindValidation, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
@@ -255,7 +256,7 @@ func TestParseUpdateSessionRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ParseUpdateSessionRequest(uuid.New(), tt.table, tt.status)
+			_, err := order.ParseUpdateSessionRequest(uuid.New(), tt.table, tt.status)
 			if tt.wantErr {
 				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
 				return
