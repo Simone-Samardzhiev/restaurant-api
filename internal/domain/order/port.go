@@ -34,6 +34,9 @@ type SessionService interface {
 type OrderedProductRepository interface {
 	// Save saves a new ordered product.
 	Save(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error)
+
+	// GetBySessionId fetches all products by session id.
+	GetBySessionId(ctx context.Context, sessionId uuid.UUID) ([]OrderedProduct, error)
 }
 
 // OrderedProductService describes how ordered products business logic is accessed.

@@ -79,3 +79,22 @@ func TestOrderedProductRepositorySave(t *testing.T) {
 		})
 	}
 }
+
+func TestOrderedProductRepositoryGetBySessionId(t *testing.T) {
+	test.SeedOrderTables(t, database)
+	repository := postgres.NewOrderedProductRepository(database)
+
+	products, err := repository.GetBySessionId(context.Background(), uuid.MustParse("88888888-8888-8888-8888-000000000001"))
+	if err != nil {
+		t.Fatalf("want no errors, got %v", err)
+	}
+
+	ids := []uuid.UUID{
+		uuid.MustParse("99999999-9999-9999-9999-000000000001"),
+		uuid.MustParse("99999999-9999-9999-9999-000000000002"),
+	}
+
+	test.CheckEntities(t, ids, products, func(product order.OrderedProduct) uuid.UUID {
+		return product.Id
+	})
+}

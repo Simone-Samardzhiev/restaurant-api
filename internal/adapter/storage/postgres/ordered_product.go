@@ -69,3 +69,39 @@ func (r *OrderedProductRepository) Save(ctx context.Context, request *order.AddO
 
 	return product, nil
 }
+
+func (r *OrderedProductRepository) GetBySessionId(ctx context.Context, sessionId uuid.UUID) ([]order.OrderedProduct, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, product_id, session_id, status
+		FROM ordered_products
+		WHERE session_id = $1`,
+		sessionId,
+	)
+
+	if err != nil {
+		return nil, domain.NewInternalError("error getting ordered products", err)
+	}
+	defer rows.Close()
+
+	var products []order.OrderedProduct
+	for rows.Next() {
+		var id uuid.UUID
+		var productId uuid.UUID
+		var sessionId uuid.UUID
+		var status string
+
+		if err := rows.Scan(&id, &productId, &sessionId, &status); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		product, err := order.ParseOrderedProduct(id, productId, sessionId, status)
+		if err != nil {
+			return nil, domain.NewInternalError("error parsing ordered product", err)
+		}
+
+		products = append(products, *product)
+	}
+
+	return products, nil
+}
