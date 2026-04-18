@@ -94,3 +94,44 @@ func TestSessionRepositoryUpdate(t *testing.T) {
 		})
 	}
 }
+
+func TestSessionRepositoryGetById(t *testing.T) {
+	tests := []struct {
+		name             string
+		id               uuid.UUID
+		wantError        bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			id:   uuid.MustParse("88888888-8888-8888-8888-000000000001"),
+		},
+		{
+			name:             "not found",
+			id:               uuid.New(),
+			wantError:        true,
+			wantErrorKind:    domain.ErrorKindNotFound,
+			wantErrorCode:    domain.ErrorCodeSessionNotFound,
+			wantDetailsCodes: []domain.ErrorCode{domain.ErrorCodeSessionNotFoundByID},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			test.SeedOrderTables(t, database)
+			repository := postgres.NewSessionRepository(database)
+
+			_, err := repository.GetById(context.Background(), tt.id)
+			if tt.wantError {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
+				return
+			}
+
+			if err != nil {
+				t.Errorf("want no error, got: %v", err)
+			}
+		})
+	}
+}

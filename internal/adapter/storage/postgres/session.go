@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/order"
 
@@ -112,4 +113,33 @@ func (r *SessionRepository) Update(ctx context.Context, request *order.UpdateSes
 	}
 
 	return nil
+}
+
+func (r *SessionRepository) GetById(ctx context.Context, id uuid.UUID) (*order.Session, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT id, table_number, status FROM order_sessions WHERE id = $1`,
+		id,
+	)
+
+	var sessionId uuid.UUID
+	var table int
+	var status string
+	if err := row.Scan(&sessionId, &table, &status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.NewNotFoundError("session not found", domain.ErrorCodeSessionNotFound, domain.ErrorDetail{
+				Code:     domain.ErrorCodeSessionNotFoundByID,
+				Message:  "order session not found by id",
+				Metadata: map[string]any{"id": id},
+			})
+		}
+
+		return nil, domain.NewInternalError("error getting session by id", err)
+	}
+
+	session, err := order.ParseSession(sessionId, table, status)
+	if err != nil {
+		return nil, domain.NewInternalError("error parsing session", err)
+	}
+	return session, nil
 }

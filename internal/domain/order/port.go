@@ -2,6 +2,8 @@ package order
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 // SessionRepository describes how session data is managed.
@@ -11,6 +13,9 @@ type SessionRepository interface {
 
 	// Get fetches all sessions
 	Get(ctx context.Context) ([]Session, error)
+
+	// GetById fetches session by id.
+	GetById(ctx context.Context, id uuid.UUID) (*Session, error)
 
 	// Update updates a session by id.
 	Update(ctx context.Context, request *UpdateSessionRequest) error
