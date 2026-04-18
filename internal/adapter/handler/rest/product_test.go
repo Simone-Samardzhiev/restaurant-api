@@ -120,7 +120,7 @@ func TestProductHandlerAddProduct(t *testing.T) {
 				},
 			},
 			productRequest: &rest.AddProductRequest{
-				Name:        "Valida product name",
+				Name:        "Valid product name",
 				Description: "Valid product description",
 				Price:       decimal.NewFromFloat(10.5),
 				CategoryId:  uuid.New(),
