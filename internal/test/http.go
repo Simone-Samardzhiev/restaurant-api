@@ -13,6 +13,7 @@ import (
 	"restaurant/internal/adapter/handler/translator"
 	"restaurant/internal/domain"
 	"restaurant/internal/domain/menu"
+	"restaurant/internal/domain/order"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -187,4 +188,16 @@ func NewGetProductsRequest(id *string, categoryId *string) *http.Request {
 	}
 
 	return httptest.NewRequest(http.MethodGet, "/products?"+query.Encode(), nil)
+}
+
+// NewSessionRouter creates a new [gin.Engine] with router for [rest.SessionHandler].
+//
+// Path to each method:
+//   - GET /sessions/:id - [rest.SessionHandler.GetSessionDetails]
+func NewSessionRouter(service order.SessionService) *gin.Engine {
+	handler := rest.NewSessionHandler(service)
+	router := gin.New()
+	router.Use(middleware.Error())
+	router.GET("/sessions/:id", handler.GetSessionDetails)
+	return router
 }
