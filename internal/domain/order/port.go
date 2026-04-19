@@ -49,4 +49,7 @@ type OrderedProductRepository interface {
 type OrderedProductService interface {
 	// PlaceOrder places a new order to a session.
 	PlaceOrder(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error)
+
+	// DeleteOrder deletes an ordered product.
+	DeleteOrder(ctx context.Context, id uuid.UUID) (*OrderedProduct, error)
 }

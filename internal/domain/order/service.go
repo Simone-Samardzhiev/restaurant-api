@@ -64,3 +64,7 @@ func NewDefaultOrderedProductService(repository OrderedProductRepository) *Defau
 func (s *DefaultOrderedProductService) PlaceOrder(ctx context.Context, request *AddOrderedProductRequest) (*OrderedProduct, error) {
 	return s.repository.Save(ctx, request)
 }
+
+func (s *DefaultOrderedProductService) DeleteOrder(ctx context.Context, id uuid.UUID) (*OrderedProduct, error) {
+	return s.repository.Delete(ctx, id)
+}
