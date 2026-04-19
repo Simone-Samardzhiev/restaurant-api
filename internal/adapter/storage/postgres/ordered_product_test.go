@@ -67,7 +67,7 @@ func TestOrderedProductRepositorySave(t *testing.T) {
 				return
 			}
 			if err != nil {
-				t.Fatalf("want no errors, got %v", err)
+				t.Fatalf("want no error, got %v", err)
 			}
 
 			if orderedProduct.ProductId != tt.request.ProductId {
@@ -97,4 +97,48 @@ func TestOrderedProductRepositoryGetBySessionId(t *testing.T) {
 	test.CheckEntities(t, ids, products, func(product order.OrderedProduct) uuid.UUID {
 		return product.Id
 	})
+}
+
+func TestOrderedProductRepository_Delete(t *testing.T) {
+	tests := []struct {
+		name             string
+		id               uuid.UUID
+		wantErr          bool
+		wantErrorKind    domain.ErrorKind
+		wantErrorCode    domain.ErrorCode
+		wantDetailsCodes []domain.ErrorCode
+	}{
+		{
+			name: "success",
+			id:   uuid.MustParse("99999999-9999-9999-9999-000000000001"),
+		},
+		{
+			name:          "product not found",
+			id:            uuid.New(),
+			wantErr:       true,
+			wantErrorKind: domain.ErrorKindNotFound,
+			wantErrorCode: domain.ErrorCodeProductNotFound,
+			wantDetailsCodes: []domain.ErrorCode{
+				domain.ErrorCodeProductNotFoundByID,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			test.SeedMenuTables(t, database)
+			test.SeedOrderTables(t, database)
+			repository := postgres.NewOrderedProductRepository(database)
+
+			_, err := repository.Save(context.Background(), &order.AddOrderedProductRequest{})
+			if tt.wantErr {
+				test.AssertError(t, err, tt.wantErrorKind, tt.wantErrorCode, tt.wantDetailsCodes...)
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("want no error, got %v", err)
+			}
+		})
+	}
 }

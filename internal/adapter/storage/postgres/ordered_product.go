@@ -105,3 +105,39 @@ func (r *OrderedProductRepository) GetBySessionId(ctx context.Context, sessionId
 
 	return products, nil
 }
+
+func (r *OrderedProductRepository) Delete(ctx context.Context, id uuid.UUID) (*order.OrderedProduct, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`DELETE FROM ordered_products 
+       WHERE id = $1
+       RETURNING id, product_id, session_id, status
+       `,
+		id,
+	)
+
+	var key uuid.UUID
+	var productId uuid.UUID
+	var sessionId uuid.UUID
+	var status string
+
+	err := row.Scan(&key, &productId, &sessionId, &status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.NewNotFoundError(
+			"product not found",
+			domain.ErrorCodeProductNotFound,
+			domain.ErrorDetail{
+				Code:     domain.ErrorCodeProductNotFoundByID,
+				Message:  "product not found by id",
+				Metadata: map[string]any{"id": id},
+			},
+		)
+	}
+
+	product, err := order.ParseOrderedProduct(key, productId, sessionId, status)
+	if err != nil {
+		return nil, domain.NewInternalError("error parsing product", err)
+	}
+
+	return product, nil
+}

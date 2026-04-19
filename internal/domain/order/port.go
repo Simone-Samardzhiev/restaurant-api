@@ -40,6 +40,9 @@ type OrderedProductRepository interface {
 
 	// GetBySessionId fetches all products by session id.
 	GetBySessionId(ctx context.Context, sessionId uuid.UUID) ([]OrderedProduct, error)
+
+	// Delete deletes an ordered product by id.
+	Delete(ctx context.Context, id uuid.UUID) (*OrderedProduct, error)
 }
 
 // OrderedProductService describes how ordered products business logic is accessed.
