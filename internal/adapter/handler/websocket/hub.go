@@ -105,8 +105,8 @@ func (h *Hub) UpdateSessionStatus(id uuid.UUID, status order.SessionStatus) {
 // Broadcast sends a message to all admins and all client by the specified session.
 // If the session is [uuid.Nil] the message will be only send to admins.
 func (h *Hub) Broadcast(sessionId uuid.UUID, message []byte) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 
 	if sessionId != uuid.Nil {
 		if session, ok := h.sessions[sessionId]; ok {
@@ -118,9 +118,7 @@ func (h *Hub) Broadcast(sessionId uuid.UUID, message []byte) {
 		select {
 		case admin.send <- message:
 		default:
-			delete(h.admins, admin.Id)
-			admin.conn.Close()
-			close(admin.send)
+			go h.DeleteAdmin(admin.Id)
 		}
 	}
 }

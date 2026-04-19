@@ -57,16 +57,14 @@ func (s *Session) DeleteAllClients() {
 
 // Broadcast sends a message to all clients in the session.
 func (s *Session) Broadcast(message []byte) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	for _, client := range s.clients {
 		select {
 		case client.send <- message:
 		default:
-			delete(s.clients, client.Id)
-			client.conn.Close()
-			close(client.send)
+			go s.DeleteClient(client.Id)
 		}
 	}
 }
