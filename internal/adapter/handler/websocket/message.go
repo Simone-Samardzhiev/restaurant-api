@@ -16,6 +16,9 @@ const (
 
 	EventAddOrderedProduct   Event = "add_ordered_product"
 	EventOrderedProductAdded Event = "ordered_product_added"
+
+	EventDeleteOrderedProduct  Event = "delete_ordered_product"
+	EventOrderedProductDeleted Event = "ordered_product_deleted"
 )
 
 // Message represent a websocket message.

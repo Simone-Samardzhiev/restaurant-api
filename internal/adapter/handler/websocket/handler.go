@@ -37,7 +37,7 @@ func (h *Handler) ConnectAsAdmin(ctx *gin.Context) {
 		return
 	}
 
-	admin := NewAdmin(uuid.New(), conn, h.sessionService, h.hub)
+	admin := NewAdmin(uuid.New(), conn, h.sessionService, h.orderedProductService, h.hub)
 	h.hub.AddAdmin(admin)
 
 	go func() {

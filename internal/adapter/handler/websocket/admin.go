@@ -15,20 +15,28 @@ type Admin struct {
 	Id   uuid.UUID
 	conn *websocket.Conn
 
-	sessionService order.SessionService
-	hub            *Hub
+	sessionService        order.SessionService
+	orderedProductService order.OrderedProductService
+	hub                   *Hub
 
 	send chan []byte
 }
 
 // NewAdmin allocates and creates a new [Admin].
-func NewAdmin(id uuid.UUID, conn *websocket.Conn, sessionService order.SessionService, hub *Hub) *Admin {
+func NewAdmin(
+	id uuid.UUID,
+	conn *websocket.Conn,
+	sessionService order.SessionService,
+	orderedProductService order.OrderedProductService,
+	hub *Hub,
+) *Admin {
 	return &Admin{
 		Id:   id,
 		conn: conn,
 
-		sessionService: sessionService,
-		hub:            hub,
+		sessionService:        sessionService,
+		orderedProductService: orderedProductService,
+		hub:                   hub,
 
 		send: make(chan []byte, 256),
 	}
@@ -158,6 +166,45 @@ func (a *Admin) updateSession(message *Message) {
 	}
 }
 
+type DeleteOrderedProductRequest struct {
+	Id uuid.UUID `json:"id"`
+}
+
+type DeleteOrderedProductResponse struct {
+	Id uuid.UUID `json:"id"`
+}
+
+func (a *Admin) deleteOrderedProduct(message *Message) {
+	var req DeleteOrderedProductRequest
+	if err := json.Unmarshal(message.Data, &req); err != nil {
+		a.send <- handleInvalidJSON(err)
+	}
+
+	product, err := a.orderedProductService.DeleteOrder(context.Background(), req.Id)
+	if err != nil {
+		a.send <- handleDomainError(err)
+		return
+	}
+
+	data, err := json.Marshal(DeleteOrderedProductResponse{
+		Id: product.Id,
+	})
+	if err != nil {
+		zap.L().Error("error encoding body", zap.Error(err))
+	}
+
+	response := Message{
+		Event: EventOrderedProductDeleted,
+		Data:  data,
+	}
+	body, err := json.Marshal(response)
+	if err != nil {
+		zap.L().Error("error encoding body", zap.Error(err))
+	}
+
+	a.hub.Broadcast(product.SessionId, body)
+}
+
 // ReadPump reads events from websocket connection.
 func (a *Admin) ReadPump() {
 	for {
@@ -178,6 +225,9 @@ func (a *Admin) ReadPump() {
 			a.addSession(&message)
 		case EventUpdateSession:
 			a.updateSession(&message)
+		case EventDeleteOrderedProduct:
+			a.deleteOrderedProduct(&message)
+
 		default:
 			a.send <- handleInvalidEvent()
 		}
