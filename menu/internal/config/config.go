@@ -11,11 +11,12 @@ import (
 type (
 	// Database represents database config.
 	Database struct {
-		Url          string
-		MaxIdleConns int
-		MaxOpenConns int
-		MaxIdleTime  time.Duration
-		MaxLifetime  time.Duration
+		Url            string
+		MigrationsPath string
+		MaxIdleConns   int
+		MaxOpenConns   int
+		MaxIdleTime    time.Duration
+		MaxLifetime    time.Duration
 	}
 
 	// Config combines all configurations.
@@ -31,6 +32,12 @@ func newDatabase() (Database, error) {
 		database.Url = url
 	} else {
 		return Database{}, errors.New("DATABASE_URL environment variable not defined")
+	}
+
+	if path, ok := os.LookupEnv("MIGRATIONS_PATH"); ok {
+		database.MigrationsPath = path
+	} else {
+		return Database{}, errors.New("MIGRATIONS_PATH environment variable not defined")
 	}
 
 	if maxIdleConns, err := strconv.Atoi(os.Getenv("DATABASE_MAX_IDLE_CONNS")); err == nil {
