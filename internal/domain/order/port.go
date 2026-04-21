@@ -19,6 +19,9 @@ type SessionRepository interface {
 
 	// Update updates a session by id.
 	Update(ctx context.Context, request *UpdateSessionRequest) error
+
+	// GetBill fetches the bill from session id.
+	GetBill(ctx context.Context, id uuid.UUID) (*Bill, error)
 }
 
 // SessionService describes how session business logic is accessed.

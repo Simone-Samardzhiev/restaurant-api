@@ -55,6 +55,7 @@ var mapErrorCode = map[domain.ErrorCode]string{
 	domain.ErrorCodeInvalidSessionUpdate: "Provided session update contains invalid data.",
 	domain.ErrorCodeSessionNotFound:      "Session not found.",
 	domain.ErrorCodeSessionNotFoundByID:  "Session with provided id not found.",
+	domain.ErrorCodeOrderNotFinished:     "Order is not finished. Please wait for all ordered products to be completed.",
 
 	domain.ErrorCodeInvalidOrderedProduct:       "Provided order contains invalid data.",
 	domain.ErrorCodeInvalidOrderedProductStatus: "Invalid order status.",

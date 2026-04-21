@@ -1,0 +1,1 @@
+CREATE INDEX ordered_products_session_id_key ON ordered_products (session_id);

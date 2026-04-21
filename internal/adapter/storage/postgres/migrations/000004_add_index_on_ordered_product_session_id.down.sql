@@ -1,0 +1,1 @@
+DROP INDEX ordered_products_session_id_key;

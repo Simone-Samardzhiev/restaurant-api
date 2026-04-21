@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // SessionRepository implements [order.SessionRepository] using postgres.
@@ -142,4 +143,52 @@ func (r *SessionRepository) GetById(ctx context.Context, id uuid.UUID) (*order.S
 		return nil, domain.NewInternalError("error parsing session", err)
 	}
 	return session, nil
+}
+
+func (r *SessionRepository) GetBill(ctx context.Context, id uuid.UUID) (*order.Bill, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT p.id, p.name, p.price, orders.status, orders.total
+		FROM (SELECT product_id, status, COUNT(*) AS total
+      		FROM ordered_products
+      		WHERE session_id = $1
+      		GROUP BY product_id, status) orders
+         		JOIN products p ON p.id = orders.product_id;`,
+		id,
+	)
+	if err != nil {
+		return nil, domain.NewInternalError("error getting bill", err)
+	}
+	defer rows.Close()
+
+	var items []order.BillItem
+	var quantity int64
+	price := decimal.Zero
+	for rows.Next() {
+		var item order.BillItem
+		var status string
+
+		if err = rows.Scan(&item.ProductId, &item.ProductName, &item.Price, &status, &item.Quantity); err != nil {
+			return nil, domain.NewInternalError("error scanning row", err)
+		}
+
+		parsedStatus, err := order.ParseOrderedProductStatus(status)
+		if err != nil {
+			return nil, domain.NewInternalError("error parsing ordered product status", err)
+		}
+
+		if parsedStatus.Equals(order.StatusPending) || parsedStatus.Equals(order.StatusPreparing) {
+			return nil, domain.NewBadRequestError("order is not finished", domain.ErrorCodeOrderNotFinished, nil)
+		}
+
+		quantity += item.Quantity
+		price = price.Add(item.Price)
+		items = append(items, item)
+	}
+
+	return &order.Bill{
+		Items:    items,
+		Quantity: quantity,
+		Price:    price,
+	}, nil
 }

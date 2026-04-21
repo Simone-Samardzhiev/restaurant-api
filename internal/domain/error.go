@@ -65,6 +65,7 @@ const (
 	ErrorCodeInvalidSessionUpdate
 	ErrorCodeSessionNotFound
 	ErrorCodeSessionNotFoundByID
+	ErrorCodeOrderNotFinished
 
 	ErrorCodeInvalidOrderedProduct
 	ErrorCodeInvalidOrderedProductStatus
@@ -108,6 +109,7 @@ var mapErrorCode = map[ErrorCode]string{
 	ErrorCodeInvalidSessionUpdate: "INVALID_SESSION_UPDATE",
 	ErrorCodeSessionNotFound:      "SESSION_NOT_FOUND",
 	ErrorCodeSessionNotFoundByID:  "SESSION_NOT_FOUND_BY_ID",
+	ErrorCodeOrderNotFinished:     "ORDER_NOT_FINISHED",
 
 	ErrorCodeInvalidOrderedProduct:       "INVALID_ORDERED_PRODUCT",
 	ErrorCodeInvalidOrderedProductStatus: "INVALID_ORDER_PRODUCT_STATUS",
