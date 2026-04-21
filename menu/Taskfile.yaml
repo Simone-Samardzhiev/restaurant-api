@@ -1,0 +1,18 @@
+version: 3
+
+vars:
+  MIGRATIONS_PATH: "./migrations"
+
+dotenv:
+  - .env
+
+tasks:
+  migrate-create:
+    desc: "Applies all migrations."
+    summary: |
+      Applies all migrations.
+      The migration is creates at env variable `MIGRATIONS_PATH`
+      and the name is set to env variable NAME
+
+    cmd:
+      migrate create -ext sql -dir {{.MIGRATIONS_PATH}} {{.NAME}}
