@@ -6,5 +6,5 @@ import "context"
 type CategoryRepository interface {
 
 	// Save saves a new category.
-	Save(ctx context.Context, category *CategoryRepository) error
+	Save(ctx context.Context, category *Category) error
 }
