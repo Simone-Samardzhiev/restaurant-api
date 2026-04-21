@@ -5,6 +5,7 @@ import (
 	"restaurant/internal/domain"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // SessionTable represents a valid table number that is larger than 0.
@@ -204,4 +205,19 @@ func ParseUpdateSessionRequest(id uuid.UUID, table *int, status *string) (*Updat
 type SessionDetails struct {
 	Session
 	OrderedProducts []OrderedProduct
+}
+
+// BillItem represents an item in the bill.
+type BillItem struct {
+	ProductId   uuid.UUID
+	ProductName string
+	Quantity    int64
+	Price       decimal.Decimal
+}
+
+// Bill contains all ordered products for a session.
+type Bill struct {
+	Items    []BillItem
+	Quantity int64
+	Price    decimal.Decimal
 }
