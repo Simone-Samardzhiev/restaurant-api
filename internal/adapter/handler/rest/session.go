@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // SessionHandler handles session related http requests.
@@ -70,6 +71,51 @@ func (h *SessionHandler) GetSessionDetails(ctx *gin.Context) {
 			ProductId: orderedProduct.ProductId,
 			SessionId: orderedProduct.SessionId,
 			Status:    orderedProduct.Status.String(),
+		})
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+// BillItemResponse represents the JSON response of bill item.
+type BillItemResponse struct {
+	ProductId uuid.UUID       `json:"productId"`
+	Name      string          `json:"name"`
+	Quantity  int64           `json:"quantity"`
+	Price     decimal.Decimal `json:"price"`
+}
+
+// BillResponse represents the JSON response of a bill.
+type BillResponse struct {
+	Items    []BillItemResponse `json:"items"`
+	Quantity int64              `json:"quantity"`
+	Price    decimal.Decimal    `json:"price"`
+}
+
+func (h *SessionHandler) GetBill(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		ctx.Error(domain.NewBadRequestError("invalid uuid", domain.ErrorCodeInvalidUUID, err)).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	result, err := h.service.GetBill(ctx, id)
+	if err != nil {
+		ctx.Error(err).SetType(gin.ErrorTypePublic)
+		return
+	}
+
+	response := BillResponse{
+		Items:    make([]BillItemResponse, 0, len(result.Items)),
+		Quantity: result.Quantity,
+		Price:    result.Price,
+	}
+	for _, item := range result.Items {
+		response.Items = append(response.Items, BillItemResponse{
+			ProductId: item.ProductId,
+			Name:      item.ProductName,
+			Quantity:  item.Quantity,
+			Price:     item.Price,
 		})
 	}
 

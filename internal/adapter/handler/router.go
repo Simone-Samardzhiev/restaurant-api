@@ -65,6 +65,7 @@ func NewRouter(container *config.Container, handlers Handlers) *Router {
 		{
 			order := admin.Group("/orders")
 			order.GET("", handlers.WebsocketHandler.ConnectAsAdmin)
+			order.GET("/bill/:id", handlers.SessionHandler.GetBill)
 		}
 	}
 	{
