@@ -30,6 +30,10 @@ func (s *DefaultSessionService) UpdateSession(ctx context.Context, request *Upda
 	return s.sessionRepository.Update(ctx, request)
 }
 
+func (s *DefaultSessionService) GetBill(ctx context.Context, id uuid.UUID) (*Bill, error) {
+	return s.sessionRepository.GetBill(ctx, id)
+}
+
 func (s *DefaultSessionService) GetSessionDetails(ctx context.Context, id uuid.UUID) (*SessionDetails, error) {
 	session, err := s.sessionRepository.GetById(ctx, id)
 	if err != nil {

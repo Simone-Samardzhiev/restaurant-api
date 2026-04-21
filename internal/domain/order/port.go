@@ -34,6 +34,9 @@ type SessionService interface {
 
 	// GetSessionDetails fetches session details by id.
 	GetSessionDetails(ctx context.Context, id uuid.UUID) (*SessionDetails, error)
+
+	// GetBill fetches the bill from session id.
+	GetBill(ctx context.Context, id uuid.UUID) (*Bill, error)
 }
 
 // OrderedProductRepository describes how ordered products data is managed.
