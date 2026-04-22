@@ -1,0 +1,6 @@
+server {
+    listen 8080;
+    location /menu {
+        proxy_pass https://${MENU_SERVICE_ADDR};
+    }
+}
