@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	Development Environment = "development"
+	Production  Environment = "production"
+)
+
 type (
 	// Database represents database config.
 	Database struct {
@@ -19,9 +24,19 @@ type (
 		MaxLifetime    time.Duration
 	}
 
+	// Environment represents app environment.
+	Environment string
+
+	// App represents the application config.
+	App struct {
+		Port string
+		Env  Environment
+	}
+
 	// Config combines all configurations.
 	Config struct {
 		Database
+		App
 	}
 )
 
@@ -67,6 +82,27 @@ func newDatabase() (Database, error) {
 	return database, nil
 }
 
+func newApp() (App, error) {
+	var app App
+	if port, ok := os.LookupEnv("PORT"); ok {
+		app.Port = port
+	} else {
+		return App{}, errors.New("PORT environment variable not defined")
+	}
+
+	if env, ok := os.LookupEnv("ENVIRONMENT"); ok {
+		environment := Environment(env)
+		switch environment {
+		case Production, Development:
+			app.Env = environment
+		default:
+			return App{}, errors.New("ENVIRONMENT environment variable not defined")
+		}
+	}
+
+	return app, nil
+}
+
 // NewConfig loads and returns [Config] from environment variables.
 func NewConfig() (*Config, error) {
 	database, err := newDatabase()
@@ -74,5 +110,13 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	return &Config{database}, nil
+	app, err := newApp()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Config{
+		database,
+		app,
+	}, nil
 }
