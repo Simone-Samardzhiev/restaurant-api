@@ -4,8 +4,9 @@ import (
 	"menu/internal/config"
 	"net/http"
 
+	"context"
+
 	"github.com/gin-gonic/gin"
-	"golang.org/x/net/context"
 )
 
 // Router binds handler to API endpoints.
