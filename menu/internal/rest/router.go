@@ -24,13 +24,15 @@ func NewRouter(c *config.App, categoryHandler *CategoryHandler) *Router {
 	}
 
 	engine := gin.New()
+	engine.RemoveExtraSlash = false
+	engine.RedirectFixedPath = false
 	engine.Use(gin.Recovery())
 
 	api := engine.Group("/api/v1")
 	{
 		{
 			categories := api.Group("/categories")
-			categories.POST("/", categoryHandler.AddCategory)
+			categories.POST("", categoryHandler.AddCategory)
 		}
 	}
 
