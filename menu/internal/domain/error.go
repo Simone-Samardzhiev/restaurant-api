@@ -4,7 +4,7 @@ package domain
 type ErrorCode int
 
 const (
-	ErrorCodeInternal = iota + 1
+	ErrorCodeInternal ErrorCode = iota + 1
 	ErrorCodeCategoryNameConflict
 )
 
@@ -15,14 +15,14 @@ func (e ErrorCode) String() string {
 	case ErrorCodeCategoryNameConflict:
 		return "CATEGORY_NAME_CONFLICT"
 	default:
-		return "UNKNOWN_ERROR"
+		return "INTERNAL_ERROR"
 	}
 }
 
 // Error represents an app error.
 type Error struct {
 	message string
-	code    ErrorCode
+	Code    ErrorCode
 	cause   error
 }
 
@@ -38,7 +38,7 @@ func (e *Error) Error() string {
 func NewError(message string, code ErrorCode, cause error) *Error {
 	return &Error{
 		message: message,
-		code:    code,
+		Code:    code,
 		cause:   cause,
 	}
 }
