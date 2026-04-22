@@ -1,0 +1,34 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="GoDfaErrorMayBeNotNil" enabled="true" level="WARNING" enabled_by_default="true">
+      <functions>
+        <function importPath="os" name="Create" />
+      </functions>
+      <methods>
+        <method importPath="database/sql" receiver="*DB" name="QueryContext" />
+      </methods>
+    </inspection_tool>
+    <inspection_tool class="GoUnhandledErrorResult" enabled="true" level="WARNING" enabled_by_default="true">
+      <methods>
+        <method importPath="bytes" receiver="*Buffer" name="WriteByte" />
+        <method importPath="strings" receiver="*Builder" name="Write" />
+        <method importPath="math/rand" receiver="*Rand" name="Read" />
+        <method importPath="strings" receiver="*Builder" name="WriteString" />
+        <method importPath="bytes" receiver="*Buffer" name="WriteRune" />
+        <method importPath="strings" receiver="*Builder" name="WriteByte" />
+        <method importPath="hash" receiver="Hash" name="Write" />
+        <method importPath="bytes" receiver="*Buffer" name="WriteString" />
+        <method importPath="strings" receiver="*Builder" name="WriteRune" />
+        <method importPath="bytes" receiver="*Buffer" name="Write" />
+        <method importPath="github.com/gin-gonic/gin" receiver="*Error" name="SetType" />
+        <method importPath="database/sql" receiver="*Rows" name="Close" />
+        <method importPath="os" receiver="*File" name="Close" />
+        <method importPath="mime/multipart" receiver="File" name="Close" />
+        <method importPath="database/sql" receiver="*Tx" name="Rollback" />
+        <method importPath="github.com/gorilla/websocket" receiver="*Conn" name="Close" />
+        <method importPath="golang.org/x/net/websocket" receiver="*Conn" name="Close" />
+      </methods>
+    </inspection_tool>
+  </profile>
+</component>

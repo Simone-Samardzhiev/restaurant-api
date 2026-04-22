@@ -1,0 +1,261 @@
+Index: internal/adapter/handler/translator/error.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package translator\n\nimport (\n\t\"restaurant/internal/domain\"\n\n\t\"go.uber.org/zap\"\n)\n\n// ErrorResponse represents an API error response.\ntype ErrorResponse struct {\n\tCode    string                `json:\"code\"`\n\tMessage string                `json:\"message\"`\n\tDetails []ErrorResponseDetail `json:\"details,omitempty\"`\n}\n\n// ErrorResponseDetail represents error details response.\ntype ErrorResponseDetail struct {\n\tCode     string         `json:\"code\"`\n\tMessage  string         `json:\"message\"`\n\tMetadata map[string]any `json:\"metadata,omitempty\"`\n}\n\n// mapErrorCode is used to map [domain.ErrorCode] to user message.\nvar mapErrorCode = map[domain.ErrorCode]string{\n\tdomain.ErrorCodeInternal: \"Internal server error.\",\n\n\tdomain.ErrorCodeInvalidCategory:           \"Provided category contains invalid data.\",\n\tdomain.ErrorCodeCategoryNameTooShort:      \"Category name is too short.\",\n\tdomain.ErrorCodeCategoryNameTooLong:       \"Category name is too long.\",\n\tdomain.ErrorCodeCategoryNameConflict:      \"Category name is already used.\",\n\tdomain.ErrorCodeInvalidCategoryUpdate:     \"Provided category update contains invalid data.\",\n\tdomain.ErrorCodeCategoryNotFound:          \"Category not found.\",\n\tdomain.ErrorCodeCategoryNotFoundByID:      \"Category with provided id not found.\",\n\tdomain.ErrorCodeCategoryHasLinkedProducts: \"Category cannot be deleted as it has linked products.\",\n\n\tdomain.ErrorCodeInvalidImageType:   \"Invalid image type.\",\n\tdomain.ErrorCodeImageNotFound:      \"Image not found.\",\n\tdomain.ErrorCodeInvalidImageUpdate: \"Invalid image update.\",\n\n\tdomain.ErrorCodeInvalidProduct:             \"Provided product contains invalid data.\",\n\tdomain.ErrorCodeProductNameTooShort:        \"Product name is too short.\",\n\tdomain.ErrorCodeProductNameTooLong:         \"Product name is too long.\",\n\tdomain.ErrorCodeProductDescriptionTooShort: \"Product description is too short.\",\n\tdomain.ErrorCodeProductPriceLessThanZero:   \"Product price cannot be less than 0.\",\n\tdomain.ErrorCodeProductNameConflict:        \"Product name is already used.\",\n\tdomain.ErrorCodeInvalidProductUpdate:       \"Provided product update contains invalid data.\",\n\tdomain.ErrorCodeProductNotFound:            \"Product not found.\",\n\tdomain.ErrorCodeProductNotFoundByID:        \"Product with provided id not found.\",\n\tdomain.ErrorCodeProductHasLinkedOrders:     \"Product cannot be deleted as it has linked orders.\",\n\n\tdomain.ErrorCodeInvalidSession:       \"Provided session contains invalid data\",\n\tdomain.ErrorCodeInvalidSessionTable:  \"Invalid session table.\",\n\tdomain.ErrorCodeInvalidSessionStatus: \"Invalid session status.\",\n\n\tdomain.ErrorCodeMalformedRequest: \"Request payload is malformed.\",\n\tdomain.ErrorCodeNoData:           \"Request does not have any data.\",\n\tdomain.ErrorCodeInvalidUUID:      \"Invalid UUID.\",\n}\n\n// mapErrorCodeToMessage maps error codes to user message.\n// If the code is not found the function returns `Internal server error.`.\nfunc mapErrorCodeToMessage(code domain.ErrorCode) string {\n\tresult, ok := mapErrorCode[code]\n\tif !ok {\n\t\treturn \"Internal server error.\"\n\t}\n\n\treturn result\n}\n\n// DomainError translates [domain.Error] into ErrorResponse.\nfunc DomainError(err *domain.Error) ErrorResponse {\n\tif err.Kind == domain.ErrorKindInternal {\n\t\tzap.L().Error(\"internal server error\", zap.Error(err), zap.NamedError(\"cause\", err.Cause))\n\t\treturn ErrorResponse{\n\t\t\tCode:    domain.ErrorCodeInternal.String(),\n\t\t\tMessage: \"Internal server error.\",\n\t\t}\n\t}\n\n\tresp := ErrorResponse{\n\t\tCode:    err.Code.String(),\n\t\tMessage: mapErrorCodeToMessage(err.Code),\n\t\tDetails: make([]ErrorResponseDetail, 0, len(err.Details)),\n\t}\n\n\tfor _, detail := range err.Details {\n\t\tresp.Details = append(resp.Details, ErrorResponseDetail{\n\t\t\tCode:     detail.Code.String(),\n\t\t\tMessage:  mapErrorCodeToMessage(detail.Code),\n\t\t\tMetadata: detail.Metadata,\n\t\t})\n\t}\n\n\treturn resp\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/internal/adapter/handler/translator/error.go b/internal/adapter/handler/translator/error.go
+--- a/internal/adapter/handler/translator/error.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/adapter/handler/translator/error.go	(date 1775737711071)
+@@ -51,6 +51,7 @@
+ 	domain.ErrorCodeInvalidSession:       "Provided session contains invalid data",
+ 	domain.ErrorCodeInvalidSessionTable:  "Invalid session table.",
+ 	domain.ErrorCodeInvalidSessionStatus: "Invalid session status.",
++	domain.ErrorCodeSessionIsNotOpened:   "Cannot connect to session which is not opened.",
+ 
+ 	domain.ErrorCodeMalformedRequest: "Request payload is malformed.",
+ 	domain.ErrorCodeNoData:           "Request does not have any data.",
+Index: internal/adapter/handler/websocket/handler.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package websocket\n\nimport (\n\t\"restaurant/internal/domain/order\"\n\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/google/uuid\"\n\t\"github.com/gorilla/websocket\"\n)\n\ntype Handler struct {\n\tsessionService order.SessionService\n\tupgrader       websocket.Upgrader\n\n\tsessions map[uuid.UUID]*Session\n\tadmins   map[uuid.UUID]*Admin\n\n\taddSession    chan *Session\n\tremoveSession chan uuid.UUID\n\n\tregister   chan *Admin\n\tunregister chan uuid.UUID\n\n\tbroadcast chan Broadcast\n}\n\nfunc (h *Handler) Pump() {\n\tfor {\n\t\tselect {\n\t\tcase session := <-h.addSession:\n\t\t\th.sessions[session.id] = session\n\t\tcase id := <-h.removeSession:\n\t\t\tdelete(h.sessions, id)\n\n\t\tcase client := <-h.register:\n\t\t\th.admins[client.id] = client\n\t\tcase id := <-h.unregister:\n\t\t\tdelete(h.admins, id)\n\n\t\tcase message := <-h.broadcast:\n\t\t\tif message.SessionId != uuid.Nil {\n\t\t\t\tif broadcast, ok := h.sessions[message.SessionId]; ok {\n\t\t\t\t\tfor _, client := range broadcast.clients {\n\t\t\t\t\t\tselect {\n\t\t\t\t\t\tcase client.send <- message.Message:\n\t\t\t\t\t\tdefault:\n\t\t\t\t\t\t\tdelete(h.sessions, client.id)\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tfor _, admin := range h.admins {\n\t\t\t\tselect {\n\t\t\t\tcase admin.send <- message.Message:\n\t\t\t\tdefault:\n\t\t\t\t\tdelete(h.admins, admin.id)\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n\nfunc NewHandler(service order.SessionService) *Handler {\n\treturn &Handler{\n\t\tsessionService: service,\n\t\tupgrader: websocket.Upgrader{\n\t\t\tReadBufferSize:  1024,\n\t\t\tWriteBufferSize: 1024,\n\t\t},\n\n\t\tsessions: make(map[uuid.UUID]*Session),\n\t\tadmins:   make(map[uuid.UUID]*Admin),\n\n\t\taddSession:    make(chan *Session),\n\t\tremoveSession: make(chan uuid.UUID),\n\n\t\tregister:   make(chan *Admin),\n\t\tunregister: make(chan uuid.UUID),\n\n\t\tbroadcast: make(chan Broadcast),\n\t}\n}\n\nfunc (h *Handler) ConnectAdmin(ctx *gin.Context) {\n\tconn, err := h.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)\n\tif err != nil {\n\t\treturn\n\t}\n\n\tadmin := NewAdmin(uuid.New(), conn, h.sessionService, h.addSession, h.unregister, h.broadcast)\n\th.register <- admin\n\n\tgo admin.ReadPump()\n\tgo admin.WritePump()\n}\n\nfunc (h *Handler) ConnectClient(ctx *gin.Context) {\n\n}\n
+===================================================================
+diff --git a/internal/adapter/handler/websocket/handler.go b/internal/adapter/handler/websocket/handler.go
+--- a/internal/adapter/handler/websocket/handler.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/adapter/handler/websocket/handler.go	(date 1775738661008)
+@@ -2,99 +2,14 @@
+ 
+ import (
+ 	"restaurant/internal/domain/order"
+-
+-	"github.com/gin-gonic/gin"
+-	"github.com/google/uuid"
+-	"github.com/gorilla/websocket"
+ )
+ 
+ type Handler struct {
+ 	sessionService order.SessionService
+-	upgrader       websocket.Upgrader
+-
+-	sessions map[uuid.UUID]*Session
+-	admins   map[uuid.UUID]*Admin
+-
+-	addSession    chan *Session
+-	removeSession chan uuid.UUID
+-
+-	register   chan *Admin
+-	unregister chan uuid.UUID
+-
+-	broadcast chan Broadcast
+ }
+ 
+-func (h *Handler) Pump() {
+-	for {
+-		select {
+-		case session := <-h.addSession:
+-			h.sessions[session.id] = session
+-		case id := <-h.removeSession:
+-			delete(h.sessions, id)
+-
+-		case client := <-h.register:
+-			h.admins[client.id] = client
+-		case id := <-h.unregister:
+-			delete(h.admins, id)
+-
+-		case message := <-h.broadcast:
+-			if message.SessionId != uuid.Nil {
+-				if broadcast, ok := h.sessions[message.SessionId]; ok {
+-					for _, client := range broadcast.clients {
+-						select {
+-						case client.send <- message.Message:
+-						default:
+-							delete(h.sessions, client.id)
+-						}
+-					}
+-				}
+-			}
+-
+-			for _, admin := range h.admins {
+-				select {
+-				case admin.send <- message.Message:
+-				default:
+-					delete(h.admins, admin.id)
+-				}
+-			}
+-		}
+-	}
+-}
+-
+-func NewHandler(service order.SessionService) *Handler {
++func NewHandler(sessionService order.SessionService) *Handler {
+ 	return &Handler{
+-		sessionService: service,
+-		upgrader: websocket.Upgrader{
+-			ReadBufferSize:  1024,
+-			WriteBufferSize: 1024,
+-		},
+-
+-		sessions: make(map[uuid.UUID]*Session),
+-		admins:   make(map[uuid.UUID]*Admin),
+-
+-		addSession:    make(chan *Session),
+-		removeSession: make(chan uuid.UUID),
+-
+-		register:   make(chan *Admin),
+-		unregister: make(chan uuid.UUID),
+-
+-		broadcast: make(chan Broadcast),
++		sessionService: sessionService,
+ 	}
+ }
+-
+-func (h *Handler) ConnectAdmin(ctx *gin.Context) {
+-	conn, err := h.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+-	if err != nil {
+-		return
+-	}
+-
+-	admin := NewAdmin(uuid.New(), conn, h.sessionService, h.addSession, h.unregister, h.broadcast)
+-	h.register <- admin
+-
+-	go admin.ReadPump()
+-	go admin.WritePump()
+-}
+-
+-func (h *Handler) ConnectClient(ctx *gin.Context) {
+-
+-}
+Index: internal/adapter/storage/postgres/session.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package postgres\n\nimport (\n\t\"database/sql\"\n\t\"restaurant/internal/domain\"\n\t\"restaurant/internal/domain/order\"\n\n\t\"context\"\n\n\t\"github.com/google/uuid\"\n)\n\n// SessionRepository implements [order.SessionRepository] using postgres.\ntype SessionRepository struct {\n\tdb *sql.DB\n}\n\nvar _ order.SessionRepository = (*SessionRepository)(nil)\n\n// NewSessionRepository allocates and create new [SessionRepository].\nfunc NewSessionRepository(db *sql.DB) *SessionRepository {\n\treturn &SessionRepository{db: db}\n}\n\nfunc (r *SessionRepository) SaveSession(ctx context.Context, request *order.AddSessionRequest) (*order.Session, error) {\n\tsession := order.Session{\n\t\tId:     uuid.New(),\n\t\tTable:  request.Table,\n\t\tStatus: request.Status,\n\t}\n\n\t_, err := r.db.ExecContext(\n\t\tctx,\n\t\t`INSERT INTO order_sessions (id, table_number, status) VALUES ($1, $2, $3)`,\n\t\tsession.Id,\n\t\tsession.Table.Value(),\n\t\tsession.Status.String(),\n\t)\n\tif err != nil {\n\t\treturn nil, domain.NewInternalError(\"error inserting order_session\", err)\n\t}\n\treturn &session, nil\n}\n
+===================================================================
+diff --git a/internal/adapter/storage/postgres/session.go b/internal/adapter/storage/postgres/session.go
+--- a/internal/adapter/storage/postgres/session.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/adapter/storage/postgres/session.go	(date 1775736908149)
+@@ -41,3 +41,37 @@
+ 	}
+ 	return &session, nil
+ }
++
++func (r *SessionRepository) GetSessions(ctx context.Context, id *uuid.UUID) ([]order.Session, error) {
++	var rows *sql.Rows
++	var err error
++
++	if id == nil {
++		rows, err = r.db.QueryContext(ctx, `SELECT id, table_number, status FROM order_sessions`)
++	} else {
++		rows, err = r.db.QueryContext(ctx, `SELECT id, table_number, status FROM order_sessions WHERE id = $1`, id)
++	}
++	if err != nil {
++		return nil, domain.NewInternalError("error getting order sessions", err)
++	}
++	defer rows.Close()
++
++	sessions := make([]order.Session, 0)
++	for rows.Next() {
++		var sessionId uuid.UUID
++		var tableNumber int
++		var status string
++		err = rows.Scan(&sessionId, &tableNumber, &status)
++		if err != nil {
++			return nil, domain.NewInternalError("error scanning row", err)
++		}
++
++		session, err := order.ParseSession(sessionId, tableNumber, status)
++		if err != nil {
++			return nil, domain.NewInternalError("error parsing session", err)
++		}
++		sessions = append(sessions, *session)
++	}
++
++	return sessions, nil
++}
+Index: internal/domain/order/session.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package order\n\nimport (\n\t\"errors\"\n\t\"restaurant/internal/domain\"\n\n\t\"github.com/google/uuid\"\n)\n\n// SessionTable represents a valid session table.\ntype SessionTable struct {\n\traw int\n}\n\nfunc (s *SessionTable) Value() int {\n\treturn s.raw\n}\n\n// ParseSessionTable parses [SessionTable] from number.\n//\n// If the table is invalid the returned error will be of type [domain.ErrorDetail]\nfunc ParseSessionTable(table int) (SessionTable, error) {\n\tif table < 1 {\n\t\treturn SessionTable{}, &domain.ErrorDetail{\n\t\t\tCode:    domain.ErrorCodeInvalidSessionTable,\n\t\t\tMessage: \"table number must be positive number\",\n\t\t\tMetadata: map[string]any{\n\t\t\t\t\"actual\": table,\n\t\t\t\t\"min\":    1,\n\t\t\t},\n\t\t}\n\t}\n\n\treturn SessionTable{raw: table}, nil\n}\n\n// SessionStatus represents a valid session status.\ntype SessionStatus struct {\n\traw string\n}\n\nfunc (s *SessionStatus) String() string {\n\treturn s.raw\n}\n\n// ParseSessionStatus parses [SessionStatus] from string.\n//\n// If the status is invalid the retuned error will be of type [domain.ErrorDetail].\nfunc ParseSessionStatus(status string) (SessionStatus, error) {\n\tswitch status {\n\tcase \"closed\", \"open\", \"paid\":\n\t\treturn SessionStatus{raw: status}, nil\n\tdefault:\n\t\treturn SessionStatus{}, &domain.ErrorDetail{\n\t\t\tCode:    domain.ErrorCodeInvalidSessionStatus,\n\t\t\tMessage: \"invalid session status\",\n\t\t\tMetadata: map[string]any{\n\t\t\t\t\"actual\":    status,\n\t\t\t\t\"supported\": []string{\"closed\", \"open\", \"paid\"},\n\t\t\t},\n\t\t}\n\t}\n}\n\n// Session represents an order session.\ntype Session struct {\n\tId     uuid.UUID\n\tTable  SessionTable\n\tStatus SessionStatus\n}\n\n// ParseSession parsed [Session] from id, table number and status.\n//\n// If any of the fields is invalid the returned error will be of type [domain.Error].\nfunc ParseSession(id uuid.UUID, table int, status string) (*Session, error) {\n\terrs := make([]domain.ErrorDetail, 0)\n\tparsedTable, err := ParseSessionTable(table)\n\tif err != nil {\n\t\tif errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {\n\t\t\terrs = append(errs, *errorDetail)\n\t\t} else {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tparsedStatus, err := ParseSessionStatus(status)\n\tif err != nil {\n\t\tif errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {\n\t\t\terrs = append(errs, *errorDetail)\n\t\t} else {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tif len(errs) > 0 {\n\t\treturn nil, domain.NewValidationError(\"invalid session\", domain.ErrorCodeInvalidSession, errs...)\n\t}\n\treturn &Session{\n\t\tId:     id,\n\t\tTable:  parsedTable,\n\t\tStatus: parsedStatus,\n\t}, nil\n}\n\n// AddSessionRequest represents a request for adding a session.\ntype AddSessionRequest struct {\n\tTable  SessionTable\n\tStatus SessionStatus\n}\n\n// ParseAddSessionRequest parses [AddSessionRequest] from table number and status.\n//\n// If any of the fields are invalid the returned error will be of type [domain.Error].\nfunc ParseAddSessionRequest(table int, status string) (*AddSessionRequest, error) {\n\terrs := make([]domain.ErrorDetail, 0)\n\tparsedTable, err := ParseSessionTable(table)\n\tif err != nil {\n\t\tif errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {\n\t\t\terrs = append(errs, *errorDetail)\n\t\t} else {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tparsedStatus, err := ParseSessionStatus(status)\n\tif err != nil {\n\t\tif errorDetail, ok := errors.AsType[*domain.ErrorDetail](err); ok {\n\t\t\terrs = append(errs, *errorDetail)\n\t\t} else {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\tif len(errs) > 0 {\n\t\treturn nil, domain.NewValidationError(\"invalid session\", domain.ErrorCodeInvalidSession, errs...)\n\t}\n\treturn &AddSessionRequest{\n\t\tTable:  parsedTable,\n\t\tStatus: parsedStatus,\n\t}, nil\n}\n
+===================================================================
+diff --git a/internal/domain/order/session.go b/internal/domain/order/session.go
+--- a/internal/domain/order/session.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/domain/order/session.go	(date 1775738045758)
+@@ -43,6 +43,10 @@
+ 	return s.raw
+ }
+ 
++func (s *SessionStatus) Equals(v string) bool {
++	return s.raw == v
++}
++
+ // ParseSessionStatus parses [SessionStatus] from string.
+ //
+ // If the status is invalid the retuned error will be of type [domain.ErrorDetail].
+Index: internal/domain/order/service.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package order\n\nimport (\n\t\"context\"\n)\n\n// DefaultSessionService is the default implementation of [SessionService].\ntype DefaultSessionService struct {\n\trepository SessionRepository\n}\n\nvar _ SessionService = (*DefaultSessionService)(nil)\n\n// NewDefaultSessionService allocates and creates new [DefaultSessionService].\nfunc NewDefaultSessionService(repository SessionRepository) *DefaultSessionService {\n\treturn &DefaultSessionService{repository: repository}\n}\n\nfunc (s *DefaultSessionService) AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error) {\n\treturn s.repository.SaveSession(ctx, request)\n}\n
+===================================================================
+diff --git a/internal/domain/order/service.go b/internal/domain/order/service.go
+--- a/internal/domain/order/service.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/domain/order/service.go	(date 1775737869489)
+@@ -2,6 +2,9 @@
+ 
+ import (
+ 	"context"
++	"restaurant/internal/domain"
++
++	"github.com/google/uuid"
+ )
+ 
+ // DefaultSessionService is the default implementation of [SessionService].
+@@ -19,3 +22,16 @@
+ func (s *DefaultSessionService) AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error) {
+ 	return s.repository.SaveSession(ctx, request)
+ }
++
++func (s *DefaultSessionService) IsSessionAvailable(ctx context.Context, id uuid.UUID) error {
++	sessions, err := s.repository.GetSessions(ctx, &id)
++	if err != nil {
++		return err
++	}
++
++	if len(sessions) == 0 || sessions[0].Status.Equals("open") {
++		return domain.NewBadRequestError("cannot connect to session which is not open", domain.ErrorCodeSessionIsNotOpened, nil)
++	}
++
++	return nil
++}
+Index: internal/domain/order/port.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package order\n\nimport (\n\t\"context\"\n)\n\n// SessionRepository describes how session data is managed.\ntype SessionRepository interface {\n\t// SaveSession saves a session.\n\tSaveSession(ctx context.Context, request *AddSessionRequest) (*Session, error)\n}\n\n// SessionService describes how session business logic is accessed.\ntype SessionService interface {\n\t// AddSession adds a new session.\n\tAddSession(ctx context.Context, request *AddSessionRequest) (*Session, error)\n}\n
+===================================================================
+diff --git a/internal/domain/order/port.go b/internal/domain/order/port.go
+--- a/internal/domain/order/port.go	(revision f86cbe2c8812ebfdfda93a453616fb15bd9326a9)
++++ b/internal/domain/order/port.go	(date 1775737754359)
+@@ -2,16 +2,24 @@
+ 
+ import (
+ 	"context"
++
++	"github.com/google/uuid"
+ )
+ 
+ // SessionRepository describes how session data is managed.
+ type SessionRepository interface {
+ 	// SaveSession saves a session.
+ 	SaveSession(ctx context.Context, request *AddSessionRequest) (*Session, error)
++
++	// GetSessions fetches session filtering by optional id.
++	GetSessions(ctx context.Context, id *uuid.UUID) ([]Session, error)
+ }
+ 
+ // SessionService describes how session business logic is accessed.
+ type SessionService interface {
+ 	// AddSession adds a new session.
+ 	AddSession(ctx context.Context, request *AddSessionRequest) (*Session, error)
++
++	// IsSessionAvailable checks if a session is available to connect for a client.
++	IsSessionAvailable(ctx context.Context, id uuid.UUID) error
+ }
