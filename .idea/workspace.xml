@@ -4,84 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Remove use of net/context in router.go">
-      <change afterPath="$PROJECT_DIR$/nginx/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nginx/nginx.conf.template" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Taskfile.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/api/main.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/config/config.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/category.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/category_it_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/category_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/main_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/middleware/error.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/middleware/zap_logger.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/product.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/product_it_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/product_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/session.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/session_it_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/session_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/rest/testdata/product_image.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/router.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/translator/error.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/translator/http.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/admin.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/client.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/error.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/handler.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/hub.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/message.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/handler/websocket/session.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/logger/zap.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/local/image.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/local/image_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/category.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/category_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/db.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/main_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000001_create_products_table.down.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000001_create_products_table.up.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000002_create_orders_table.down.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000002_create_orders_table.up.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000003_replace_images_in_products.down.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000003_replace_images_in_products.up.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000004_add_index_on_ordered_product_session_id.down.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/migrations/000004_add_index_on_ordered_product_session_id.up.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/ordered_product.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/ordered_product_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/product.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/product_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/session.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/adapter/storage/postgres/session_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/error.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/category.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/category_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/image.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/image_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/port.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/product.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/product_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/service.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/menu/service_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/ordered_product.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/ordered_product_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/port.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/service.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/service_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/session.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/domain/order/session_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/db.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/entities.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/error.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/http.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/must.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/testdata/seeds/menu.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/test/testdata/seeds/orders.sql" beforeDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="chore: Remove unused files">
+      <change afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/nginx/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx/nginx.conf.template" beforeDir="false" afterPath="$PROJECT_DIR$/nginx/nginx.conf.template" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -304,8 +232,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(order): Add repository method for getting the bill by session id" />
-    <MESSAGE value="feat(order): Add service method for getting the bill from session id" />
     <MESSAGE value="feat(order): Add rest endpoint for getting the bill of a session by id" />
     <MESSAGE value="refactor(menu): Add menu microservice" />
     <MESSAGE value="refactor(menu): Add category model" />
@@ -329,7 +255,9 @@
     <MESSAGE value="feat(menu/rest): Add `Router` to set up API endpoints and start the server" />
     <MESSAGE value="feat(menu): Add Dockerfile" />
     <MESSAGE value="refactor(menu/rest): Remove use of net/context in router.go" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Remove use of net/context in router.go" />
+    <MESSAGE value="feat(nginx): Add nginx service" />
+    <MESSAGE value="chore: Remove unused files" />
+    <option name="LAST_COMMIT_MESSAGE" value="chore: Remove unused files" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

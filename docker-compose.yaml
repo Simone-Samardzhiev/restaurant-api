@@ -1,0 +1,39 @@
+services:
+  menu-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: menu
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d menu" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  menu-api:
+    build: "./menu"
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
+      MIGRATIONS_PATH: file://./migrations
+      DATABASE_MAX_IDLE_CONNS: 10
+      DATABASE_MAX_OPEN_CONNS: 10
+      DATABASE_MAX_IDLE_TIME: 10m
+      DATABASE_MAX_LIFETIME: 10m
+
+      PORT: :8080
+      Environment: development
+    depends_on:
+      menu-db:
+        condition: service_healthy
+
+  nginx-proxy:
+    build: "./nginx"
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    environment:
+      MENU_SERVICE_ADDR: menu-api:8080
+    depends_on:
+      - menu-api
