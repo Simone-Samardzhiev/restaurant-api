@@ -40,7 +40,7 @@ func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *Cate
 
 	return &Router{
 		server: http.Server{
-			Addr:    c.Port,
+			Addr:    c.Addr,
 			Handler: engine,
 		},
 	}

@@ -29,7 +29,7 @@ type (
 
 	// App represents the application config.
 	App struct {
-		Port string
+		Addr string
 		Env  Environment
 	}
 
@@ -84,10 +84,10 @@ func newDatabase() (Database, error) {
 
 func newApp() (App, error) {
 	var app App
-	if port, ok := os.LookupEnv("PORT"); ok {
-		app.Port = port
+	if port, ok := os.LookupEnv("ADDR"); ok {
+		app.Addr = port
 	} else {
-		return App{}, errors.New("PORT environment variable not defined")
+		return App{}, errors.New("ADDR environment variable not defined")
 	}
 
 	if env, ok := os.LookupEnv("ENVIRONMENT"); ok {

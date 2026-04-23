@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="fix(menu): Fix heath checking" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu): Improve heath checking endpoint">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -226,7 +231,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/domain): Add app error struct" />
     <MESSAGE value="refactor(menu): Add Taskfile.yaml for creating migrations" />
     <MESSAGE value="refactor(menu): Add migration for creating the categories table" />
     <MESSAGE value="chore(menu): Add .gitignore" />
@@ -251,7 +255,8 @@
     <MESSAGE value="fix(menu): Fix remove trailing slash in Dockerfile for migrations" />
     <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
     <MESSAGE value="fix(menu): Fix heath checking" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(menu): Fix heath checking" />
+    <MESSAGE value="refactor(menu): Improve heath checking endpoint" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu): Improve heath checking endpoint" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

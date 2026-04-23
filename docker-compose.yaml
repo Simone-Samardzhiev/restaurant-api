@@ -22,7 +22,7 @@ services:
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
 
-      PORT: :8080
+      ADDR: 0.0.0.0:8080
       Environment: development
     depends_on:
       menu-db:
