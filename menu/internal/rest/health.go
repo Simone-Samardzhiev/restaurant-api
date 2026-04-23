@@ -23,7 +23,7 @@ type UnhealthyResponse struct {
 }
 
 func (h *HealthHandler) IsHealthy(ctx *gin.Context) {
-	if err := h.db.Ping(); err != nil {
+	if err := h.db.Ping(); err == nil {
 		ctx.Status(http.StatusOK)
 	} else {
 		ctx.JSON(http.StatusServiceUnavailable, UnhealthyResponse{
