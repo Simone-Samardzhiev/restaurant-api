@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Disable automatic redirecting by the gin engine and remove trailing path when nesting endpoints">
-      <change afterPath="$PROJECT_DIR$/menu/internal/rest/health.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
-    </list>
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Add health checking endpoint" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -230,7 +226,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu): Add category model" />
     <MESSAGE value="refactor(menu): Add `Database` struct holding database configuration" />
     <MESSAGE value="refactor(menu/config): Implement loading and parsing of environment variables for the `Database` struct" />
     <MESSAGE value="refactor(menu/db): Implement `Connect` function that establishes a connect to postgres database" />
@@ -255,7 +250,8 @@
     <MESSAGE value="chore: Remove unused files" />
     <MESSAGE value="feat: Implement reverse proxy to the menu api from nginx" />
     <MESSAGE value="refactor(menu/rest): Disable automatic redirecting by the gin engine and remove trailing path when nesting endpoints" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Disable automatic redirecting by the gin engine and remove trailing path when nesting endpoints" />
+    <MESSAGE value="refactor(menu/rest): Add health checking endpoint" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Add health checking endpoint" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
