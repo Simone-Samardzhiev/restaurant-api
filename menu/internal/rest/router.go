@@ -28,7 +28,7 @@ func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *Cate
 	engine.RedirectFixedPath = false
 	engine.Use(gin.Recovery())
 
-	engine.Group("/health", heathHandler.IsHealthy)
+	engine.GET("/health", heathHandler.IsHealthy)
 
 	api := engine.Group("/api/v1")
 	{

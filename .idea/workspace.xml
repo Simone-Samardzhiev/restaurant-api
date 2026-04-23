@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu): Improve heath checking endpoint">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
-    </list>
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu): Change environment variable PORT to ADDR" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -231,7 +226,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu): Add Taskfile.yaml for creating migrations" />
     <MESSAGE value="refactor(menu): Add migration for creating the categories table" />
     <MESSAGE value="chore(menu): Add .gitignore" />
     <MESSAGE value="chore(menu): Add `ApplyMigrations` function to apply all migrations and add a call to it at api startup" />
@@ -256,7 +250,8 @@
     <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
     <MESSAGE value="fix(menu): Fix heath checking" />
     <MESSAGE value="refactor(menu): Improve heath checking endpoint" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu): Improve heath checking endpoint" />
+    <MESSAGE value="refactor(menu): Change environment variable PORT to ADDR" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu): Change environment variable PORT to ADDR" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
