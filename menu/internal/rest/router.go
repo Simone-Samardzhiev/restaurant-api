@@ -15,7 +15,7 @@ type Router struct {
 }
 
 // NewRouter creates and allocates new [Router].
-func NewRouter(c *config.App, categoryHandler *CategoryHandler) *Router {
+func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *CategoryHandler) *Router {
 	switch c.Env {
 	case config.Development:
 		gin.SetMode(gin.DebugMode)
@@ -27,6 +27,8 @@ func NewRouter(c *config.App, categoryHandler *CategoryHandler) *Router {
 	engine.RemoveExtraSlash = false
 	engine.RedirectFixedPath = false
 	engine.Use(gin.Recovery())
+
+	engine.Group("/health", heathHandler.IsHealthy)
 
 	api := engine.Group("/api/v1")
 	{

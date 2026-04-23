@@ -30,11 +30,13 @@ func main() {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
+	heathCheckHandler := rest.NewHealthHandler(database)
+
 	categoryRepository := db.NewCategoryRepository(database)
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
-	router := rest.NewRouter(&conf.App, categoryHandler)
+	router := rest.NewRouter(&conf.App, heathCheckHandler, categoryHandler)
 
 	go func() {
 		_ = router.Start()
