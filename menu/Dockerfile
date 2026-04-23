@@ -10,7 +10,7 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 COPY --from=builder /app/bin/api ./bin/api
-COPY migrations ./migrations
+COPY ./migrations ./migrations
 
 EXPOSE 8080
 CMD ["./bin/api"]
