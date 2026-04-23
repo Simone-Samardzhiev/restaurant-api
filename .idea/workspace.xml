@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="fix(menu): Fix remove trailing slash in Dockerfile for migrations">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/menu/Dockerfile" afterDir="false" />
-    </list>
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="fix(menu): Fix heath checking" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -229,8 +226,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/db): Implement `Connect` function that establishes a connect to postgres database" />
-    <MESSAGE value="refactor(menu/domain): Add `CategoryRepository`" />
     <MESSAGE value="refactor(menu/domain): Add app error struct" />
     <MESSAGE value="refactor(menu): Add Taskfile.yaml for creating migrations" />
     <MESSAGE value="refactor(menu): Add migration for creating the categories table" />
@@ -254,7 +249,9 @@
     <MESSAGE value="refactor(menu/rest): Add health checking endpoint" />
     <MESSAGE value="fix(menu): Fix missing slash in Dockerfile for migrations" />
     <MESSAGE value="fix(menu): Fix remove trailing slash in Dockerfile for migrations" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(menu): Fix remove trailing slash in Dockerfile for migrations" />
+    <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
+    <MESSAGE value="fix(menu): Fix heath checking" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix(menu): Fix heath checking" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
