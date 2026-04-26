@@ -6,7 +6,7 @@ import (
 	"menu/internal/domain"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v5"
 )
 
 // ErrorResponse represents JSON error response.
@@ -14,93 +14,116 @@ type ErrorResponse struct {
 	HTTPStatus int    `json:"httpStatus"`
 	Message    string `json:"message"`
 	ErrorCode  string `json:"code"`
+	err        error
 }
 
-// InvalidJSONErrorResponse should be returned if decoding JSON fails.
-var InvalidJSONErrorResponse = ErrorResponse{
-	HTTPStatus: http.StatusBadRequest,
-	Message:    "Malformed JSON payload.",
-	ErrorCode:  "INVALID_JSON",
+func (e *ErrorResponse) Error() string {
+	return e.err.Error()
 }
 
-// translateErrorCodeToHTTPStatus translates [domain.ErrorCode] into http status code.
-func translateErrorCodeToHTTPStatus(code domain.ErrorCode) int {
-	switch code {
-	case domain.ErrorCodeInternal:
-		return http.StatusInternalServerError
-	case domain.ErrorCodeCategoryNameConflict:
-		return http.StatusConflict
-	default:
-		return http.StatusInternalServerError
+func (e *ErrorResponse) Unwrap() error {
+	return errors.Unwrap(e.err)
+}
+
+// NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
+// returned from decoding JSON.
+func NewInvalidJSONError(err error) *ErrorResponse {
+	return &ErrorResponse{
+		HTTPStatus: http.StatusBadRequest,
+		Message:    "Invalid JSON payload.",
+		ErrorCode:  "INVALID_JSON",
+		err:        err,
 	}
 }
 
-// translateErrorCodeToMessage translates [domain.ErrorCode] into end client message.
-func translateErrorCodeToMessage(code domain.ErrorCode) string {
-	switch code {
-	case domain.ErrorCodeInternal:
-		return "Internal server error."
-	case domain.ErrorCodeCategoryNameConflict:
-		return "Category name is already taken."
-	default:
-		return "Internal server error."
-	}
+var codesToStatus = map[domain.ErrorCode]int{
+	domain.ErrorCodeInternal:             http.StatusInternalServerError,
+	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
 }
 
-// translateError translates the error into [ErrorResponse].
-//
-// If the error is not of type [domain.Error], the error will be logged.
-//
-// If the error is of type [domain.Error], and when translating the returned status code
-// is 500, the error will also be logged.
-func translateError(err error) ErrorResponse {
-	domainErr, ok := errors.AsType[*domain.Error](err)
-	if !ok {
-		slog.Error("Unknown error type", slog.Any("error", err))
+func translateCodeToStatus(code domain.ErrorCode) int {
+	if status, ok := codesToStatus[code]; ok {
+		return status
+	}
+	return http.StatusInternalServerError
+}
 
-		return ErrorResponse{
-			HTTPStatus: http.StatusInternalServerError,
-			Message:    "Internal server error.",
-			ErrorCode:  domain.ErrorCodeInternal.String(),
+var codesToMessage = map[domain.ErrorCode]string{
+	domain.ErrorCodeInternal:             "Internal server error.",
+	domain.ErrorCodeCategoryNameConflict: "Category name is already taken.",
+}
+
+func translateCodeToMessage(code domain.ErrorCode) string {
+	if status, ok := codesToMessage[code]; ok {
+		return status
+	}
+	return codesToMessage[domain.ErrorCodeInternal]
+}
+
+// NewErrorResponse translates [domain.Error] into [ErrorResponse]
+// if the error is not of type [domain.Error], the error will be translated
+// into internal error.
+func NewErrorResponse(err error) *ErrorResponse {
+	if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+		return &ErrorResponse{
+			HTTPStatus: translateCodeToStatus(domainErr.Code),
+			Message:    translateCodeToMessage(domainErr.Code),
+			ErrorCode:  domainErr.Code.String(),
+			err:        domainErr,
 		}
 	}
 
-	status := translateErrorCodeToHTTPStatus(domainErr.Code)
-	if status == http.StatusInternalServerError {
-		slog.Error(
-			"Internal server error.",
-			slog.Any("error", err),
-			slog.Any("cause", domainErr.Cause()),
-		)
-	}
-
-	return ErrorResponse{
-		HTTPStatus: status,
-		Message:    translateErrorCodeToMessage(domainErr.Code),
-		ErrorCode:  domainErr.Code.String(),
+	return &ErrorResponse{
+		HTTPStatus: http.StatusInternalServerError,
+		Message:    translateCodeToMessage(domain.ErrorCodeInternal),
+		ErrorCode:  translateCodeToMessage(domain.ErrorCodeInternal),
+		err:        err,
 	}
 }
 
-// handleError translates the error and sends [ErrorResponse] as JSON.
-func handleError(ctx *gin.Context, err error) {
-	response := translateError(err)
-	ctx.JSON(response.HTTPStatus, response)
-}
-
-// ValidationError represents JSON error response from validation payload.
 type ValidationError struct {
 	ErrorResponse
 	Fields map[string][]string `json:"fields"`
 }
 
-// handleValidationError sends [ValidationError] as JSON with the provided errors.
-func handleValidationError(ctx *gin.Context, errors map[string][]string) {
-	ctx.JSON(http.StatusUnprocessableEntity, ValidationError{
+var validationErr = errors.New("validation error")
+
+func NewValidationError(fields map[string][]string) *ValidationError {
+	return &ValidationError{
 		ErrorResponse: ErrorResponse{
 			HTTPStatus: http.StatusUnprocessableEntity,
-			Message:    "Payload validation failed.",
+			Message:    "Payload validation error.",
 			ErrorCode:  "INVALID_PAYLOAD",
+			err:        validationErr,
 		},
-		Fields: errors,
+		Fields: fields,
+	}
+}
+
+func errorHandler(c *echo.Context, err error) {
+	if appErr, ok := errors.AsType[*ErrorResponse](err); ok {
+		if appErr.HTTPStatus >= http.StatusInternalServerError {
+			c.Logger().Error(
+				"Internal server error",
+				slog.Any("error", appErr.err),
+				slog.Any("cause", errors.Unwrap(appErr.err)),
+			)
+		}
+
+		_ = c.JSON(appErr.HTTPStatus, appErr)
+
+		return
+	}
+
+	if valErr, ok := errors.AsType[*ValidationError](err); ok {
+		_ = c.JSON(valErr.HTTPStatus, valErr)
+		return
+	}
+
+	c.Logger().Error("Unknown error", slog.Any("error", err))
+	_ = c.JSON(http.StatusInternalServerError, ErrorResponse{
+		HTTPStatus: http.StatusInternalServerError,
+		Message:    translateCodeToMessage(domain.ErrorCodeInternal),
+		ErrorCode:  domain.ErrorCodeInternal.String(),
 	})
 }

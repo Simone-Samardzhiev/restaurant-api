@@ -8,8 +8,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v5"
 )
 
 // CategoryHandler handles HTTP request for categories.
@@ -35,20 +35,24 @@ type AddCategoryRequest struct {
 }
 
 func (a *AddCategoryRequest) Validate() map[string][]string {
-	errors := make(map[string][]string)
+	fields := make(map[string][]string)
 
 	a.Name = strings.TrimSpace(a.Name)
 	length := utf8.RuneCountInString(a.Name)
 
 	if length <= MinCategoryLength {
-		errors["name"] = append(errors["name"], "Must be at least "+strconv.Itoa(MinCategoryLength)+" characters.")
+		fields["name"] = append(fields["name"], "Must be at least "+strconv.Itoa(MinCategoryLength)+" characters.")
 	}
 
 	if length >= MaxCategoryLength {
-		errors["name"] = append(errors["name"], "Must be at most "+strconv.Itoa(MaxCategoryLength)+" characters.")
+		fields["name"] = append(fields["name"], "Must be at most "+strconv.Itoa(MaxCategoryLength)+" characters.")
 	}
 
-	return errors
+	if len(fields) > 0 {
+		return fields
+	}
+
+	return nil
 }
 
 // CategoryResponse represents the JSON response of a category
@@ -60,28 +64,25 @@ type CategoryResponse struct {
 }
 
 // AddCategory handles creation of a new category.
-func (c *CategoryHandler) AddCategory(ctx *gin.Context) {
+func (c *CategoryHandler) AddCategory(ctx *echo.Context) error {
 	var req AddCategoryRequest
-	if err := ctx.BindJSON(&req); err != nil {
-		ctx.JSON(InvalidJSONErrorResponse.HTTPStatus, InvalidJSONErrorResponse)
-		return
+	if err := ctx.Bind(&req); err != nil {
+		return NewInvalidJSONError(err)
 	}
 
-	if errors := req.Validate(); len(errors) > 0 {
-		handleValidationError(ctx, errors)
-		return
+	if fields := req.Validate(); fields != nil {
+		return NewValidationError(fields)
 	}
 
-	category, err := c.service.Add(ctx, req.Name)
+	result, err := c.service.Add(ctx.Request().Context(), req.Name)
 	if err != nil {
-		handleError(ctx, err)
-		return
+		return NewErrorResponse(err)
 	}
 
-	ctx.JSON(http.StatusCreated, CategoryResponse{
-		Id:        category.Id,
-		Name:      category.Name,
-		CreatedAt: category.CreatedAt,
-		UpdatedAt: category.UpdatedAt,
+	return ctx.JSON(http.StatusCreated, CategoryResponse{
+		Id:        result.Id,
+		Name:      result.Name,
+		CreatedAt: result.CreatedAt,
+		UpdatedAt: result.UpdatedAt,
 	})
 }

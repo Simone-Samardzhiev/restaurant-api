@@ -28,7 +28,7 @@ type Error struct {
 	cause   error
 }
 
-func (e *Error) Cause() error {
+func (e *Error) Unwrap() error {
 	return e.cause
 }
 

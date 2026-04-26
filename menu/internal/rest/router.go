@@ -1,12 +1,11 @@
 package rest
 
 import (
+	"context"
 	"menu/internal/config"
 	"net/http"
 
-	"context"
-
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v5"
 )
 
 // Router binds handler to API endpoints.
@@ -16,21 +15,14 @@ type Router struct {
 
 // NewRouter creates and allocates new [Router].
 func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *CategoryHandler) *Router {
-	switch c.Env {
-	case config.Development:
-		gin.SetMode(gin.DebugMode)
-	case config.Production:
-		gin.SetMode(gin.ReleaseMode)
-	}
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: errorHandler,
+	})
 
-	engine := gin.New()
-	engine.RemoveExtraSlash = false
-	engine.RedirectFixedPath = false
-	engine.Use(gin.Recovery())
+	e.RouteNotFound("/*", handleEndpointNotFound)
+	e.GET("/health", heathHandler.IsHealthy)
 
-	engine.GET("/health", heathHandler.IsHealthy)
-
-	api := engine.Group("/api/v1")
+	api := e.Group("/api/v1")
 	{
 		{
 			categories := api.Group("/categories")
@@ -41,7 +33,7 @@ func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *Cate
 	return &Router{
 		server: http.Server{
 			Addr:    c.Addr,
-			Handler: engine,
+			Handler: e,
 		},
 	}
 }

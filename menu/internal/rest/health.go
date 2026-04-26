@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v5"
 )
 
 // HealthHandler has a handler function to check if the service is healthy.
@@ -22,13 +22,12 @@ type UnhealthyResponse struct {
 	Cause string `json:"cause"`
 }
 
-func (h *HealthHandler) IsHealthy(ctx *gin.Context) {
+func (h *HealthHandler) IsHealthy(ctx *echo.Context) error {
 	if err := h.db.Ping(); err != nil {
-		ctx.JSON(http.StatusServiceUnavailable, UnhealthyResponse{
+		return ctx.JSON(http.StatusServiceUnavailable, UnhealthyResponse{
 			Cause: "Database connection is lost.",
 		})
-		return
 	}
 
-	ctx.Status(http.StatusOK)
+	return ctx.NoContent(http.StatusOK)
 }
