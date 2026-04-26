@@ -23,7 +23,7 @@ services:
       DATABASE_MAX_LIFETIME: 10m
 
       ADDR: 0.0.0.0:8080
-      Environment: development
+      ENVIRONMENT: development
     depends_on:
       menu-db:
         condition: service_healthy
