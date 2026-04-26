@@ -8,15 +8,17 @@ const (
 	ErrorCodeCategoryNameConflict
 )
 
+var mapErrorCodes = map[ErrorCode]string{
+	ErrorCodeInternal:             "INTERNAL_ERROR",
+	ErrorCodeCategoryNameConflict: "CATEGORY_NAME_CONFLICT",
+}
+
 func (e ErrorCode) String() string {
-	switch e {
-	case ErrorCodeInternal:
-		return "INTERNAL_ERROR"
-	case ErrorCodeCategoryNameConflict:
-		return "CATEGORY_NAME_CONFLICT"
-	default:
-		return "INTERNAL_ERROR"
+	code, ok := mapErrorCodes[e]
+	if ok {
+		return code
 	}
+	return mapErrorCodes[ErrorCodeInternal]
 }
 
 // Error represents an app error.
