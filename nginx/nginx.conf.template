@@ -1,7 +1,7 @@
 server {
     listen 8080;
-
     access_log off;
+    server_name ${SERVER_NAME};
 
     location /api/v1/menu {
         rewrite ^/api/v1/menu(.*) /api/v1$1 break;
