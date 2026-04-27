@@ -5,6 +5,7 @@ import (
 	"menu/internal/config"
 	"menu/internal/db"
 	"menu/internal/domain"
+	"menu/internal/logger"
 	"menu/internal/rest"
 	"os/signal"
 	"syscall"
@@ -36,7 +37,12 @@ func main() {
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
-	router := rest.NewRouter(&conf.App, heathCheckHandler, categoryHandler)
+	router := rest.NewRouter(&rest.RouterConfig{
+		App:             &conf.App,
+		Logger:          logger.New(&conf.App),
+		HeathHandler:    heathCheckHandler,
+		CategoryHandler: categoryHandler,
+	})
 
 	go func() {
 		_ = router.Start()

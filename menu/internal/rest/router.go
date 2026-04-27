@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"log/slog"
 	"menu/internal/config"
 	"net/http"
 
@@ -13,26 +14,36 @@ type Router struct {
 	server http.Server
 }
 
+type RouterConfig struct {
+	App             *config.App
+	Logger          *slog.Logger
+	HeathHandler    *HealthHandler
+	CategoryHandler *CategoryHandler
+}
+
 // NewRouter creates and allocates new [Router].
-func NewRouter(c *config.App, heathHandler *HealthHandler, categoryHandler *CategoryHandler) *Router {
+func NewRouter(c *RouterConfig) *Router {
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: errorHandler,
+		Logger:           c.Logger,
 	})
 
+	e.Use(loggerMiddleware)
+
 	e.RouteNotFound("/*", handleEndpointNotFound)
-	e.GET("/health", heathHandler.IsHealthy)
+	e.GET("/health", c.HeathHandler.IsHealthy)
 
 	api := e.Group("/api/v1")
 	{
 		{
 			categories := api.Group("/categories")
-			categories.POST("", categoryHandler.AddCategory)
+			categories.POST("", c.CategoryHandler.AddCategory)
 		}
 	}
 
 	return &Router{
 		server: http.Server{
-			Addr:    c.Addr,
+			Addr:    c.App.Addr,
 			Handler: e,
 		},
 	}

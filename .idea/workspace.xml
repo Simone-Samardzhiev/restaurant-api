@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor: Remove access logs from nginx">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu): Add logging implementation">
+      <change afterPath="$PROJECT_DIR$/menu/internal/rest/logger.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx/nginx.conf.template" beforeDir="false" afterPath="$PROJECT_DIR$/nginx/nginx.conf.template" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/cmd/api/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/cmd/api/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/logger/logger.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/logger/logger.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -230,8 +232,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="chore(menu): Add default implementation of `CategoryService`" />
-    <MESSAGE value="refactor(menu/db): Change `ApplyMigrations` function to ignore `ErrNoChange` when applying migrations" />
     <MESSAGE value="refactor(menu/rest): Implement error translation into JSON response for the api" />
     <MESSAGE value="fix(menu): Add missing down migration" />
     <MESSAGE value="feat(menu/rest): Add `CategoryHandler` for handling http request for categories" />
@@ -255,7 +255,9 @@
     <MESSAGE value="refactor(menu/domain): Refactor code mapping of error with map" />
     <MESSAGE value="refactor(menu/response): Swap gin for echo and centralize error handling" />
     <MESSAGE value="refactor: Remove access logs from nginx" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: Remove access logs from nginx" />
+    <MESSAGE value="refactor: Add server name directive in ngixn configuration" />
+    <MESSAGE value="feat(menu): Add logging implementation" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(menu): Add logging implementation" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
