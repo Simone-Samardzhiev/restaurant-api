@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(nginx): Add rate limiting for the menu service">
-      <change afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/rest): Add tests for request validation">
+      <change afterPath="$PROJECT_DIR$/menu/internal/db/category_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/menu/internal/db/main_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -229,7 +229,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(menu): Add missing down migration" />
     <MESSAGE value="feat(menu/rest): Add `CategoryHandler` for handling http request for categories" />
     <MESSAGE value="feat(menu/config): Add `App` configuration" />
     <MESSAGE value="feat(menu/rest): Add `Router` to set up API endpoints and start the server" />
@@ -254,7 +253,8 @@
     <MESSAGE value="refactor: Add server name directive in ngixn configuration" />
     <MESSAGE value="feat(menu): Add logging implementation" />
     <MESSAGE value="feat(nginx): Add rate limiting for the menu service" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(nginx): Add rate limiting for the menu service" />
+    <MESSAGE value="test(menu/rest): Add tests for request validation" />
+    <option name="LAST_COMMIT_MESSAGE" value="test(menu/rest): Add tests for request validation" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
