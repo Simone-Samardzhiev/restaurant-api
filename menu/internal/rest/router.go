@@ -26,6 +26,7 @@ func NewRouter(c *RouterConfig) *Router {
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: errorHandler,
 		Logger:           c.Logger,
+		IPExtractor:      echo.ExtractIPFromRealIPHeader(),
 	})
 
 	e.Use(loggerMiddleware)

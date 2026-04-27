@@ -15,7 +15,7 @@ func loggerMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			slog.String("method", c.Request().Method),
 			slog.String("host", c.Request().Host),
 			slog.String("path", c.Request().URL.Path),
-			slog.String("ip", c.Request().RemoteAddr),
+			slog.String("ip", c.RealIP()),
 		)
 
 		return err
