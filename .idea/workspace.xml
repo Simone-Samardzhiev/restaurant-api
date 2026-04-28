@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/db.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/db.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/main_test.go" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/db): Make main testing function apply all migrations in db package">
+      <change afterPath="$PROJECT_DIR$/menu/internal/rest/main_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,79 +63,80 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Database Script.products.sql.executor&quot;: &quot;Run&quot;,
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;Go Build.go build menu/cmd/api.executor&quot;: &quot;Run&quot;,
-    &quot;Go Build.go build restaurant/cmd/api.executor&quot;: &quot;Run&quot;,
-    &quot;Go Build.run api.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestCategoryHandlerAddCategory in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestCategoryRepositoryAddCategory in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Debug&quot;,
-    &quot;Go Test.TestDefaultProductServiceUpdateImage/product_not_found in restaurant/internal/domain/menu.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestDefaultProductService_UpdateProduct in restaurant/internal/domain/menu.executor&quot;: &quot;Debug&quot;,
-    &quot;Go Test.TestImageRepositoryDeleteImage in restaurant/internal/adapter/storage/local.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestMenuRepositoryDeleteCategory in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestMenuRepositoryUpdateCategory in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestMenuRepository_AddCategory in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestOrderService_UpdateSession in restaurant/internal/core/service.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestParseAddCategoryRequest in restaurant/internal/domain/menu.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductHandlerAddProduct in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductHandlerUpdateImage in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductHandlerUpdateImage/invalid_image in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductHandlerUpdateImage/invalid_request in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductHandlerUpdateImage/success in restaurant/internal/adapter/handler/rest.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductRepositorySaveProduct in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductRepositoryUpdateProduct in restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Debug&quot;,
-    &quot;Go Test.TestProductService_DeleteProduct in restaurant/internal/core/service.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.TestProductService_GetProductById in restaurant/internal/core/service.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.go test restaurant/internal/adapter/storage/postgres.executor&quot;: &quot;Debug&quot;,
-    &quot;Go Test.go test restaurant/internal/core/service.executor&quot;: &quot;Run&quot;,
-    &quot;Go Test.go test restaurant/internal/domain/menu.executor&quot;: &quot;Debug&quot;,
-    &quot;Go Test.test db.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginOnboarding&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginOnboardingV2&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginStorageMigration&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.analysis.ui.options.defaults&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;database.data.extractors.current.export.id&quot;: &quot;Comma-separated (CSV)_id&quot;,
-    &quot;database.data.extractors.current.id&quot;: &quot;Comma-separated (CSV)_id&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;refactor/implement-microservices&quot;,
-    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;js.buildTools.gulp.gulp_package_dir&quot;: &quot;&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/simone/Documents/restaurant-api&quot;,
-    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Database Script.products.sql.executor": "Run",
+    "DefaultGoTemplateProperty": "Go File",
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Go Build.go build menu/cmd/api.executor": "Run",
+    "Go Build.go build restaurant/cmd/api.executor": "Run",
+    "Go Build.run api.executor": "Run",
+    "Go Test.TestCategoryHandlerAddCategory in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestCategoryRepositoryAddCategory in restaurant/internal/adapter/storage/postgres.executor": "Debug",
+    "Go Test.TestDefaultProductServiceUpdateImage/product_not_found in restaurant/internal/domain/menu.executor": "Run",
+    "Go Test.TestDefaultProductService_UpdateProduct in restaurant/internal/domain/menu.executor": "Debug",
+    "Go Test.TestImageRepositoryDeleteImage in restaurant/internal/adapter/storage/local.executor": "Run",
+    "Go Test.TestMenuRepositoryDeleteCategory in restaurant/internal/adapter/storage/postgres.executor": "Run",
+    "Go Test.TestMenuRepositoryUpdateCategory in restaurant/internal/adapter/storage/postgres.executor": "Run",
+    "Go Test.TestMenuRepository_AddCategory in restaurant/internal/adapter/storage/postgres.executor": "Run",
+    "Go Test.TestOrderService_UpdateSession in restaurant/internal/core/service.executor": "Run",
+    "Go Test.TestParseAddCategoryRequest in restaurant/internal/domain/menu.executor": "Run",
+    "Go Test.TestProductHandlerAddProduct in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestProductHandlerUpdateImage in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestProductHandlerUpdateImage/invalid_image in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestProductHandlerUpdateImage/invalid_request in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestProductHandlerUpdateImage/success in restaurant/internal/adapter/handler/rest.executor": "Run",
+    "Go Test.TestProductRepositorySaveProduct in restaurant/internal/adapter/storage/postgres.executor": "Run",
+    "Go Test.TestProductRepositoryUpdateProduct in restaurant/internal/adapter/storage/postgres.executor": "Debug",
+    "Go Test.TestProductService_DeleteProduct in restaurant/internal/core/service.executor": "Run",
+    "Go Test.TestProductService_GetProductById in restaurant/internal/core/service.executor": "Run",
+    "Go Test.go test restaurant/internal/adapter/storage/postgres.executor": "Debug",
+    "Go Test.go test restaurant/internal/core/service.executor": "Run",
+    "Go Test.go test restaurant/internal/domain/menu.executor": "Debug",
+    "Go Test.test db.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.GoLinterPluginOnboarding": "true",
+    "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
+    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.analysis.ui.options.defaults": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "database.data.extractors.current.export.id": "Comma-separated (CSV)_id",
+    "database.data.extractors.current.id": "Comma-separated (CSV)_id",
+    "git-widget-placeholder": "refactor/implement-microservices",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "js.buildTools.gulp.gulp_package_dir": "",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/Users/simone/Documents/restaurant-api/menu/internal/rest",
+    "list.type.of.created.stylesheet": "CSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "Errors",
+    "to.speed.mode.migration.done": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;,
-      &quot;java.sql.Driver&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql",
+      "java.sql.Driver"
     ],
-    &quot;RunConfigurationTargetLRU&quot;: [
-      &quot;fdefe002-0d77-46fe-8761-11b90e0f2a10&quot;
+    "RunConfigurationTargetLRU": [
+      "fdefe002-0d77-46fe-8761-11b90e0f2a10"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/menu/internal/rest" />
       <recent name="$PROJECT_DIR$/internal/adapter/storage/local/testdata" />
       <recent name="$PROJECT_DIR$/internal/adapter/storage/postgres" />
       <recent name="$PROJECT_DIR$" />
@@ -230,7 +230,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(menu/rest): Add `Router` to set up API endpoints and start the server" />
     <MESSAGE value="feat(menu): Add Dockerfile" />
     <MESSAGE value="refactor(menu/rest): Remove use of net/context in router.go" />
     <MESSAGE value="feat(nginx): Add nginx service" />
@@ -255,7 +254,8 @@
     <MESSAGE value="test(menu/rest): Add tests for request validation" />
     <MESSAGE value="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`" />
     <MESSAGE value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
+    <MESSAGE value="test(menu/db): Make main testing function apply all migrations in db package" />
+    <option name="LAST_COMMIT_MESSAGE" value="test(menu/db): Make main testing function apply all migrations in db package" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

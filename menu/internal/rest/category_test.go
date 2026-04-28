@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"menu/internal/db"
 	"menu/internal/domain"
 	"net/http"
 	"net/http/httptest"
@@ -160,4 +161,76 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddCategory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := db.NewCategoryRepository(testDb)
+	service := domain.NewDefaultCategoryService(repository)
+	handler := NewCategoryHandler(service)
+
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: errorHandler,
+	})
+	e.POST("/categories", handler.AddCategory)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("Want http status code %d, got %d", http.StatusCreated, rec.Code)
+		}
+
+		var res CategoryResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+
+		if res.Name != "test" {
+			t.Fatalf("Want name %s, got %s", "test", res.Name)
+		}
+	})
+
+	t.Run("conflicting name", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		if _, err := testDb.ExecContext(
+			context.Background(),
+			`INSERT INTO categories(id, name, created_at, updated_at)
+			VALUES (gen_random_uuid(), 'test', NOW(), NOW())`); err != nil {
+			t.Fatalf("Error inserting data: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusCreated, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+
+		if res.ErrorCode != domain.ErrorCodeCategoryNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict, res.ErrorCode)
+		}
+	})
 }
