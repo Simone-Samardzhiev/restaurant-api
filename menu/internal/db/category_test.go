@@ -3,6 +3,8 @@ package db
 import (
 	"errors"
 	"menu/internal/domain"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,4 +67,49 @@ func TestCategoryRepositorySave(t *testing.T) {
 
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
+}
+
+func TestCategoryRepositoryGetAll(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	if _, err := testDb.ExecContext(
+		context.Background(),
+		`INSERT INTO categories(id, name, created_at, updated_at) 
+		VALUES (gen_random_uuid(), 'Category 1', NOW(), NOW()),
+		       (gen_random_uuid(), 'Category 2', NOW(), NOW()),
+		       (gen_random_uuid(), 'Category 3', NOW(), NOW()),
+		       (gen_random_uuid(), 'Category 4', NOW(), NOW())`,
+	); err != nil {
+		t.Fatalf("Error seeding data: %v", err)
+	}
+
+	repository := NewCategoryRepository(testDb)
+	categories, err := repository.GetAll(context.Background())
+	if err != nil {
+		t.Fatalf("Error getting all categories: %v", err)
+	}
+
+	wantNames := []string{"Category 1", "Category 2", "Category 3", "Category 4"}
+
+	if len(categories) != len(wantNames) {
+		t.Fatalf("Unexpected category length: %d", len(categories))
+	}
+
+	slices.SortFunc(categories, func(a, b domain.Category) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	slices.Sort(wantNames)
+
+	for i := 0; i < len(categories); i++ {
+		if categories[i].Name != wantNames[i] {
+			t.Fatalf("Unexpected category name: %s", categories[i].Name)
+		}
+	}
 }

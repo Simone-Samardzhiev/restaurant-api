@@ -46,3 +46,26 @@ func (c *CategoryRepository) Save(ctx context.Context, category *domain.Category
 
 	return domain.NewError("error saving category", domain.ErrorCodeInternal, err)
 }
+
+func (c *CategoryRepository) GetAll(ctx context.Context) ([]domain.Category, error) {
+	rows, err := c.db.QueryContext(ctx, "SELECT id, name, created_at, updated_at FROM categories")
+	if err != nil {
+		return nil, domain.NewError("error getting categories", domain.ErrorCodeInternal, err)
+	}
+	defer rows.Close()
+
+	var categories []domain.Category
+	for rows.Next() {
+		var category domain.Category
+		if err := rows.Scan(&category.Id, &category.Name, &category.CreatedAt, &category.UpdatedAt); err != nil {
+			return nil, domain.NewError("error scanning row", domain.ErrorCodeInternal, err)
+		}
+
+		categories = append(categories, category)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, domain.NewError("error scanning rows", domain.ErrorCodeInternal, err)
+	}
+	return categories, nil
+}
