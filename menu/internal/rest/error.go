@@ -25,13 +25,15 @@ func (e *ErrorResponse) Unwrap() error {
 	return errors.Unwrap(e.err)
 }
 
+const invalidJSONErrorCode = "INVALID_JSON"
+
 // NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
 // returned from decoding JSON.
 func NewInvalidJSONError(err error) *ErrorResponse {
 	return &ErrorResponse{
 		HTTPStatus: http.StatusBadRequest,
 		Message:    "Invalid JSON payload.",
-		ErrorCode:  "INVALID_JSON",
+		ErrorCode:  invalidJSONErrorCode,
 		err:        err,
 	}
 }
@@ -81,19 +83,21 @@ func NewErrorResponse(err error) *ErrorResponse {
 	}
 }
 
-type ValidationError struct {
+type ValidationErrorResponse struct {
 	ErrorResponse
 	Fields map[string][]string `json:"fields"`
 }
 
+const invalidPayloadErrorCode = "INVALID_PAYLOAD"
+
 var validationErr = errors.New("validation error")
 
-func NewValidationError(fields map[string][]string) *ValidationError {
-	return &ValidationError{
+func NewValidationError(fields map[string][]string) *ValidationErrorResponse {
+	return &ValidationErrorResponse{
 		ErrorResponse: ErrorResponse{
 			HTTPStatus: http.StatusUnprocessableEntity,
 			Message:    "Payload validation error.",
-			ErrorCode:  "INVALID_PAYLOAD",
+			ErrorCode:  invalidPayloadErrorCode,
 			err:        validationErr,
 		},
 		Fields: fields,
@@ -115,7 +119,7 @@ func errorHandler(c *echo.Context, err error) {
 		return
 	}
 
-	if valErr, ok := errors.AsType[*ValidationError](err); ok {
+	if valErr, ok := errors.AsType[*ValidationErrorResponse](err); ok {
 		_ = c.JSON(valErr.HTTPStatus, valErr)
 		return
 	}
