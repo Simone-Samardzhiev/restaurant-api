@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/rest): Add integration tests for adding a category">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/db): Add method for fetching all categories to `CategoryRepository`">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/domain/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/category_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/category_service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/service.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,7 +231,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/rest): Remove use of net/context in router.go" />
     <MESSAGE value="feat(nginx): Add nginx service" />
     <MESSAGE value="chore: Remove unused files" />
     <MESSAGE value="feat: Implement reverse proxy to the menu api from nginx" />
@@ -257,7 +255,8 @@
     <MESSAGE value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
     <MESSAGE value="test(menu/db): Make main testing function apply all migrations in db package" />
     <MESSAGE value="test(menu/rest): Add integration tests for adding a category" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(menu/rest): Add integration tests for adding a category" />
+    <MESSAGE value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
+    <option name="LAST_COMMIT_MESSAGE" value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

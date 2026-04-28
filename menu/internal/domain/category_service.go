@@ -34,3 +34,7 @@ func (d *DefaultCategoryService) Add(ctx context.Context, name string) (*Categor
 	}
 	return &category, nil
 }
+
+func (d *DefaultCategoryService) GetAll(ctx context.Context) ([]Category, error) {
+	return d.repository.GetAll(ctx)
+}

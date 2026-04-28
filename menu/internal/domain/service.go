@@ -7,4 +7,7 @@ type CategoryService interface {
 
 	// Add creates a new category with specific name.
 	Add(ctx context.Context, name string) (*Category, error)
+
+	// GetAll fetches all categories.
+	GetAll(ctx context.Context) ([]Category, error)
 }
