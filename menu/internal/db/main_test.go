@@ -24,8 +24,11 @@ func TestMain(m *testing.M) {
 	}
 
 	if err = db.Ping(); err != nil {
-		log.Fatalf("Error pinging database: %v", err)
+		log.Fatalf("Error pinging database connection: %v", err)
+	}
 
+	if err = ApplyMigrations(db, "file://./../../migrations"); err != nil {
+		log.Fatalf("Error applying migrations: %v", err)
 	}
 
 	testDb = db

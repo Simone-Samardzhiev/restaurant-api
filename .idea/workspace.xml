@@ -4,10 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/error.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/db.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/db.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/main_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -122,7 +122,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;Errors&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   },
   &quot;keyToStringList&quot;: {
@@ -230,7 +230,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(menu/config): Add `App` configuration" />
     <MESSAGE value="feat(menu/rest): Add `Router` to set up API endpoints and start the server" />
     <MESSAGE value="feat(menu): Add Dockerfile" />
     <MESSAGE value="refactor(menu/rest): Remove use of net/context in router.go" />
@@ -255,7 +254,8 @@
     <MESSAGE value="feat(nginx): Add rate limiting for the menu service" />
     <MESSAGE value="test(menu/rest): Add tests for request validation" />
     <MESSAGE value="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`" />
+    <MESSAGE value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
+    <option name="LAST_COMMIT_MESSAGE" value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

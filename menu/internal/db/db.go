@@ -33,7 +33,7 @@ func Connect(c *config.Database) (*sql.DB, error) {
 
 // ApplyMigrations applies all migrations.
 //
-// Note: The path should start with *file://*
+// Note: The path should start with *file://*.
 func ApplyMigrations(db *sql.DB, path string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
