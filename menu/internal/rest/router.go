@@ -39,6 +39,7 @@ func NewRouter(c *RouterConfig) *Router {
 		{
 			categories := api.Group("/categories")
 			categories.POST("", c.CategoryHandler.AddCategory)
+			categories.GET("", c.CategoryHandler.GetCategories)
 		}
 	}
 

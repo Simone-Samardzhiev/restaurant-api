@@ -86,3 +86,22 @@ func (c *CategoryHandler) AddCategory(ctx *echo.Context) error {
 		UpdatedAt: result.UpdatedAt,
 	})
 }
+
+func (c *CategoryHandler) GetCategories(ctx *echo.Context) error {
+	categories, err := c.service.GetAll(ctx.Request().Context())
+	if err != nil {
+		return NewErrorResponse(err)
+	}
+
+	response := make([]CategoryResponse, 0, len(categories))
+	for _, category := range categories {
+		response = append(response, CategoryResponse{
+			Id:        category.Id,
+			Name:      category.Name,
+			CreatedAt: category.CreatedAt,
+			UpdatedAt: category.UpdatedAt,
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, response)
+}
