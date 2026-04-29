@@ -1,6 +1,10 @@
 package domain
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // CategoryService describes how category business logic is accessed.
 type CategoryService interface {
@@ -10,4 +14,6 @@ type CategoryService interface {
 
 	// GetAll fetches all categories.
 	GetAll(ctx context.Context) ([]Category, error)
+
+	Update(ctx context.Context, id uuid.UUID, name string) error
 }
