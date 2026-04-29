@@ -4,11 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test(menu/domain): Add method for fetching all categories to `CategoryService`">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/rest): Add endpoint for retrieving categories">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/error.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/error.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,7 +234,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="chore: Remove unused files" />
     <MESSAGE value="feat: Implement reverse proxy to the menu api from nginx" />
     <MESSAGE value="refactor(menu/rest): Disable automatic redirecting by the gin engine and remove trailing path when nesting endpoints" />
     <MESSAGE value="refactor(menu/rest): Add health checking endpoint" />
@@ -257,7 +258,8 @@
     <MESSAGE value="test(menu/rest): Add integration tests for adding a category" />
     <MESSAGE value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
     <MESSAGE value="test(menu/domain): Add method for fetching all categories to `CategoryService`" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(menu/domain): Add method for fetching all categories to `CategoryService`" />
+    <MESSAGE value="feat(menu/rest): Add endpoint for retrieving categories" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/rest): Add endpoint for retrieving categories" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

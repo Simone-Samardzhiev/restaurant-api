@@ -6,6 +6,7 @@ import (
 	"errors"
 	"menu/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -68,4 +69,29 @@ func (c *CategoryRepository) GetAll(ctx context.Context) ([]domain.Category, err
 		return nil, domain.NewError("error scanning rows", domain.ErrorCodeInternal, err)
 	}
 	return categories, nil
+}
+
+func (c *CategoryRepository) Update(ctx context.Context, id uuid.UUID, name string) error {
+	result, err := c.db.ExecContext(ctx, "UPDATE categories SET name = $1 WHERE id = $2", name, id)
+	if err == nil {
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+		}
+
+		if rows == 0 {
+			return domain.NewError("error updating category", domain.ErrorCodeCategoryNotFound, nil)
+		}
+
+		return nil
+	}
+
+	pqErr, ok := errors.AsType[*pq.Error](err)
+	if ok {
+		if pqErr.Code == "23505" && pqErr.Constraint == "categories_name_key" {
+			return domain.NewError("category name conflict", domain.ErrorCodeCategoryNameConflict, err)
+		}
+	}
+
+	return domain.NewError("error updating category", domain.ErrorCodeInternal, err)
 }

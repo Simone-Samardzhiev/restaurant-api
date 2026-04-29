@@ -14,7 +14,7 @@ import (
 
 func TestCategoryRepositorySave(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
+		t.Skip("Skipping integration test in short mode")
 	}
 
 	repository := NewCategoryRepository(testDb)
@@ -57,6 +57,10 @@ func TestCategoryRepositorySave(t *testing.T) {
 		}
 
 		err := repository.Save(context.Background(), category)
+		if err == nil {
+			t.Fatalf("Want conflict error, got nil")
+		}
+
 		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
 			if domainErr.Code != domain.ErrorCodeCategoryNameConflict {
 				t.Fatalf("Want error code: %s, got: %s", domain.ErrorCodeCategoryNameConflict, domainErr.Code)
@@ -71,7 +75,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 
 func TestCategoryRepositoryGetAll(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
+		t.Skip("Skipping integration test in short mode")
 	}
 
 	if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
@@ -112,4 +116,97 @@ func TestCategoryRepositoryGetAll(t *testing.T) {
 			t.Fatalf("Unexpected category name: %s", categories[i].Name)
 		}
 	}
+}
+
+func TestCategoryRepositoryUpdate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := NewCategoryRepository(testDb)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		id := uuid.New()
+
+		if _, err := testDb.ExecContext(
+			context.Background(),
+			`INSERT INTO categories(id, name, created_at, updated_at)
+			VALUES ($1, 'test', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		const newName = "New Name"
+
+		if err := repository.Update(context.Background(), id, newName); err != nil {
+			t.Logf("Cause: %v", errors.Unwrap(err))
+			t.Fatalf("Error updating category: %v", err)
+		}
+
+		row := testDb.QueryRowContext(context.Background(), `SELECT name FROM categories WHERE id = $1`, id)
+		var name string
+		if err := row.Scan(&name); err != nil {
+			t.Fatalf("Error getting category name: %v", err)
+		}
+
+		if name != newName {
+			t.Fatalf("Want category name: %s, got: %s", newName, name)
+		}
+	})
+
+	t.Run("name conflict", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.ExecContext(
+			context.Background(),
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'Test1', NOW(), NOW()),
+			(gen_random_uuid(), 'Test2', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		const newName = "Test2"
+		err := repository.Update(context.Background(), id, newName)
+		if err == nil {
+			t.Fatalf("Want conflict error, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeCategoryNameConflict {
+				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+			}
+
+			return
+		}
+
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		id := uuid.New()
+		err := repository.Update(context.Background(), id, "Random name")
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeCategoryNotFound {
+				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+			}
+
+			return
+		}
+
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
 }

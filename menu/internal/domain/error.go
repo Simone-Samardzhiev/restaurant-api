@@ -6,11 +6,13 @@ type ErrorCode int
 const (
 	ErrorCodeInternal ErrorCode = iota + 1
 	ErrorCodeCategoryNameConflict
+	ErrorCodeCategoryNotFound
 )
 
 var mapErrorCodes = map[ErrorCode]string{
 	ErrorCodeInternal:             "INTERNAL_ERROR",
 	ErrorCodeCategoryNameConflict: "CATEGORY_NAME_CONFLICT",
+	ErrorCodeCategoryNotFound:     "CATEGORY_NOT_FOUND",
 }
 
 func (e ErrorCode) String() string {

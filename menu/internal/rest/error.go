@@ -41,6 +41,7 @@ func NewInvalidJSONError(err error) *ErrorResponse {
 var codesToStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeInternal:             http.StatusInternalServerError,
 	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
+	domain.ErrorCodeCategoryNotFound:     http.StatusNotFound,
 }
 
 func translateCodeToStatus(code domain.ErrorCode) int {
@@ -53,6 +54,7 @@ func translateCodeToStatus(code domain.ErrorCode) int {
 var codesToMessage = map[domain.ErrorCode]string{
 	domain.ErrorCodeInternal:             "Internal server error.",
 	domain.ErrorCodeCategoryNameConflict: "Category name is already taken.",
+	domain.ErrorCodeCategoryNotFound:     "Category not found.",
 }
 
 func translateCodeToMessage(code domain.ErrorCode) string {

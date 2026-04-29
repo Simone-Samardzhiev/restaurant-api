@@ -1,6 +1,10 @@
 package domain
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // CategoryRepository describes how category data is accessed.
 type CategoryRepository interface {
@@ -10,4 +14,7 @@ type CategoryRepository interface {
 
 	// GetAll fetches all categories.
 	GetAll(ctx context.Context) ([]Category, error)
+
+	// Update updates the category name by id.
+	Update(ctx context.Context, id uuid.UUID, name string) error
 }
