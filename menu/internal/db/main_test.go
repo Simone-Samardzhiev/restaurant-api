@@ -8,10 +8,16 @@ import (
 	"testing"
 )
 
+// testDb holds connection to the test database.
+// Connection is only established if the short flag is not provided.
 var testDb *sql.DB
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+
+	if testing.Short() {
+		os.Exit(m.Run())
+	}
 
 	dbUrl, ok := os.LookupEnv("TEST_DATABASE_URL")
 	if !ok {

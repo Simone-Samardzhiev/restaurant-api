@@ -19,7 +19,7 @@ import (
 type fakeCategoryService struct {
 	onAdd    func(ctx context.Context, name string) (*domain.Category, error)
 	onGetAll func(ctx context.Context) ([]domain.Category, error)
-	onUpdate func(ctx context.Context, name string) error
+	onUpdate func(ctx context.Context, id uuid.UUID, name string) error
 }
 
 var _ domain.CategoryService = (*fakeCategoryService)(nil)
@@ -42,7 +42,7 @@ func (f fakeCategoryService) Update(ctx context.Context, id uuid.UUID, name stri
 	if f.onUpdate == nil {
 		panic("onUpdate not implemented")
 	}
-	return f.onUpdate(ctx, name)
+	return f.onUpdate(ctx, id, name)
 }
 
 func TestAddCategoryRequestValidate(t *testing.T) {
@@ -372,7 +372,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		{
 			name: "success",
 			service: &fakeCategoryService{
-				onUpdate: func(ctx context.Context, name string) error {
+				onUpdate: func(ctx context.Context, id uuid.UUID, name string) error {
 					return nil
 				},
 			},

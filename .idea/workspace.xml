@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Add error handling for echo errors in `errorHandler`">
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test: Removed unused context when modifying the database before or after the tests">
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/main_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -230,7 +229,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(menu): Fix remove trailing slash in Dockerfile for migrations" />
     <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
     <MESSAGE value="fix(menu): Fix heath checking" />
     <MESSAGE value="refactor(menu): Improve heath checking endpoint" />
@@ -255,7 +253,8 @@
     <MESSAGE value="feat(menu/db): Add method on `CategoryService` for updating" />
     <MESSAGE value="feat(menu/rest): Add endpoint for updating categories" />
     <MESSAGE value="refactor(menu/rest): Add error handling for echo errors in `errorHandler`" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Add error handling for echo errors in `errorHandler`" />
+    <MESSAGE value="test: Removed unused context when modifying the database before or after the tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="test: Removed unused context when modifying the database before or after the tests" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
