@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test: Removed unused context when modifying the database before or after the tests">
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/main_test.go" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="test: Make test establish connection only if the testing short flag is not used">
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/db/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/db/category_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/repository.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -229,7 +231,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
     <MESSAGE value="fix(menu): Fix heath checking" />
     <MESSAGE value="refactor(menu): Improve heath checking endpoint" />
     <MESSAGE value="refactor(menu): Change environment variable PORT to ADDR" />
@@ -254,7 +255,8 @@
     <MESSAGE value="feat(menu/rest): Add endpoint for updating categories" />
     <MESSAGE value="refactor(menu/rest): Add error handling for echo errors in `errorHandler`" />
     <MESSAGE value="test: Removed unused context when modifying the database before or after the tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="test: Removed unused context when modifying the database before or after the tests" />
+    <MESSAGE value="test: Make test establish connection only if the testing short flag is not used" />
+    <option name="LAST_COMMIT_MESSAGE" value="test: Make test establish connection only if the testing short flag is not used" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

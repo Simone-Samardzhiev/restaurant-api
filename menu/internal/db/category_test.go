@@ -207,3 +207,48 @@ func TestCategoryRepositoryUpdate(t *testing.T) {
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
+
+func TestCategoryRepositoryDelete(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := NewCategoryRepository(testDb)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO categories(id, name, created_at, updated_at)
+			VALUES ($1, 'test', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		if err := repository.Delete(context.Background(), id); err != nil {
+			t.Fatalf("Error deleting category: %v", err)
+		}
+	})
+
+	t.Run("category not found", func(t *testing.T) {
+		id := uuid.New()
+		err := repository.Delete(context.Background(), id)
+
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeCategoryNotFound {
+				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+			}
+			return
+		}
+
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
+}

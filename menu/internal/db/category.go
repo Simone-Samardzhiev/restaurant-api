@@ -80,7 +80,7 @@ func (c *CategoryRepository) Update(ctx context.Context, id uuid.UUID, name stri
 		}
 
 		if rows == 0 {
-			return domain.NewError("error updating category", domain.ErrorCodeCategoryNotFound, nil)
+			return domain.NewError("category not found", domain.ErrorCodeCategoryNotFound, nil)
 		}
 
 		return nil
@@ -94,4 +94,21 @@ func (c *CategoryRepository) Update(ctx context.Context, id uuid.UUID, name stri
 	}
 
 	return domain.NewError("error updating category", domain.ErrorCodeInternal, err)
+}
+
+func (c *CategoryRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := c.db.ExecContext(ctx, "DELETE FROM categories WHERE id = $1", id)
+	if err != nil {
+		return domain.NewError("error deleting category", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+
+	if rows == 0 {
+		return domain.NewError("category not found", domain.ErrorCodeCategoryNotFound, nil)
+	}
+	return nil
 }

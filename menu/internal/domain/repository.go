@@ -15,6 +15,9 @@ type CategoryRepository interface {
 	// GetAll fetches all categories.
 	GetAll(ctx context.Context) ([]Category, error)
 
-	// Update updates the category name by id.
+	// Update updates a category name by id.
 	Update(ctx context.Context, id uuid.UUID, name string) error
+
+	// Delete deletes a category by id.
+	Delete(ctx context.Context, id uuid.UUID) error
 }
