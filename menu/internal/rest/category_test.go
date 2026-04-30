@@ -195,7 +195,7 @@ func TestAddCategory(t *testing.T) {
 	e.POST("/categories", handler.AddCategory)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
@@ -220,12 +220,11 @@ func TestAddCategory(t *testing.T) {
 	})
 
 	t.Run("conflicting name", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at)
 			VALUES (gen_random_uuid(), 'test', NOW(), NOW())`); err != nil {
 			t.Fatalf("Error seeding data: %v", err)
@@ -300,7 +299,7 @@ func TestGetCategories(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+	if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 		t.Fatalf("Error truncating table: %v", err)
 	}
 
@@ -456,13 +455,12 @@ func TestUpdateCategory(t *testing.T) {
 	e.PATCH("/categories/:id", handler.UpdateCategory)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 			t.Fatalf("Error truncating categories: %v", err)
 		}
 
 		id := uuid.New()
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at)
 			VALUES ($1, 'Old name', NOW(), NOW())`,
 			id,
@@ -470,7 +468,7 @@ func TestUpdateCategory(t *testing.T) {
 			t.Fatalf("Error seeding data: %v", err)
 		}
 
-		var newName string = "New Name"
+		const newName = "New Name"
 		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{ "name":"New Name" }`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -481,7 +479,7 @@ func TestUpdateCategory(t *testing.T) {
 		}
 
 		// Validate its updated
-		row := testDb.QueryRowContext(context.Background(), `SELECT name FROM categories WHERE id = $1`, id)
+		row := testDb.QueryRow(`SELECT name FROM categories WHERE id = $1`, id)
 		var name string
 		if err := row.Scan(&name); err != nil {
 			t.Fatalf("Error getting category name: %v", err)
@@ -493,13 +491,12 @@ func TestUpdateCategory(t *testing.T) {
 	})
 
 	t.Run("conflict", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 			t.Fatalf("Error truncating categories: %v", err)
 		}
 
 		id := uuid.New()
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at) 
 			VALUES ($1, 'Test1', NOW(), NOW()),
 			(gen_random_uuid(), 'Test2', NOW(), NOW())`,

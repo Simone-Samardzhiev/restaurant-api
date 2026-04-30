@@ -20,7 +20,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 	repository := NewCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
@@ -37,7 +37,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 	})
 
 	t.Run("name conflict", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
@@ -78,12 +78,11 @@ func TestCategoryRepositoryGetAll(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 		t.Fatalf("Error truncating table: %v", err)
 	}
 
-	if _, err := testDb.ExecContext(
-		context.Background(),
+	if _, err := testDb.Exec(
 		`INSERT INTO categories(id, name, created_at, updated_at) 
 		VALUES (gen_random_uuid(), 'Category 1', NOW(), NOW()),
 		       (gen_random_uuid(), 'Category 2', NOW(), NOW()),
@@ -126,14 +125,13 @@ func TestCategoryRepositoryUpdate(t *testing.T) {
 	repository := NewCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
 		id := uuid.New()
 
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at)
 			VALUES ($1, 'test', NOW(), NOW())`,
 			id,
@@ -160,13 +158,12 @@ func TestCategoryRepositoryUpdate(t *testing.T) {
 	})
 
 	t.Run("name conflict", func(t *testing.T) {
-		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE TABLE categories CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
 		id := uuid.New()
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at) 
 			VALUES ($1, 'Test1', NOW(), NOW()),
 			(gen_random_uuid(), 'Test2', NOW(), NOW())`,
