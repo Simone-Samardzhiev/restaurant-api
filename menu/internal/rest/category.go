@@ -150,3 +150,16 @@ func (c *CategoryHandler) UpdateCategory(ctx *echo.Context) error {
 
 	return ctx.NoContent(http.StatusNoContent)
 }
+
+func (c *CategoryHandler) DeleteCategory(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	if err = c.service.Delete(ctx.Request().Context(), id); err != nil {
+		return NewErrorResponse(err)
+	}
+
+	return ctx.NoContent(http.StatusOK)
+}

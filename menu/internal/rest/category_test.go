@@ -139,7 +139,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			service:            &fakeCategoryService{},
 			request:            `{{}`,
 			wantHttpStatusCode: http.StatusBadRequest,
-			wantErrorCode:      invalidJSONErrorCode,
+			wantErrorCode:      errorCodeInvalidJSON,
 		},
 	}
 
@@ -451,7 +451,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			id:             uuid.NewString(),
 			request:        `{ "na:"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
-			wantErrorCode:  invalidJSONErrorCode,
+			wantErrorCode:  errorCodeInvalidJSON,
 		},
 		{
 			name:           "invalid uuid",
@@ -459,7 +459,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			id:             "invalid",
 			request:        `{ "name":"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
-			wantErrorCode:  invalidUUIDErrorCode,
+			wantErrorCode:  errorCodeInvalidUUID,
 		},
 	}
 
@@ -584,6 +584,121 @@ func TestUpdateCategory(t *testing.T) {
 		id := uuid.New()
 		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{"name" : "test"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+		if res.ErrorCode != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.ErrorCode)
+		}
+	})
+}
+
+func TestCategoryHandlerDeleteCategory(t *testing.T) {
+	tests := []struct {
+		name           string
+		service        domain.CategoryService
+		id             string
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			service: &fakeCategoryService{
+				onDelete: func(ctx context.Context, id uuid.UUID) error {
+					return nil
+				},
+			},
+			id:             uuid.New().String(),
+			wantHttpStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid id",
+			service:        &fakeCategoryService{},
+			id:             "invalid",
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  errorCodeInvalidUUID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			handler := NewCategoryHandler(tt.service)
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: errorHandler,
+			})
+			e.DELETE("/categories/:id", handler.DeleteCategory)
+
+			req := httptest.NewRequest(http.MethodDelete, "/categories/"+tt.id, nil)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusOK {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response body: %v", err)
+			}
+			if res.ErrorCode != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.ErrorCode)
+			}
+		})
+	}
+}
+
+func TestDeleteCategory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	repository := db.NewCategoryRepository(testDb)
+	service := domain.NewDefaultCategoryService(repository)
+	handler := NewCategoryHandler(service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: errorHandler,
+	})
+	e.DELETE("/categories/:id", handler.DeleteCategory)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
+			t.Fatalf("Error truncating categories: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'test', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		id := uuid.NewString()
+		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id, nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 

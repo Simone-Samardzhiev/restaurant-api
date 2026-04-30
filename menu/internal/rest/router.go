@@ -41,6 +41,7 @@ func NewRouter(c *RouterConfig) *Router {
 			categories.POST("", c.CategoryHandler.AddCategory)
 			categories.GET("", c.CategoryHandler.GetCategories)
 			categories.PATCH("/:id", c.CategoryHandler.UpdateCategory)
+			categories.DELETE("/:id", c.CategoryHandler.DeleteCategory)
 		}
 	}
 

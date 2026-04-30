@@ -25,7 +25,7 @@ func (e *ErrorResponse) Unwrap() error {
 	return errors.Unwrap(e.err)
 }
 
-const invalidJSONErrorCode = "INVALID_JSON"
+const errorCodeInvalidJSON = "INVALID_JSON"
 
 // NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
 // returned from decoding JSON.
@@ -33,12 +33,12 @@ func NewInvalidJSONError(err error) *ErrorResponse {
 	return &ErrorResponse{
 		HTTPStatus: http.StatusBadRequest,
 		Message:    "Invalid JSON payload.",
-		ErrorCode:  invalidJSONErrorCode,
+		ErrorCode:  errorCodeInvalidJSON,
 		err:        err,
 	}
 }
 
-const invalidUUIDErrorCode = "INVALID_UUID"
+const errorCodeInvalidUUID = "INVALID_UUID"
 
 // NewInvalidUUIDError creates and allocates new [ErrorResponse] from an error
 // returned by UUID.
@@ -46,7 +46,7 @@ func NewInvalidUUIDError(err error) *ErrorResponse {
 	return &ErrorResponse{
 		HTTPStatus: http.StatusBadRequest,
 		Message:    "Invalid UUID format.",
-		ErrorCode:  invalidUUIDErrorCode,
+		ErrorCode:  errorCodeInvalidUUID,
 		err:        err,
 	}
 }
