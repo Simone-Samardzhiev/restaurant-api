@@ -42,3 +42,7 @@ func (d *DefaultCategoryService) GetAll(ctx context.Context) ([]Category, error)
 func (d *DefaultCategoryService) Update(ctx context.Context, id uuid.UUID, name string) error {
 	return d.repository.Update(ctx, id, name)
 }
+
+func (d *DefaultCategoryService) Delete(ctx context.Context, id uuid.UUID) error {
+	return d.repository.Delete(ctx, id)
+}
