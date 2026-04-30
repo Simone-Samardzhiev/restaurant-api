@@ -20,6 +20,7 @@ type fakeCategoryService struct {
 	onAdd    func(ctx context.Context, name string) (*domain.Category, error)
 	onGetAll func(ctx context.Context) ([]domain.Category, error)
 	onUpdate func(ctx context.Context, id uuid.UUID, name string) error
+	onDelete func(ctx context.Context, id uuid.UUID) error
 }
 
 var _ domain.CategoryService = (*fakeCategoryService)(nil)
@@ -43,6 +44,13 @@ func (f fakeCategoryService) Update(ctx context.Context, id uuid.UUID, name stri
 		panic("onUpdate not implemented")
 	}
 	return f.onUpdate(ctx, id, name)
+}
+
+func (f fakeCategoryService) Delete(ctx context.Context, id uuid.UUID) error {
+	if f.onDelete == nil {
+		panic("onDelete not implemented")
+	}
+	return f.onDelete(ctx, id)
 }
 
 func TestAddCategoryRequestValidate(t *testing.T) {
@@ -357,6 +365,55 @@ func TestGetCategories(t *testing.T) {
 		if wantNames[i] != res[i].Name {
 			t.Errorf("Want name %s, got %s", wantNames[i], res[i].Name)
 		}
+	}
+}
+
+func TestUpdateCategoryRequestValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		req       *UpdateCategoryRequest
+		wantField string
+	}{
+		{
+			name: "valid",
+			req: &UpdateCategoryRequest{
+				Name: "test",
+			},
+		},
+		{
+			name: "short name",
+			req: &UpdateCategoryRequest{
+				Name: "t",
+			},
+			wantField: "name",
+		},
+		{
+			name: "long name",
+			req: &UpdateCategoryRequest{
+				Name: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest",
+			},
+			wantField: "name",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := tt.req.Validate()
+
+			if tt.wantField == "" {
+				if got != nil {
+					t.Errorf("Validate() = %v, want nil", got)
+				}
+				return
+			}
+
+			_, ok := got[tt.wantField]
+			if !ok {
+				t.Errorf("Missing field: %s", tt.wantField)
+			}
+		})
 	}
 }
 

@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/db): Add `Delete` method to `CategoryRepository`">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/domain): Add `Delete` method to `CategoryService`">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/domain/category_service.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/category_service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/domain/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -231,7 +232,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu): Improve heath checking endpoint" />
     <MESSAGE value="refactor(menu): Change environment variable PORT to ADDR" />
     <MESSAGE value="refactor(menu/rest): Fix setting up the route endpoint for health checking" />
     <MESSAGE value="fix: Fix a typo in docker-compose.yaml" />
@@ -256,7 +256,8 @@
     <MESSAGE value="test: Removed unused context when modifying the database before or after the tests" />
     <MESSAGE value="test: Make test establish connection only if the testing short flag is not used" />
     <MESSAGE value="feat(menu/db): Add `Delete` method to `CategoryRepository`" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/db): Add `Delete` method to `CategoryRepository`" />
+    <MESSAGE value="feat(menu/domain): Add `Delete` method to `CategoryService`" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/domain): Add `Delete` method to `CategoryService`" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
