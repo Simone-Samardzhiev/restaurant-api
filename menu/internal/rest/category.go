@@ -40,11 +40,11 @@ func (a *AddCategoryRequest) Validate() map[string][]string {
 	a.Name = strings.TrimSpace(a.Name)
 	length := utf8.RuneCountInString(a.Name)
 
-	if length <= MinCategoryLength {
+	if length < MinCategoryLength {
 		fields["name"] = append(fields["name"], "Must be at least "+strconv.Itoa(MinCategoryLength)+" characters.")
 	}
 
-	if length >= MaxCategoryLength {
+	if length > MaxCategoryLength {
 		fields["name"] = append(fields["name"], "Must be at most "+strconv.Itoa(MaxCategoryLength)+" characters.")
 	}
 
@@ -104,4 +104,49 @@ func (c *CategoryHandler) GetCategories(ctx *echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, response)
+}
+
+// UpdateCategoryRequest represents the JSON request for updating a category.
+type UpdateCategoryRequest struct {
+	Name string `json:"name"`
+}
+
+func (u *UpdateCategoryRequest) Validate() map[string][]string {
+	fields := make(map[string][]string)
+	u.Name = strings.TrimSpace(u.Name)
+	length := utf8.RuneCountInString(u.Name)
+
+	if length < MinCategoryLength {
+		fields["name"] = append(fields["name"], "Must be at least "+strconv.Itoa(MinCategoryLength)+" characters.")
+	}
+	if length > MaxCategoryLength {
+		fields["name"] = append(fields["name"], "Must be at most "+strconv.Itoa(MaxCategoryLength)+" characters.")
+	}
+
+	if len(fields) > 0 {
+		return fields
+	}
+	return nil
+}
+
+func (c *CategoryHandler) UpdateCategory(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	var req UpdateCategoryRequest
+	if err = ctx.Bind(&req); err != nil {
+		return NewInvalidJSONError(err)
+	}
+
+	if fields := req.Validate(); fields != nil {
+		return NewValidationError(fields)
+	}
+
+	if err = c.service.Update(ctx.Request().Context(), id, req.Name); err != nil {
+		return NewErrorResponse(err)
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }

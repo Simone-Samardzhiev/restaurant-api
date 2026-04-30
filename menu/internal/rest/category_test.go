@@ -19,6 +19,7 @@ import (
 type fakeCategoryService struct {
 	onAdd    func(ctx context.Context, name string) (*domain.Category, error)
 	onGetAll func(ctx context.Context) ([]domain.Category, error)
+	onUpdate func(ctx context.Context, name string) error
 }
 
 var _ domain.CategoryService = (*fakeCategoryService)(nil)
@@ -35,6 +36,13 @@ func (f fakeCategoryService) GetAll(ctx context.Context) ([]domain.Category, err
 		panic("onGetAll not implemented")
 	}
 	return f.onGetAll(ctx)
+}
+
+func (f fakeCategoryService) Update(ctx context.Context, id uuid.UUID, name string) error {
+	if f.onUpdate == nil {
+		panic("onUpdate not implemented")
+	}
+	return f.onUpdate(ctx, name)
 }
 
 func TestAddCategoryRequestValidate(t *testing.T) {
@@ -220,7 +228,7 @@ func TestAddCategory(t *testing.T) {
 			context.Background(),
 			`INSERT INTO categories(id, name, created_at, updated_at)
 			VALUES (gen_random_uuid(), 'test', NOW(), NOW())`); err != nil {
-			t.Fatalf("Error inserting data: %v", err)
+			t.Fatalf("Error seeding data: %v", err)
 		}
 
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test"}`))
@@ -245,6 +253,8 @@ func TestAddCategory(t *testing.T) {
 }
 
 func TestCategoryHandlerGetCategories(t *testing.T) {
+	t.Parallel()
+
 	service := &fakeCategoryService{
 		onGetAll: func(ctx context.Context) ([]domain.Category, error) {
 			return []domain.Category{
@@ -349,4 +359,190 @@ func TestGetCategories(t *testing.T) {
 			t.Errorf("Want name %s, got %s", wantNames[i], res[i].Name)
 		}
 	}
+}
+
+func TestCategoryHandlerUpdateCategory(t *testing.T) {
+	tests := []struct {
+		name           string
+		service        domain.CategoryService
+		id             string
+		request        string
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			service: &fakeCategoryService{
+				onUpdate: func(ctx context.Context, name string) error {
+					return nil
+				},
+			},
+			id:             uuid.NewString(),
+			request:        `{ "name":"test" }`,
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid payload",
+			service:        &fakeCategoryService{},
+			id:             uuid.NewString(),
+			request:        `{ "name":"t" }`,
+			wantHttpStatus: http.StatusUnprocessableEntity,
+			wantErrorCode:  invalidPayloadErrorCode,
+		},
+		{
+			name:           "invalid JSON",
+			service:        &fakeCategoryService{},
+			id:             uuid.NewString(),
+			request:        `{ "na:"test" }`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  invalidJSONErrorCode,
+		},
+		{
+			name:           "invalid uuid",
+			service:        &fakeCategoryService{},
+			id:             "invalid",
+			request:        `{ "name":"test" }`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  invalidUUIDErrorCode,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			handler := NewCategoryHandler(test.service)
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: errorHandler,
+			})
+			e.PATCH("/categories/:id", handler.UpdateCategory)
+
+			req := httptest.NewRequest(http.MethodPatch, "/categories/"+test.id, strings.NewReader(test.request))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != test.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", test.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusNoContent {
+				return
+			}
+
+			var res ValidationErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response body: %v", err)
+			}
+
+			if res.ErrorCode != test.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", test.wantErrorCode, res.ErrorCode)
+			}
+		})
+	}
+}
+
+func TestUpdateCategory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := db.NewCategoryRepository(testDb)
+	service := domain.NewDefaultCategoryService(repository)
+	handler := NewCategoryHandler(service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: errorHandler,
+	})
+
+	e.PATCH("/categories/:id", handler.UpdateCategory)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+			t.Fatalf("Error truncating categories: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.ExecContext(
+			context.Background(),
+			`INSERT INTO categories(id, name, created_at, updated_at)
+			VALUES ($1, 'Old name', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		var newName string = "New Name"
+		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{ "name":"New Name" }`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNoContent, rec.Code)
+		}
+
+		// Validate its updated
+		row := testDb.QueryRowContext(context.Background(), `SELECT name FROM categories WHERE id = $1`, id)
+		var name string
+		if err := row.Scan(&name); err != nil {
+			t.Fatalf("Error getting category name: %v", err)
+		}
+
+		if name != newName {
+			t.Fatalf("Want name %s, got %s", newName, name)
+		}
+	})
+
+	t.Run("conflict", func(t *testing.T) {
+		if _, err := testDb.ExecContext(context.Background(), `TRUNCATE categories CASCADE `); err != nil {
+			t.Fatalf("Error truncating categories: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.ExecContext(
+			context.Background(),
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'Test1', NOW(), NOW()),
+			(gen_random_uuid(), 'Test2', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error seeding data: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{ "name":"Test2" }`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+		if res.ErrorCode != domain.ErrorCodeCategoryNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict.String(), res.ErrorCode)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		id := uuid.New()
+		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{"name" : "test"}`))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+		if res.ErrorCode != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.ErrorCode)
+		}
+	})
 }

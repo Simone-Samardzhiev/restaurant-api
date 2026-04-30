@@ -38,6 +38,19 @@ func NewInvalidJSONError(err error) *ErrorResponse {
 	}
 }
 
+const invalidUUIDErrorCode = "INVALID_UUID"
+
+// NewInvalidUUIDError creates and allocates new [ErrorResponse] from an error
+// returned by UUID.
+func NewInvalidUUIDError(err error) *ErrorResponse {
+	return &ErrorResponse{
+		HTTPStatus: http.StatusBadRequest,
+		Message:    "Invalid UUID format.",
+		ErrorCode:  invalidUUIDErrorCode,
+		err:        err,
+	}
+}
+
 var codesToStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeInternal:             http.StatusInternalServerError,
 	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
