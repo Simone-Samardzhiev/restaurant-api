@@ -139,6 +139,14 @@ func errorHandler(c *echo.Context, err error) {
 		return
 	}
 
+	if echoErr, ok := errors.AsType[*echo.HTTPError](err); ok {
+		_ = c.JSON(echoErr.Code, ErrorResponse{
+			HTTPStatus: echoErr.Code,
+			Message:    echoErr.Message,
+			ErrorCode:  "METHOD_NOT_ALLOWED",
+		})
+	}
+
 	c.Logger().Error("Unknown error", slog.Any("error", err))
 	_ = c.JSON(http.StatusInternalServerError, ErrorResponse{
 		HTTPStatus: http.StatusInternalServerError,

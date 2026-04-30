@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/db): Add method on `CategoryService` for updating">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/rest): Add endpoint for updating categories">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/menu/internal/rest/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/error.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -233,7 +230,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/rest): Add health checking endpoint" />
     <MESSAGE value="fix(menu): Fix missing slash in Dockerfile for migrations" />
     <MESSAGE value="fix(menu): Fix remove trailing slash in Dockerfile for migrations" />
     <MESSAGE value="fix(menu): Fix migrations path in Dockerfile" />
@@ -258,7 +254,8 @@
     <MESSAGE value="feat(menu/rest): Add endpoint for retrieving categories" />
     <MESSAGE value="feat(menu/db): Add method on `CategoryRepository` for updating" />
     <MESSAGE value="feat(menu/db): Add method on `CategoryService` for updating" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/db): Add method on `CategoryService` for updating" />
+    <MESSAGE value="feat(menu/rest): Add endpoint for updating categories" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/rest): Add endpoint for updating categories" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
