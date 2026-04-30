@@ -111,7 +111,7 @@ func NewValidationError(fields map[string][]string) *ValidationErrorResponse {
 	return &ValidationErrorResponse{
 		ErrorResponse: ErrorResponse{
 			HTTPStatus: http.StatusUnprocessableEntity,
-			Message:    "Payload validation error.",
+			Message:    "Provided payload contains invalid fields.",
 			ErrorCode:  invalidPayloadErrorCode,
 			err:        validationErr,
 		},
