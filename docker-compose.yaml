@@ -35,6 +35,5 @@ services:
     restart: on-failure
     environment:
       MENU_SERVICE_ADDR: menu-api:8080
-      SERVER_NAME: localhost
     depends_on:
       - menu-api

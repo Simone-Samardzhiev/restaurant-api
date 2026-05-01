@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Change error message of `ValidationErrorResponse`">
-      <change afterPath="$PROJECT_DIR$/caddy/Caddyfile" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor: Replace nginx with caddy">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/caddy/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/nginx/nginx.conf.template" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -233,7 +228,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/domain): Refactor code mapping of error with map" />
     <MESSAGE value="refactor(menu/response): Swap gin for echo and centralize error handling" />
     <MESSAGE value="refactor: Remove access logs from nginx" />
     <MESSAGE value="refactor: Add server name directive in ngixn configuration" />
@@ -258,7 +252,8 @@
     <MESSAGE value="test(rest): Add missing tests for `Validate` method of `UpdateCategoryRequest`" />
     <MESSAGE value="feat(menu/rest): Add endpoint for deleting a category" />
     <MESSAGE value="refactor(menu/rest): Change error message of `ValidationErrorResponse`" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Change error message of `ValidationErrorResponse`" />
+    <MESSAGE value="refactor: Replace nginx with caddy" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: Replace nginx with caddy" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
