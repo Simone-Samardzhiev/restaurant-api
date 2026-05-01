@@ -4,8 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/rest): Add endpoint for deleting a category">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Change error message of `ValidationErrorResponse`">
+      <change afterPath="$PROJECT_DIR$/caddy/Caddyfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/caddy/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx/nginx.conf.template" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -149,6 +154,15 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration default="true" type="js.build_tools.gulp">
+      <node-interpreter>project</node-interpreter>
+      <node-options />
+      <gulpfile />
+      <tasks />
+      <arguments />
+      <envs />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="restaurant-api" />
       <working_directory value="$PROJECT_DIR$" />
@@ -177,15 +191,6 @@
       <framework value="gotest" />
       <method v="2" />
     </configuration>
-    <configuration default="true" type="js.build_tools.gulp">
-      <node-interpreter>project</node-interpreter>
-      <node-options />
-      <gulpfile />
-      <tasks />
-      <arguments />
-      <envs />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Go Build.go build menu/cmd/api" />
@@ -196,7 +201,6 @@
     <attachedChunks>
       <set>
         <option value="bundled-gosdk-72a9cf600ed8-3dd3895e5e08-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-261.23567.143" />
-        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-GO-261.23567.143" />
       </set>
     </attachedChunks>
   </component>
@@ -229,7 +233,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix: Fix a typo in docker-compose.yaml" />
     <MESSAGE value="refactor(menu/domain): Refactor code mapping of error with map" />
     <MESSAGE value="refactor(menu/response): Swap gin for echo and centralize error handling" />
     <MESSAGE value="refactor: Remove access logs from nginx" />
@@ -254,7 +257,8 @@
     <MESSAGE value="feat(menu/domain): Add `Delete` method to `CategoryService`" />
     <MESSAGE value="test(rest): Add missing tests for `Validate` method of `UpdateCategoryRequest`" />
     <MESSAGE value="feat(menu/rest): Add endpoint for deleting a category" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/rest): Add endpoint for deleting a category" />
+    <MESSAGE value="refactor(menu/rest): Change error message of `ValidationErrorResponse`" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Change error message of `ValidationErrorResponse`" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

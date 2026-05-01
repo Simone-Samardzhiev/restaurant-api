@@ -28,8 +28,8 @@ services:
       menu-db:
         condition: service_healthy
 
-  nginx-proxy:
-    build: "./nginx"
+  caddy-proxy:
+    build: "./caddy"
     ports:
       - "8080:8080"
     restart: on-failure
