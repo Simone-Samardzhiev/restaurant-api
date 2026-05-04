@@ -30,7 +30,6 @@ func NewRouter(c *RouterConfig) *Router {
 	})
 
 	e.Use(loggerMiddleware)
-
 	e.RouteNotFound("/*", handleEndpointNotFound)
 	e.GET("/health", c.HeathHandler.IsHealthy)
 

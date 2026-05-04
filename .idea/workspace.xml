@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor: Replace nginx with caddy">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(caddy): Remove server name from the proxy">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/logger.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/logger.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -228,7 +230,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(menu/response): Swap gin for echo and centralize error handling" />
     <MESSAGE value="refactor: Remove access logs from nginx" />
     <MESSAGE value="refactor: Add server name directive in ngixn configuration" />
     <MESSAGE value="feat(menu): Add logging implementation" />
@@ -253,7 +254,8 @@
     <MESSAGE value="feat(menu/rest): Add endpoint for deleting a category" />
     <MESSAGE value="refactor(menu/rest): Change error message of `ValidationErrorResponse`" />
     <MESSAGE value="refactor: Replace nginx with caddy" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: Replace nginx with caddy" />
+    <MESSAGE value="refactor(caddy): Remove server name from the proxy" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(caddy): Remove server name from the proxy" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
