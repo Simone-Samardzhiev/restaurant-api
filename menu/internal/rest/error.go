@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"golang.org/x/net/context"
 )
 
 // ErrorResponse represents JSON error response.
@@ -23,32 +24,6 @@ func (e *ErrorResponse) Error() string {
 
 func (e *ErrorResponse) Unwrap() error {
 	return errors.Unwrap(e.err)
-}
-
-const errorCodeInvalidJSON = "INVALID_JSON"
-
-// NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
-// returned from decoding JSON.
-func NewInvalidJSONError(err error) *ErrorResponse {
-	return &ErrorResponse{
-		HTTPStatus: http.StatusBadRequest,
-		Message:    "Invalid JSON payload.",
-		ErrorCode:  errorCodeInvalidJSON,
-		err:        err,
-	}
-}
-
-const errorCodeInvalidUUID = "INVALID_UUID"
-
-// NewInvalidUUIDError creates and allocates new [ErrorResponse] from an error
-// returned by UUID.
-func NewInvalidUUIDError(err error) *ErrorResponse {
-	return &ErrorResponse{
-		HTTPStatus: http.StatusBadRequest,
-		Message:    "Invalid UUID format.",
-		ErrorCode:  errorCodeInvalidUUID,
-		err:        err,
-	}
 }
 
 var codesToStatus = map[domain.ErrorCode]int{
@@ -98,6 +73,32 @@ func NewErrorResponse(err error) *ErrorResponse {
 	}
 }
 
+const errorCodeInvalidJSON = "INVALID_JSON"
+
+// NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
+// returned from decoding JSON.
+func NewInvalidJSONError(err error) *ErrorResponse {
+	return &ErrorResponse{
+		HTTPStatus: http.StatusBadRequest,
+		Message:    "Invalid JSON payload.",
+		ErrorCode:  errorCodeInvalidJSON,
+		err:        err,
+	}
+}
+
+const errorCodeInvalidUUID = "INVALID_UUID"
+
+// NewInvalidUUIDError creates and allocates new [ErrorResponse] from an error
+// returned by UUID.
+func NewInvalidUUIDError(err error) *ErrorResponse {
+	return &ErrorResponse{
+		HTTPStatus: http.StatusBadRequest,
+		Message:    "Invalid UUID format.",
+		ErrorCode:  errorCodeInvalidUUID,
+		err:        err,
+	}
+}
+
 type ValidationErrorResponse struct {
 	ErrorResponse
 	Fields map[string][]string `json:"fields"`
@@ -122,7 +123,9 @@ func NewValidationError(fields map[string][]string) *ValidationErrorResponse {
 func errorHandler(c *echo.Context, err error) {
 	if appErr, ok := errors.AsType[*ErrorResponse](err); ok {
 		if appErr.HTTPStatus >= http.StatusInternalServerError {
-			c.Logger().Error(
+			c.Logger().LogAttrs(
+				context.Background(),
+				slog.LevelError,
 				"Internal server error",
 				slog.Any("error", appErr.err),
 				slog.Any("cause", errors.Unwrap(appErr.err)),
@@ -147,7 +150,12 @@ func errorHandler(c *echo.Context, err error) {
 		})
 	}
 
-	c.Logger().Error("Unknown error", slog.Any("error", err))
+	c.Logger().LogAttrs(
+		context.Background(),
+		slog.LevelError,
+		"Unknown error",
+		slog.Any("error", err),
+	)
 	_ = c.JSON(http.StatusInternalServerError, ErrorResponse{
 		HTTPStatus: http.StatusInternalServerError,
 		Message:    translateCodeToMessage(domain.ErrorCodeInternal),
