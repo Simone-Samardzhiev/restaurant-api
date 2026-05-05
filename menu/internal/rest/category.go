@@ -76,7 +76,7 @@ func (c *CategoryHandler) AddCategory(ctx *echo.Context) error {
 
 	result, err := c.service.Add(ctx.Request().Context(), req.Name)
 	if err != nil {
-		return NewErrorResponse(err)
+		return NewError(err)
 	}
 
 	return ctx.JSON(http.StatusCreated, CategoryResponse{
@@ -90,7 +90,7 @@ func (c *CategoryHandler) AddCategory(ctx *echo.Context) error {
 func (c *CategoryHandler) GetCategories(ctx *echo.Context) error {
 	categories, err := c.service.GetAll(ctx.Request().Context())
 	if err != nil {
-		return NewErrorResponse(err)
+		return NewError(err)
 	}
 
 	response := make([]CategoryResponse, 0, len(categories))
@@ -145,7 +145,7 @@ func (c *CategoryHandler) UpdateCategory(ctx *echo.Context) error {
 	}
 
 	if err = c.service.Update(ctx.Request().Context(), id, req.Name); err != nil {
-		return NewErrorResponse(err)
+		return NewError(err)
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
@@ -158,7 +158,7 @@ func (c *CategoryHandler) DeleteCategory(ctx *echo.Context) error {
 	}
 
 	if err = c.service.Delete(ctx.Request().Context(), id); err != nil {
-		return NewErrorResponse(err)
+		return NewError(err)
 	}
 
 	return ctx.NoContent(http.StatusOK)

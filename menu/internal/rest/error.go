@@ -7,158 +7,161 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
-	"golang.org/x/net/context"
 )
 
-// ErrorResponse represents JSON error response.
-type ErrorResponse struct {
-	HTTPStatus int    `json:"httpStatus"`
-	Message    string `json:"message"`
-	ErrorCode  string `json:"code"`
-	err        error
+// Error represents an app error.
+type Error struct {
+	HttpStatus int
+	Code       string
+	Message    string
+	Err        error
 }
 
-func (e *ErrorResponse) Error() string {
-	return e.err.Error()
-}
-
-func (e *ErrorResponse) Unwrap() error {
-	return errors.Unwrap(e.err)
-}
-
-var codesToStatus = map[domain.ErrorCode]int{
+// mapErrorCodesToHTTPStatus maps [domain.ErrorCode] to appropriate HTTP status code.
+var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeInternal:             http.StatusInternalServerError,
 	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
 	domain.ErrorCodeCategoryNotFound:     http.StatusNotFound,
 }
 
-func translateCodeToStatus(code domain.ErrorCode) int {
-	if status, ok := codesToStatus[code]; ok {
-		return status
-	}
-	return http.StatusInternalServerError
-}
-
-var codesToMessage = map[domain.ErrorCode]string{
+// mapErrorCodesToMessage maps [domain.ErrorCode] to appropriate end user message.
+var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 	domain.ErrorCodeInternal:             "Internal server error.",
-	domain.ErrorCodeCategoryNameConflict: "Category name is already taken.",
+	domain.ErrorCodeCategoryNameConflict: "Category name already exists.",
 	domain.ErrorCodeCategoryNotFound:     "Category not found.",
 }
 
-func translateCodeToMessage(code domain.ErrorCode) string {
-	if status, ok := codesToMessage[code]; ok {
-		return status
-	}
-	return codesToMessage[domain.ErrorCodeInternal]
-}
+// NewError creates a new [Error]. If the error of type [domain.Error] the message and the code gets translated,
+// otherwise the [domain.ErrorCodeInternal] is used.
+func NewError(err error) *Error {
+	code := domain.ErrorCodeInternal
 
-// NewErrorResponse translates [domain.Error] into [ErrorResponse]
-// if the error is not of type [domain.Error], the error will be translated
-// into internal error.
-func NewErrorResponse(err error) *ErrorResponse {
 	if domainErr, ok := errors.AsType[*domain.Error](err); ok {
-		return &ErrorResponse{
-			HTTPStatus: translateCodeToStatus(domainErr.Code),
-			Message:    translateCodeToMessage(domainErr.Code),
-			ErrorCode:  domainErr.Code.String(),
-			err:        domainErr,
-		}
+		code = domainErr.Code
 	}
 
-	return &ErrorResponse{
-		HTTPStatus: http.StatusInternalServerError,
-		Message:    translateCodeToMessage(domain.ErrorCodeInternal),
-		ErrorCode:  translateCodeToMessage(domain.ErrorCodeInternal),
-		err:        err,
+	status := mapErrorCodesToHTTPStatus[code]
+	message := mapErrorCodesToMessage[code]
+
+	return &Error{
+		HttpStatus: status,
+		Code:       code.String(),
+		Message:    message,
+		Err:        err,
 	}
 }
 
-const errorCodeInvalidJSON = "INVALID_JSON"
+// Rest side error codes.
+const (
+	ErrorCodeInvalidJSON   = "INVALID_JSON"
+	ErrorCodeInvalidUUID   = "INVALID_UUID"
+	ErrorCodeInvalidEntity = "INVALID_ENTITY"
+)
 
-// NewInvalidJSONError creates and allocates new [ErrorResponse] from an error
-// returned from decoding JSON.
-func NewInvalidJSONError(err error) *ErrorResponse {
-	return &ErrorResponse{
-		HTTPStatus: http.StatusBadRequest,
-		Message:    "Invalid JSON payload.",
-		ErrorCode:  errorCodeInvalidJSON,
-		err:        err,
+// NewInvalidJSONError creates new [Error] from JSON unmarshaling error.
+func NewInvalidJSONError(err error) *Error {
+	return &Error{
+		HttpStatus: http.StatusBadRequest,
+		Code:       ErrorCodeInvalidJSON,
+		Message:    "JSON request is malformed.",
+		Err:        err,
 	}
 }
 
-const errorCodeInvalidUUID = "INVALID_UUID"
-
-// NewInvalidUUIDError creates and allocates new [ErrorResponse] from an error
-// returned by UUID.
-func NewInvalidUUIDError(err error) *ErrorResponse {
-	return &ErrorResponse{
-		HTTPStatus: http.StatusBadRequest,
-		Message:    "Invalid UUID format.",
-		ErrorCode:  errorCodeInvalidUUID,
-		err:        err,
+// NewInvalidUUIDError creates new [Error] from UUID parsing error.
+func NewInvalidUUIDError(err error) *Error {
+	return &Error{
+		HttpStatus: http.StatusBadRequest,
+		Code:       ErrorCodeInvalidUUID,
+		Message:    "UUID is malformed.",
+		Err:        err,
 	}
 }
 
+func (e *Error) Error() string {
+	return e.Err.Error()
+}
+
+// ValidationError represents an error from validation payload.
+type ValidationError struct {
+	Fields map[string][]string
+}
+
+// NewValidationError create and allocates new [ValidationError].
+func NewValidationError(fields map[string][]string) *ValidationError {
+	return &ValidationError{Fields: fields}
+}
+
+func (e *ValidationError) Error() string {
+	return "validation error"
+}
+
+// ErrorResponse represents a JSON response from [Error].
+type ErrorResponse struct {
+	Code       string `json:"code"`
+	HttpStatus int    `json:"httpStatus"`
+	Message    string `json:"message"`
+	RequestID  string `json:"requestId"`
+}
+
+// ValidationErrorResponse represents response from [ValidationError].
 type ValidationErrorResponse struct {
 	ErrorResponse
 	Fields map[string][]string `json:"fields"`
 }
 
-const invalidPayloadErrorCode = "INVALID_PAYLOAD"
+// ErrorHandler handles root errors in [echo.Echo].
+func ErrorHandler(ctx *echo.Context, err error) {
+	requestId := ctx.Request().Header.Get(echo.HeaderXRequestID)
 
-var validationErr = errors.New("validation error")
-
-func NewValidationError(fields map[string][]string) *ValidationErrorResponse {
-	return &ValidationErrorResponse{
-		ErrorResponse: ErrorResponse{
-			HTTPStatus: http.StatusUnprocessableEntity,
-			Message:    "Provided payload contains invalid fields.",
-			ErrorCode:  invalidPayloadErrorCode,
-			err:        validationErr,
-		},
-		Fields: fields,
-	}
-}
-
-func errorHandler(c *echo.Context, err error) {
-	if appErr, ok := errors.AsType[*ErrorResponse](err); ok {
-		if appErr.HTTPStatus >= http.StatusInternalServerError {
-			c.Logger().LogAttrs(
-				context.Background(),
+	if e, ok := errors.AsType[*Error](err); ok {
+		if e.HttpStatus >= http.StatusInternalServerError {
+			ctx.Logger().LogAttrs(
+				ctx.Request().Context(),
 				slog.LevelError,
-				"Internal server error",
-				slog.Any("error", appErr.err),
-				slog.Any("cause", errors.Unwrap(appErr.err)),
+				"Internal error",
+				slog.Any("error", err),
+				slog.Any("cause", errors.Unwrap(err)),
 			)
 		}
 
-		_ = c.JSON(appErr.HTTPStatus, appErr)
-
+		response := ErrorResponse{
+			Code:       e.Code,
+			HttpStatus: e.HttpStatus,
+			Message:    e.Error(),
+			RequestID:  requestId,
+		}
+		_ = ctx.JSON(response.HttpStatus, response)
 		return
 	}
 
-	if valErr, ok := errors.AsType[*ValidationErrorResponse](err); ok {
-		_ = c.JSON(valErr.HTTPStatus, valErr)
+	if e, ok := errors.AsType[*ValidationError](err); ok {
+		response := ValidationErrorResponse{
+			ErrorResponse: ErrorResponse{
+				Code:       ErrorCodeInvalidEntity,
+				HttpStatus: http.StatusUnprocessableEntity,
+				Message:    "Request data is invalid.",
+				RequestID:  requestId,
+			},
+			Fields: e.Fields,
+		}
+
+		_ = ctx.JSON(response.HttpStatus, response)
 		return
 	}
 
-	if echoErr, ok := errors.AsType[*echo.HTTPError](err); ok {
-		_ = c.JSON(echoErr.Code, ErrorResponse{
-			HTTPStatus: echoErr.Code,
-			Message:    echoErr.Message,
-			ErrorCode:  "METHOD_NOT_ALLOWED",
-		})
-	}
-
-	c.Logger().LogAttrs(
-		context.Background(),
+	ctx.Logger().LogAttrs(
+		ctx.Request().Context(),
 		slog.LevelError,
-		"Unknown error",
+		"Unknow error",
 		slog.Any("error", err),
 	)
-	_ = c.JSON(http.StatusInternalServerError, ErrorResponse{
-		HTTPStatus: http.StatusInternalServerError,
-		Message:    translateCodeToMessage(domain.ErrorCodeInternal),
-		ErrorCode:  domain.ErrorCodeInternal.String(),
-	})
+
+	response := ErrorResponse{
+		Code:       domain.ErrorCodeInternal.String(),
+		HttpStatus: mapErrorCodesToHTTPStatus[domain.ErrorCodeInternal],
+		Message:    mapErrorCodesToMessage[domain.ErrorCodeInternal],
+		RequestID:  requestId,
+	}
+	_ = ctx.JSON(response.HttpStatus, response)
 }

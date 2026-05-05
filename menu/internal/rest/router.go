@@ -14,6 +14,7 @@ type Router struct {
 	server http.Server
 }
 
+// RouterConfig is configuration for [NewRouter].
 type RouterConfig struct {
 	App             *config.App
 	Logger          *slog.Logger
@@ -24,13 +25,20 @@ type RouterConfig struct {
 // NewRouter creates and allocates new [Router].
 func NewRouter(c *RouterConfig) *Router {
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
 		Logger:           c.Logger,
+		HTTPErrorHandler: ErrorHandler,
 		IPExtractor:      echo.ExtractIPFromXFFHeader(),
 	})
 
 	e.Use(loggerMiddleware)
-	e.RouteNotFound("/*", handleEndpointNotFound)
+	e.RouteNotFound("/*", func(ctx *echo.Context) error {
+		return ctx.JSON(http.StatusNotFound, ErrorResponse{
+			Code:       "ENDPOINT_NOT_FOUND",
+			HttpStatus: http.StatusNotFound,
+			Message:    "Endpoint not found.",
+			RequestID:  ctx.Request().Header.Get(echo.HeaderXRequestID),
+		})
+	})
 	e.GET("/health", c.HeathHandler.IsHealthy)
 
 	api := e.Group("/api/v1")

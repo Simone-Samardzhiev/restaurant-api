@@ -4,8 +4,15 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rest): Refactor request logger">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="chore: Add watch command to docker-compose.yaml">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/caddy/Caddyfile" beforeDir="false" afterPath="$PROJECT_DIR$/caddy/Caddyfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/menu/internal/rest/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/error.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/logger.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/logger.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/not_found.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -228,8 +235,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor: Add server name directive in ngixn configuration" />
-    <MESSAGE value="feat(menu): Add logging implementation" />
     <MESSAGE value="feat(nginx): Add rate limiting for the menu service" />
     <MESSAGE value="test(menu/rest): Add tests for request validation" />
     <MESSAGE value="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`" />
@@ -253,7 +258,9 @@
     <MESSAGE value="refactor: Replace nginx with caddy" />
     <MESSAGE value="refactor(caddy): Remove server name from the proxy" />
     <MESSAGE value="refactor(menu/rest): Refactor request logger" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rest): Refactor request logger" />
+    <MESSAGE value="refactor(menu/rest): Refactor error logging" />
+    <MESSAGE value="chore: Add watch command to docker-compose.yaml" />
+    <option name="LAST_COMMIT_MESSAGE" value="chore: Add watch command to docker-compose.yaml" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

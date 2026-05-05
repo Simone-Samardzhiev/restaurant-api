@@ -132,14 +132,14 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 			service:            &fakeCategoryService{},
 			request:            `{ "name": "n" }`,
 			wantHttpStatusCode: http.StatusUnprocessableEntity,
-			wantErrorCode:      invalidPayloadErrorCode,
+			wantErrorCode:      ErrorCodeInvalidEntity,
 		},
 		{
 			name:               "invalid JSON",
 			service:            &fakeCategoryService{},
 			request:            `{{}`,
 			wantHttpStatusCode: http.StatusBadRequest,
-			wantErrorCode:      errorCodeInvalidJSON,
+			wantErrorCode:      ErrorCodeInvalidJSON,
 		},
 	}
 
@@ -149,7 +149,7 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 
 			handler := NewCategoryHandler(tt.service)
 			e := echo.NewWithConfig(echo.Config{
-				HTTPErrorHandler: errorHandler,
+				HTTPErrorHandler: ErrorHandler,
 			})
 			e.POST("/categories", handler.AddCategory)
 
@@ -181,8 +181,8 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 				t.Fatalf("Error decoding response body: %v", err)
 			}
 
-			if res.ErrorCode != tt.wantErrorCode {
-				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.ErrorCode)
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
 			}
 		})
 	}
@@ -198,7 +198,7 @@ func TestAddCategory(t *testing.T) {
 	handler := NewCategoryHandler(service)
 
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
+		HTTPErrorHandler: ErrorHandler,
 	})
 	e.POST("/categories", handler.AddCategory)
 
@@ -253,8 +253,8 @@ func TestAddCategory(t *testing.T) {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
 
-		if res.ErrorCode != domain.ErrorCodeCategoryNameConflict.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict, res.ErrorCode)
+		if res.Code != domain.ErrorCodeCategoryNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict, res.Code)
 		}
 	})
 }
@@ -276,7 +276,7 @@ func TestCategoryHandlerGetCategories(t *testing.T) {
 	}
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
+		HTTPErrorHandler: ErrorHandler,
 	})
 	e.GET("/categories", handler.GetCategories)
 
@@ -315,7 +315,7 @@ func TestGetCategories(t *testing.T) {
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
+		HTTPErrorHandler: ErrorHandler,
 	})
 
 	e.POST("/categories", handler.AddCategory)
@@ -443,7 +443,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			id:             uuid.NewString(),
 			request:        `{ "name":"t" }`,
 			wantHttpStatus: http.StatusUnprocessableEntity,
-			wantErrorCode:  invalidPayloadErrorCode,
+			wantErrorCode:  ErrorCodeInvalidEntity,
 		},
 		{
 			name:           "invalid JSON",
@@ -451,7 +451,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			id:             uuid.NewString(),
 			request:        `{ "na:"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
-			wantErrorCode:  errorCodeInvalidJSON,
+			wantErrorCode:  ErrorCodeInvalidJSON,
 		},
 		{
 			name:           "invalid uuid",
@@ -459,7 +459,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 			id:             "invalid",
 			request:        `{ "name":"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
-			wantErrorCode:  errorCodeInvalidUUID,
+			wantErrorCode:  ErrorCodeInvalidUUID,
 		},
 	}
 
@@ -469,7 +469,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 
 			handler := NewCategoryHandler(test.service)
 			e := echo.NewWithConfig(echo.Config{
-				HTTPErrorHandler: errorHandler,
+				HTTPErrorHandler: ErrorHandler,
 			})
 			e.PATCH("/categories/:id", handler.UpdateCategory)
 
@@ -490,8 +490,8 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 				t.Fatalf("Error decoding response body: %v", err)
 			}
 
-			if res.ErrorCode != test.wantErrorCode {
-				t.Fatalf("Want error code %s, got %s", test.wantErrorCode, res.ErrorCode)
+			if res.Code != test.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", test.wantErrorCode, res.Code)
 			}
 		})
 	}
@@ -506,7 +506,7 @@ func TestUpdateCategory(t *testing.T) {
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
+		HTTPErrorHandler: ErrorHandler,
 	})
 
 	e.PATCH("/categories/:id", handler.UpdateCategory)
@@ -575,8 +575,8 @@ func TestUpdateCategory(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
-		if res.ErrorCode != domain.ErrorCodeCategoryNameConflict.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict.String(), res.ErrorCode)
+		if res.Code != domain.ErrorCodeCategoryNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict.String(), res.Code)
 		}
 	})
 
@@ -595,8 +595,8 @@ func TestUpdateCategory(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
-		if res.ErrorCode != domain.ErrorCodeCategoryNotFound.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.ErrorCode)
+		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.Code)
 		}
 	})
 }
@@ -624,7 +624,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 			service:        &fakeCategoryService{},
 			id:             "invalid",
 			wantHttpStatus: http.StatusBadRequest,
-			wantErrorCode:  errorCodeInvalidUUID,
+			wantErrorCode:  ErrorCodeInvalidUUID,
 		},
 	}
 
@@ -634,7 +634,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 
 			handler := NewCategoryHandler(tt.service)
 			e := echo.NewWithConfig(echo.Config{
-				HTTPErrorHandler: errorHandler,
+				HTTPErrorHandler: ErrorHandler,
 			})
 			e.DELETE("/categories/:id", handler.DeleteCategory)
 
@@ -653,8 +653,8 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 				t.Fatalf("Error decoding response body: %v", err)
 			}
-			if res.ErrorCode != tt.wantErrorCode {
-				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.ErrorCode)
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
 			}
 		})
 	}
@@ -669,7 +669,7 @@ func TestDeleteCategory(t *testing.T) {
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
-		HTTPErrorHandler: errorHandler,
+		HTTPErrorHandler: ErrorHandler,
 	})
 	e.DELETE("/categories/:id", handler.DeleteCategory)
 
@@ -710,8 +710,8 @@ func TestDeleteCategory(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
-		if res.ErrorCode != domain.ErrorCodeCategoryNotFound.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.ErrorCode)
+		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.Code)
 		}
 	})
 }
