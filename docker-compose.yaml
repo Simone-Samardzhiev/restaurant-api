@@ -13,6 +13,10 @@ services:
 
   menu-api:
     build: "./menu"
+    develop:
+      watch:
+        - path: "./menu"
+          action: rebuild
     restart: on-failure
     environment:
       DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
@@ -30,6 +34,10 @@ services:
 
   caddy-proxy:
     build: "./caddy"
+    develop:
+      watch:
+        - path: "./caddy"
+          action: rebuild
     ports:
       - "8080:8080"
     restart: on-failure
