@@ -17,17 +17,17 @@ import (
 )
 
 func main() {
-	conf, err := config.NewConfig()
+	appConfig, err := config.NewConfig()
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	database, err := db.Connect(&conf.Database)
+	database, err := db.Connect(&appConfig.Database)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	if err = db.ApplyMigrations(database, conf.Database.MigrationsPath); err != nil {
+	if err = db.ApplyMigrations(database, appConfig.Database.MigrationsPath); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
@@ -38,8 +38,8 @@ func main() {
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
 	router := rest.NewRouter(&rest.RouterConfig{
-		App:             &conf.App,
-		Logger:          logger.New(&conf.App),
+		App:             &appConfig.App,
+		Logger:          logger.New(&appConfig.App),
 		HeathHandler:    heathCheckHandler,
 		CategoryHandler: categoryHandler,
 	})

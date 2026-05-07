@@ -10,4 +10,4 @@ require (
 	github.com/lib/pq v1.12.3
 )
 
-require golang.org/x/net v0.51.0 // indirect
+require golang.org/x/net v0.51.0
