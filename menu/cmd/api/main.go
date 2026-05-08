@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"menu/internal/config"
-	"menu/internal/db"
 	"menu/internal/domain"
 	"menu/internal/logger"
+	"menu/internal/postgres"
 	"menu/internal/rest"
 	"os/signal"
 	"syscall"
@@ -22,18 +22,18 @@ func main() {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	database, err := db.Connect(&appConfig.Database)
+	database, err := postgres.Connect(&appConfig.Database)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	if err = db.ApplyMigrations(database, appConfig.Database.MigrationsPath); err != nil {
+	if err = postgres.ApplyMigrations(database, appConfig.Database.MigrationsPath); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
 	heathCheckHandler := rest.NewHealthHandler(database)
 
-	categoryRepository := db.NewCategoryRepository(database)
+	categoryRepository := postgres.NewCategoryRepository(database)
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 

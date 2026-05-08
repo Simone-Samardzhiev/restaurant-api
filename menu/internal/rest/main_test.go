@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"log"
-	"menu/internal/db"
+	"menu/internal/postgres"
 	"os"
 	"testing"
 )
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Error pinging database connection: %v", err)
 	}
 
-	if err = db.ApplyMigrations(database, "file://./../../migrations"); err != nil {
+	if err = postgres.ApplyMigrations(database, "file://./../../migrations"); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 

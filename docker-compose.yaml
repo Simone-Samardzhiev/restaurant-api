@@ -30,7 +30,7 @@ services:
     build: "./menu"
     restart: on-failure
     environment:
-      DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
+      DATABASE_URL: postgres://postgres:password@menu-postgres:5432/menu?sslmode=disable
       MIGRATIONS_PATH: file://./migrations
       DATABASE_MAX_IDLE_CONNS: 10
       DATABASE_MAX_OPEN_CONNS: 10

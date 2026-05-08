@@ -3,8 +3,8 @@ package rest
 import (
 	"context"
 	"encoding/json"
-	"menu/internal/db"
 	"menu/internal/domain"
+	"menu/internal/postgres"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -193,7 +193,7 @@ func TestAddCategory(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := db.NewCategoryRepository(testDb)
+	repository := postgres.NewCategoryRepository(testDb)
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 
@@ -311,7 +311,7 @@ func TestGetCategories(t *testing.T) {
 		t.Fatalf("Error truncating table: %v", err)
 	}
 
-	repository := db.NewCategoryRepository(testDb)
+	repository := postgres.NewCategoryRepository(testDb)
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
@@ -502,7 +502,7 @@ func TestUpdateCategory(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := db.NewCategoryRepository(testDb)
+	repository := postgres.NewCategoryRepository(testDb)
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
@@ -665,7 +665,7 @@ func TestDeleteCategory(t *testing.T) {
 		t.Skip("Skipping test in short mode")
 	}
 
-	repository := db.NewCategoryRepository(testDb)
+	repository := postgres.NewCategoryRepository(testDb)
 	service := domain.NewDefaultCategoryService(repository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
