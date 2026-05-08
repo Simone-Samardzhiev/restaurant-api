@@ -48,7 +48,7 @@ func main() {
 		_ = router.Start()
 	}()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 	<-ctx.Done()
 
@@ -57,10 +57,10 @@ func main() {
 	defer cancel()
 
 	if err = router.Stop(shutdownCtx); err != nil {
-		log.Fatalf("Error shutting down router: %v", err)
+		log.Printf("Error shutting down router: %v\n", err)
 	}
 
 	if err = database.Close(); err != nil {
-		log.Fatalf("Error closing database connection: %v", err)
+		log.Printf("Error closing database connection: %v\n", err)
 	}
 }
