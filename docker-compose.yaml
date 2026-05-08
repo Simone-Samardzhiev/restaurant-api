@@ -11,12 +11,23 @@ services:
       timeout: 5s
       retries: 5
 
-  menu-api:
-    build: "./menu"
+  valkey-cache:
+    build: "./valkey"
+    restart: on-failure
+    environment:
+      VALKEY_PASSWORD: password
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     develop:
       watch:
-        - path: "./menu"
+        - path: "./valkey"
           action: rebuild
+
+  menu-api:
+    build: "./menu"
     restart: on-failure
     environment:
       DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
@@ -25,19 +36,18 @@ services:
       DATABASE_MAX_OPEN_CONNS: 10
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
-
       ADDR: 0.0.0.0:8080
       ENVIRONMENT: development
     depends_on:
       menu-db:
         condition: service_healthy
+    develop:
+      watch:
+        - path: "./menu"
+          action: rebuild
 
   caddy-proxy:
     build: "./caddy"
-    develop:
-      watch:
-        - path: "./caddy"
-          action: rebuild
     ports:
       - "8080:8080"
     restart: on-failure
@@ -45,3 +55,7 @@ services:
       MENU_SERVICE_ADDR: menu-api:8080
     depends_on:
       - menu-api
+    develop:
+      watch:
+        - path: "./caddy"
+          action: rebuild

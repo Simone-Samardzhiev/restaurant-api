@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor: Improve error handling by including request id in the error response">
-      <change afterPath="$PROJECT_DIR$/menu/internal/aws/image.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/cmd/api/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/cmd/api/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category.go" afterDir="false" />
-    </list>
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat: Add valkey instance" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,8 +16,8 @@
         <option value="HTML File" />
         <option value="CSS File" />
         <option value="JavaScript File" />
-        <option value="Dockerfile" />
         <option value="Go File" />
+        <option value="Dockerfile" />
       </list>
     </option>
   </component>
@@ -233,9 +226,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="test(menu/rest): Add tests for request validation" />
-    <MESSAGE value="test(menu/db): Add tests for `Save` method of postgres implementation of `CategoryRepository`" />
-    <MESSAGE value="test(menu/db): Add tests for `AddCategory` method of `CategoryHandler`" />
     <MESSAGE value="test(menu/db): Make main testing function apply all migrations in db package" />
     <MESSAGE value="test(menu/rest): Add integration tests for adding a category" />
     <MESSAGE value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
@@ -258,7 +248,10 @@
     <MESSAGE value="refactor(menu/rest): Refactor error logging" />
     <MESSAGE value="chore: Add watch command to docker-compose.yaml" />
     <MESSAGE value="refactor: Improve error handling by including request id in the error response" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: Improve error handling by including request id in the error response" />
+    <MESSAGE value="refactor(menu/rest): Add Cache control header when fetching categories" />
+    <MESSAGE value="refactor(menu): Add notification for SIGTERM signal to handle graceful shutdowns" />
+    <MESSAGE value="feat: Add valkey instance" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Add valkey instance" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
