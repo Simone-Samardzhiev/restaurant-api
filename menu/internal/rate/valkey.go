@@ -1,7 +1,6 @@
 package rate
 
 import (
-	"log"
 	"menu/internal/config"
 	"strconv"
 
@@ -29,7 +28,6 @@ type ValkeyStore struct {
 }
 
 func NewValkeyStore(client valkey.Client, c config.RateLimit) *ValkeyStore {
-	log.Printf("Rate config: %+v", c)
 	return &ValkeyStore{
 		client: client,
 		limit:  strconv.Itoa(c.Limit),
