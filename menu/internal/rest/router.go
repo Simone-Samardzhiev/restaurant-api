@@ -30,7 +30,7 @@ func NewRouter(c *RouterConfig) *Router {
 	e := echo.NewWithConfig(echo.Config{
 		Logger:           c.Logger,
 		HTTPErrorHandler: ErrorHandler,
-		IPExtractor:      echo.ExtractIPFromXFFHeader(),
+		IPExtractor:      echo.ExtractIPFromRealIPHeader(),
 	})
 
 	e.Use(loggerMiddleware)
@@ -41,10 +41,15 @@ func NewRouter(c *RouterConfig) *Router {
 		},
 		Store: c.Store,
 		ErrorHandler: func(c *echo.Context, err error) error {
-			return c.NoContent(http.StatusInternalServerError)
+			return err
 		},
 		DenyHandler: func(c *echo.Context, identifier string, err error) error {
-			return c.NoContent(http.StatusForbidden)
+			return c.JSON(http.StatusTooManyRequests, ErrorResponse{
+				Code:       ErrorCodeTooManyRequests,
+				HttpStatus: http.StatusTooManyRequests,
+				Message:    "Too many requests. Please try again later.",
+				RequestID:  c.Request().Header.Get(echo.HeaderXRequestID),
+			})
 		},
 	}))
 	e.RouteNotFound("/*", func(ctx *echo.Context) error {

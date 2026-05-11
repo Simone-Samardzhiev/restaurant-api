@@ -53,9 +53,10 @@ func NewError(err error) *Error {
 
 // Rest side error codes.
 const (
-	ErrorCodeInvalidJSON   = "INVALID_JSON"
-	ErrorCodeInvalidUUID   = "INVALID_UUID"
-	ErrorCodeInvalidEntity = "INVALID_ENTITY"
+	ErrorCodeInvalidJSON     = "INVALID_JSON"
+	ErrorCodeInvalidUUID     = "INVALID_UUID"
+	ErrorCodeInvalidEntity   = "INVALID_ENTITY"
+	ErrorCodeTooManyRequests = "TOO_MANY_REQUESTS"
 )
 
 // NewInvalidJSONError creates new [Error] from JSON unmarshaling error.

@@ -4,8 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat: Add rate limiting using valkey">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu/rate): Remove unused logging of rate limit configuration">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/caddy/Caddyfile" beforeDir="false" afterPath="$PROJECT_DIR$/caddy/Caddyfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/error.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/error.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -228,7 +231,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
     <MESSAGE value="test(menu/domain): Add method for fetching all categories to `CategoryService`" />
     <MESSAGE value="feat(menu/rest): Add endpoint for retrieving categories" />
     <MESSAGE value="feat(menu/db): Add method on `CategoryRepository` for updating" />
@@ -253,7 +255,8 @@
     <MESSAGE value="feat: Add valkey instance" />
     <MESSAGE value="refactor(menu): Rename package db to postgres" />
     <MESSAGE value="feat: Add rate limiting using valkey" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: Add rate limiting using valkey" />
+    <MESSAGE value="refactor(menu/rate): Remove unused logging of rate limit configuration" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu/rate): Remove unused logging of rate limit configuration" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
