@@ -15,4 +15,15 @@
             health_status 200
         }
     }
+
+    handle {
+        header Content-Type application/json
+
+        respond `{
+            "code": "ENDPOINT_NOT_FOUND",
+            "httpStatus": 404,
+            "message": "Endpoint not found.",
+            "requestId": "{uuid}"
+        }`
+    }
 }
