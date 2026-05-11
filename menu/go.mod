@@ -10,4 +10,9 @@ require (
 	github.com/lib/pq v1.12.3
 )
 
-require golang.org/x/net v0.51.0
+require (
+	github.com/valkey-io/valkey-go v1.0.74
+	golang.org/x/net v0.51.0
+)
+
+require golang.org/x/sys v0.41.0 // indirect

@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat: Add valkey instance">
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(menu): Rename package db to postgres">
+      <change afterPath="$PROJECT_DIR$/menu/internal/rate/valkey.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/menu/cmd/api/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/cmd/api/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/category.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/postgres/category.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/postgres/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/db.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/postgres/db.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/db/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/postgres/main_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rest/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/main_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/rest/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rest/router.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,8 +25,8 @@
         <option value="HTML File" />
         <option value="CSS File" />
         <option value="JavaScript File" />
-        <option value="Go File" />
         <option value="Dockerfile" />
+        <option value="Go File" />
       </list>
     </option>
   </component>
@@ -235,7 +235,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="test(menu/db): Make main testing function apply all migrations in db package" />
     <MESSAGE value="test(menu/rest): Add integration tests for adding a category" />
     <MESSAGE value="test(menu/db): Add method for fetching all categories to `CategoryRepository`" />
     <MESSAGE value="test(menu/domain): Add method for fetching all categories to `CategoryService`" />
@@ -260,7 +259,8 @@
     <MESSAGE value="refactor(menu/rest): Add Cache control header when fetching categories" />
     <MESSAGE value="refactor(menu): Add notification for SIGTERM signal to handle graceful shutdowns" />
     <MESSAGE value="feat: Add valkey instance" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: Add valkey instance" />
+    <MESSAGE value="refactor(menu): Rename package db to postgres" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor(menu): Rename package db to postgres" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>

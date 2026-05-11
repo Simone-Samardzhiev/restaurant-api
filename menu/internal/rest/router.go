@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 // Router binds handler to API endpoints.
@@ -16,8 +17,10 @@ type Router struct {
 
 // RouterConfig is configuration for [NewRouter].
 type RouterConfig struct {
-	App             *config.App
-	Logger          *slog.Logger
+	App    *config.App
+	Logger *slog.Logger
+	Store  middleware.RateLimiterStore
+
 	HeathHandler    *HealthHandler
 	CategoryHandler *CategoryHandler
 }
@@ -31,6 +34,19 @@ func NewRouter(c *RouterConfig) *Router {
 	})
 
 	e.Use(loggerMiddleware)
+	e.Use(middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+		Skipper: middleware.DefaultSkipper,
+		IdentifierExtractor: func(c *echo.Context) (string, error) {
+			return c.RealIP(), nil
+		},
+		Store: c.Store,
+		ErrorHandler: func(c *echo.Context, err error) error {
+			return c.NoContent(http.StatusInternalServerError)
+		},
+		DenyHandler: func(c *echo.Context, identifier string, err error) error {
+			return c.NoContent(http.StatusForbidden)
+		},
+	}))
 	e.RouteNotFound("/*", func(ctx *echo.Context) error {
 		return ctx.JSON(http.StatusNotFound, ErrorResponse{
 			Code:       "ENDPOINT_NOT_FOUND",

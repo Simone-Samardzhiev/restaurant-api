@@ -17,7 +17,7 @@ services:
     environment:
       VALKEY_PASSWORD: password
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      test: [ "CMD", "rate-cli", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -30,12 +30,18 @@ services:
     build: "./menu"
     restart: on-failure
     environment:
-      DATABASE_URL: postgres://postgres:password@menu-postgres:5432/menu?sslmode=disable
+      DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
       MIGRATIONS_PATH: file://./migrations
       DATABASE_MAX_IDLE_CONNS: 10
       DATABASE_MAX_OPEN_CONNS: 10
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
+
+      VALKEY_URL: valkey://:password@valkey-cache:6379
+
+      RATE_LIMIT_COUNT: 15
+      RATE_LIMIT_WINDOW: 1s
+
       ADDR: 0.0.0.0:8080
       ENVIRONMENT: development
     depends_on:

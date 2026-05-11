@@ -24,6 +24,15 @@ type (
 		MaxLifetime    time.Duration
 	}
 
+	Valkey struct {
+		Url string
+	}
+
+	RateLimit struct {
+		Limit  int
+		Window time.Duration
+	}
+
 	// Environment represents app environment.
 	Environment string
 
@@ -36,6 +45,8 @@ type (
 	// Config combines all configurations.
 	Config struct {
 		Database
+		Valkey
+		RateLimit
 		App
 	}
 )
@@ -82,6 +93,34 @@ func newDatabase() (Database, error) {
 	return database, nil
 }
 
+func newValkey() (Valkey, error) {
+	var valkey Valkey
+	if url, ok := os.LookupEnv("VALKEY_URL"); ok {
+		valkey.Url = url
+	} else {
+		return Valkey{}, errors.New("VALKEY_URL environment variable not defined")
+	}
+
+	return valkey, nil
+}
+
+func newRateLimit() (RateLimit, error) {
+	var ratelimit RateLimit
+	if limit, err := strconv.Atoi(os.Getenv("RATE_LIMIT_COUNT")); err == nil {
+		ratelimit.Limit = limit
+	} else {
+		return RateLimit{}, fmt.Errorf("RATE_LIMIT_COUNT environment variable not defined: %v", err)
+	}
+
+	if window, err := time.ParseDuration(os.Getenv("RATE_LIMIT_WINDOW")); err == nil {
+		ratelimit.Window = window
+	} else {
+		return RateLimit{}, fmt.Errorf("RATE_LIMIT_WINDOW environment variable not defined: %v", err)
+	}
+
+	return ratelimit, nil
+}
+
 func newApp() (App, error) {
 	var app App
 	if port, ok := os.LookupEnv("ADDR"); ok {
@@ -110,6 +149,16 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	valkey, err := newValkey()
+	if err != nil {
+		return nil, err
+	}
+
+	rateLimit, err := newRateLimit()
+	if err != nil {
+		return nil, err
+	}
+
 	app, err := newApp()
 	if err != nil {
 		return nil, err
@@ -117,6 +166,8 @@ func NewConfig() (*Config, error) {
 
 	return &Config{
 		database,
+		valkey,
+		rateLimit,
 		app,
 	}, nil
 }

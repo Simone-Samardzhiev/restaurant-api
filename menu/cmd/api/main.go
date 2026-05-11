@@ -6,6 +6,7 @@ import (
 	"menu/internal/domain"
 	"menu/internal/logger"
 	"menu/internal/postgres"
+	"menu/internal/rate"
 	"menu/internal/rest"
 	"os/signal"
 	"syscall"
@@ -14,6 +15,7 @@ import (
 	"context"
 
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/valkey-io/valkey-go"
 )
 
 func main() {
@@ -27,6 +29,16 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
+	valkeyOption, err := valkey.ParseURL(appConfig.Valkey.Url)
+	if err != nil {
+		log.Fatalf("Error parsing rate url: %v", err)
+	}
+
+	valkeyConn, err := valkey.NewClient(valkeyOption)
+	if err != nil {
+		log.Fatalf("Error connecting to rate: %v", err)
+	}
+
 	if err = postgres.ApplyMigrations(database, appConfig.Database.MigrationsPath); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
@@ -37,9 +49,13 @@ func main() {
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
+	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
+
 	router := rest.NewRouter(&rest.RouterConfig{
-		App:             &appConfig.App,
-		Logger:          logger.New(&appConfig.App),
+		App:    &appConfig.App,
+		Logger: logger.New(&appConfig.App),
+		Store:  rateLimitStore,
+
 		HeathHandler:    heathCheckHandler,
 		CategoryHandler: categoryHandler,
 	})
