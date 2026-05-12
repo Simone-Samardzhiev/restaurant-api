@@ -10,7 +10,7 @@
             header_up X-Request-Id {uuid}
 
             health_uri /health
-            health_interval 30s
+            health_interval 5m
             health_timeout 5s
             health_status 200
         }
