@@ -4,8 +4,9 @@ import (
 	"menu/internal/config"
 	"strconv"
 
+	"context"
+
 	"github.com/valkey-io/valkey-go"
-	"golang.org/x/net/context"
 )
 
 var script = valkey.NewLuaScript(

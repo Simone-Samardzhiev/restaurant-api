@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"context"
+
 	"github.com/google/uuid"
-	"golang.org/x/net/context"
 )
 
 func TestCategoryRepositorySave(t *testing.T) {
