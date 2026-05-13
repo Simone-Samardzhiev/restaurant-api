@@ -12,10 +12,10 @@ type ProductStatus string
 
 const (
 	// ProductStatusReady product is ready and can be displayed.
-	ProductStatusReady ProductStatus = "product_ready"
+	ProductStatusReady ProductStatus = "ready"
 
 	// ProductStatusAwaitingImage is not ready and waiting for image.
-	ProductStatusAwaitingImage ProductStatus = "product_awaiting_image"
+	ProductStatusAwaitingImage ProductStatus = "awaiting_image"
 )
 
 // Product represents product in the menu.

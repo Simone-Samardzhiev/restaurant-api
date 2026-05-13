@@ -4,14 +4,33 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="refactor(caddy): Increase health check interval for menu servcie in Caddyfile">
-      <change afterPath="$PROJECT_DIR$/menu/internal/domain/product.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/menu/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/postgres/category_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/postgres/category_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/menu/internal/rate/valkey.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/rate/valkey.go" afterDir="false" />
+    <list default="true" id="aca83ce5-c5af-4c41-bdbd-2fd7f433439a" name="Changes" comment="feat(menu/domain): Add product model">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49b8e718-df0e-4b57-8514-be3969dd95df.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49b8e718-df0e-4b57-8514-be3969dd95df/storage_v2/_src_/database/menu.XxUzAA.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49b8e718-df0e-4b57-8514-be3969dd95df/storage_v2/_src_/database/menu.XxUzAA/schema/information_schema.FNRwLQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49b8e718-df0e-4b57-8514-be3969dd95df/storage_v2/_src_/database/menu.XxUzAA/schema/pg_catalog.0S1ZNQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/49b8e718-df0e-4b57-8514-be3969dd95df/storage_v2/_src_/database/menu.XxUzAA/schema/public.abK9xQ.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/data_sources_history.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/fdefe002-0d77-46fe-8761-11b90e0f2a10.corrupted.20251129-101923.reason.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/fdefe002-0d77-46fe-8761-11b90e0f2a10.corrupted.20251129-101923.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/fdefe002-0d77-46fe-8761-11b90e0f2a10.corrupted.20251210-073857.reason.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/fdefe002-0d77-46fe-8761-11b90e0f2a10.corrupted.20251210-073857.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/go.imports.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/httpRequests/2026-03-19T143956.404.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/httpRequests/http-client.cookies" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/httpRequests/http-requests-log.http" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/restaurant-api.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Interactive_in-memory_rebase_at_9_04_26,_15_45_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Interactive_in-memory_rebase_at_9_04_26__15_45__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sqldialects.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/menu/internal/domain/product.go" beforeDir="false" afterPath="$PROJECT_DIR$/menu/internal/domain/product.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -164,6 +183,10 @@
       <envs />
       <method v="2" />
     </configuration>
+    <configuration default="true" type="CaddyfileRunConfiguration" factoryName="CaddyfileRunConfiguration" caddy-exec="caddy" sub-command="run" caddyfile="Caddyfile" working-dir="" env-files="">
+      <env-vars />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="restaurant-api" />
       <working_directory value="$PROJECT_DIR$" />
@@ -234,7 +257,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(menu/db): Add method on `CategoryService` for updating" />
     <MESSAGE value="feat(menu/rest): Add endpoint for updating categories" />
     <MESSAGE value="refactor(menu/rest): Add error handling for echo errors in `errorHandler`" />
     <MESSAGE value="test: Removed unused context when modifying the database before or after the tests" />
@@ -259,7 +281,8 @@
     <MESSAGE value="refactor(menu/rest): Make IP extracting use&#10;x-real-ip header" />
     <MESSAGE value="refactor(caddy): Add handler all in Caddyfile" />
     <MESSAGE value="refactor(caddy): Increase health check interval for menu servcie in Caddyfile" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor(caddy): Increase health check interval for menu servcie in Caddyfile" />
+    <MESSAGE value="feat(menu/domain): Add product model" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(menu/domain): Add product model" />
   </component>
   <component name="VgoModernizerVersionTracker">
     <upgrades>
