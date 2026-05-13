@@ -1,4 +1,4 @@
-package postgres
+package database
 
 import (
 	"context"
@@ -10,20 +10,20 @@ import (
 	"github.com/lib/pq"
 )
 
-// CategoryRepository implements [domain.CategoryRepository]
-// using postgres.
-type CategoryRepository struct {
+// PostgresCategoryRepository implements [domain.CategoryRepository]
+// using database.
+type PostgresCategoryRepository struct {
 	db *sql.DB
 }
 
-var _ domain.CategoryRepository = (*CategoryRepository)(nil)
+var _ domain.CategoryRepository = (*PostgresCategoryRepository)(nil)
 
-// NewCategoryRepository creates and allocates new [CategoryRepository].
-func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{db: db}
+// NewPostgresCategoryRepository creates and allocates new [PostgresCategoryRepository].
+func NewPostgresCategoryRepository(db *sql.DB) *PostgresCategoryRepository {
+	return &PostgresCategoryRepository{db: db}
 }
 
-func (c *CategoryRepository) Save(ctx context.Context, category *domain.Category) error {
+func (c *PostgresCategoryRepository) Save(ctx context.Context, category *domain.Category) error {
 	_, err := c.db.ExecContext(
 		ctx,
 		`INSERT INTO categories (id, name, created_at, updated_at) 
@@ -48,7 +48,7 @@ func (c *CategoryRepository) Save(ctx context.Context, category *domain.Category
 	return domain.NewError("error saving category", domain.ErrorCodeInternal, err)
 }
 
-func (c *CategoryRepository) GetAll(ctx context.Context) ([]domain.Category, error) {
+func (c *PostgresCategoryRepository) GetAll(ctx context.Context) ([]domain.Category, error) {
 	rows, err := c.db.QueryContext(ctx, "SELECT id, name, created_at, updated_at FROM categories")
 	if err != nil {
 		return nil, domain.NewError("error getting categories", domain.ErrorCodeInternal, err)
@@ -71,7 +71,7 @@ func (c *CategoryRepository) GetAll(ctx context.Context) ([]domain.Category, err
 	return categories, nil
 }
 
-func (c *CategoryRepository) Update(ctx context.Context, id uuid.UUID, name string) error {
+func (c *PostgresCategoryRepository) Update(ctx context.Context, id uuid.UUID, name string) error {
 	result, err := c.db.ExecContext(ctx, "UPDATE categories SET name = $1 WHERE id = $2", name, id)
 	if err == nil {
 		rows, err := result.RowsAffected()
@@ -96,7 +96,7 @@ func (c *CategoryRepository) Update(ctx context.Context, id uuid.UUID, name stri
 	return domain.NewError("error updating category", domain.ErrorCodeInternal, err)
 }
 
-func (c *CategoryRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (c *PostgresCategoryRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	result, err := c.db.ExecContext(ctx, "DELETE FROM categories WHERE id = $1", id)
 	if err != nil {
 		return domain.NewError("error deleting category", domain.ErrorCodeInternal, err)

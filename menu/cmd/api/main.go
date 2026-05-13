@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 	"menu/internal/config"
+	"menu/internal/database"
 	"menu/internal/domain"
 	"menu/internal/logger"
-	"menu/internal/postgres"
 	"menu/internal/rate"
 	"menu/internal/rest"
 	"os/signal"
@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	database, err := postgres.Connect(&appConfig.Database)
+	db, err := database.Connect(&appConfig.Database)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
@@ -39,13 +39,13 @@ func main() {
 		log.Fatalf("Error connecting to rate: %v", err)
 	}
 
-	if err = postgres.ApplyMigrations(database, appConfig.Database.MigrationsPath); err != nil {
+	if err = database.ApplyMigrations(db, appConfig.Database.MigrationsPath); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
-	heathCheckHandler := rest.NewHealthHandler(database)
+	heathCheckHandler := rest.NewHealthHandler(db)
 
-	categoryRepository := postgres.NewCategoryRepository(database)
+	categoryRepository := database.NewPostgresCategoryRepository(db)
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
@@ -76,7 +76,7 @@ func main() {
 		log.Printf("Error shutting down router: %v\n", err)
 	}
 
-	if err = database.Close(); err != nil {
+	if err = db.Close(); err != nil {
 		log.Printf("Error closing database connection: %v\n", err)
 	}
 }

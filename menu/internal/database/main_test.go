@@ -1,4 +1,4 @@
-package postgres
+package database
 
 import (
 	"database/sql"
@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("TEST_DATABASE_URL environment variable not set")
 	}
 
-	db, err := sql.Open("postgres", dbUrl)
+	db, err := sql.Open("database", dbUrl)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)
 	}

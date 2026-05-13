@@ -1,4 +1,4 @@
-package postgres
+package database
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// Connect establishes a new postgres connection.
+// Connect establishes a new database connection.
 func Connect(c *config.Database) (*sql.DB, error) {
 	db, err := sql.Open("postgres", c.Url)
 	if err != nil {

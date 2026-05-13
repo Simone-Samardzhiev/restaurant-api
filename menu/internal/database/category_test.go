@@ -1,4 +1,4 @@
-package postgres
+package database
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := NewCategoryRepository(testDb)
+	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
@@ -93,7 +93,7 @@ func TestCategoryRepositoryGetAll(t *testing.T) {
 		t.Fatalf("Error seeding data: %v", err)
 	}
 
-	repository := NewCategoryRepository(testDb)
+	repository := NewPostgresCategoryRepository(testDb)
 	categories, err := repository.GetAll(context.Background())
 	if err != nil {
 		t.Fatalf("Error getting all categories: %v", err)
@@ -123,7 +123,7 @@ func TestCategoryRepositoryUpdate(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := NewCategoryRepository(testDb)
+	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
@@ -214,7 +214,7 @@ func TestCategoryRepositoryDelete(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := NewCategoryRepository(testDb)
+	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories`); err != nil {

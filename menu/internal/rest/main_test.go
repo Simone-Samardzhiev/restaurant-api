@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"log"
-	"menu/internal/postgres"
+	"menu/internal/database"
 	"os"
 	"testing"
 )
@@ -24,19 +24,19 @@ func TestMain(m *testing.M) {
 		log.Fatal("TEST_DATABASE_URL environment variable not set")
 	}
 
-	database, err := sql.Open("postgres", dbUrl)
+	db, err := sql.Open("database", dbUrl)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)
 	}
 
-	if err = database.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatalf("Error pinging database connection: %v", err)
 	}
 
-	if err = postgres.ApplyMigrations(database, "file://./../../migrations"); err != nil {
+	if err = database.ApplyMigrations(db, "file://./../../migrations"); err != nil {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
-	testDb = database
+	testDb = db
 	os.Exit(m.Run())
 }
