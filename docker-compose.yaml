@@ -1,4 +1,22 @@
+volumes:
+  menu-db-storage:
+
 services:
+  valkey-cache:
+    build: "./valkey"
+    restart: on-failure
+    environment:
+      VALKEY_PASSWORD: password
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    develop:
+      watch:
+        - path: "./valkey"
+          action: rebuild
+
   menu-db:
     image: postgres:16
     environment:
@@ -10,21 +28,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  valkey-cache:
-    build: "./valkey"
-    restart: on-failure
-    environment:
-      VALKEY_PASSWORD: password
-    healthcheck:
-      test: [ "CMD", "rate-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    develop:
-      watch:
-        - path: "./valkey"
-          action: rebuild
+    volumes:
+      - menu-db-storage:/var/lib/postgresql/data/
 
   menu-api:
     build: "./menu"
@@ -45,6 +50,8 @@ services:
       ADDR: 0.0.0.0:8080
       ENVIRONMENT: development
     depends_on:
+      valkey-cache:
+        condition: service_healthy
       menu-db:
         condition: service_healthy
     develop:
