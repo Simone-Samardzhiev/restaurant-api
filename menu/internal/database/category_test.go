@@ -217,7 +217,7 @@ func TestCategoryRepositoryDelete(t *testing.T) {
 	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE categories`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
