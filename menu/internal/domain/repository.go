@@ -21,3 +21,8 @@ type CategoryRepository interface {
 	// Delete deletes a category by id.
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// ProductRepository describes how product data is accessed.
+type ProductRepository interface {
+	Save(ctx context.Context, product *Product) error
+}
