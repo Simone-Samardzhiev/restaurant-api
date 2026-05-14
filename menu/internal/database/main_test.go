@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("TEST_DATABASE_URL environment variable not set")
 	}
 
-	db, err := sql.Open("database", dbUrl)
+	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatalf("Error opening database connection: %v", err)
 	}
