@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func TestCategoryRepositorySave(t *testing.T) {
+func TestPostgresCategoryRepositorySave(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -42,8 +42,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		if _, err := testDb.ExecContext(
-			context.Background(),
+		if _, err := testDb.Exec(
 			`INSERT INTO categories(id, name, created_at, updated_at) 
 			VALUES (gen_random_uuid(), 'Conflicting name', NOW(), NOW())`,
 		); err != nil {
@@ -74,7 +73,7 @@ func TestCategoryRepositorySave(t *testing.T) {
 	})
 }
 
-func TestCategoryRepositoryGetAll(t *testing.T) {
+func TestPostgresCategoryRepositoryGetAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -118,7 +117,7 @@ func TestCategoryRepositoryGetAll(t *testing.T) {
 	}
 }
 
-func TestCategoryRepositoryUpdate(t *testing.T) {
+func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -209,7 +208,7 @@ func TestCategoryRepositoryUpdate(t *testing.T) {
 	})
 }
 
-func TestCategoryRepositoryDelete(t *testing.T) {
+func TestPostgresCategoryRepositoryDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
