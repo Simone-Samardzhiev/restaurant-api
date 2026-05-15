@@ -43,8 +43,12 @@ func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Pr
 	}
 
 	if pqErr, ok := errors.AsType[*pq.Error](err); ok {
-		if pqErr.Code == "23505" || pqErr.Constraint == "" {
+		if pqErr.Code == "23505" && pqErr.Constraint == "products_name_key" {
 			return domain.NewError("product name conflict", domain.ErrorCodeProductNameConflict, pqErr)
+		}
+
+		if pqErr.Code == "23503" && pqErr.Constraint == "products_category_id_fkey" {
+			return domain.NewError("category not found", domain.ErrorCodeCategoryNotFound, pqErr)
 		}
 	}
 
