@@ -163,7 +163,7 @@ func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 		}
 
 		if name != newName {
-			t.Fatalf("Want category name: %s, got: %s", newName, name)
+			t.Fatalf("Category name mismatch: want %s, got: %s", newName, name)
 		}
 	})
 
