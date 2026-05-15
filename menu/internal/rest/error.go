@@ -19,16 +19,22 @@ type Error struct {
 
 // mapErrorCodesToHTTPStatus maps [domain.ErrorCode] to appropriate HTTP status code.
 var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
-	domain.ErrorCodeInternal:             http.StatusInternalServerError,
+	domain.ErrorCodeInternal: http.StatusInternalServerError,
+
 	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
 	domain.ErrorCodeCategoryNotFound:     http.StatusNotFound,
+
+	domain.ErrorCodeProductNameConflict: http.StatusConflict,
 }
 
 // mapErrorCodesToMessage maps [domain.ErrorCode] to appropriate end user message.
 var mapErrorCodesToMessage = map[domain.ErrorCode]string{
-	domain.ErrorCodeInternal:             "Internal server error.",
+	domain.ErrorCodeInternal: "Internal server error.",
+
 	domain.ErrorCodeCategoryNameConflict: "Category name already exists.",
 	domain.ErrorCodeCategoryNotFound:     "Category not found.",
+
+	domain.ErrorCodeProductNameConflict: "Product name already exists.",
 }
 
 // NewError creates a new [Error]. If the error of type [domain.Error] the message and the code gets translated,

@@ -11,7 +11,7 @@ import (
 )
 
 // PostgresCategoryRepository implements [domain.CategoryRepository]
-// using database.
+// using postgres.
 type PostgresCategoryRepository struct {
 	db *sql.DB
 }
