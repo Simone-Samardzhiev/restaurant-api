@@ -35,6 +35,16 @@ func TestPostgresCategoryRepositorySave(t *testing.T) {
 		if err := repository.Save(context.Background(), category); err != nil {
 			t.Fatalf("Error saving category: %v", err)
 		}
+
+		row := testDb.QueryRow(`SELECT name FROM categories WHERE id = $1`, category.Id)
+		var name string
+		if err := row.Scan(&name); err != nil {
+			t.Fatalf("Error getting category name: %v", err)
+		}
+
+		if name != category.Name {
+			t.Fatalf("Category name mismatch: got %s, want %s", name, category.Name)
+		}
 	})
 
 	t.Run("name conflict", func(t *testing.T) {
