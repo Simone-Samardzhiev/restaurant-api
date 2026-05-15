@@ -1,5 +1,6 @@
 volumes:
   menu-db-storage:
+  menu-bucket-storage:
 
 services:
   valkey-cache:
@@ -17,6 +18,17 @@ services:
         - path: "./valkey"
           action: rebuild
 
+  menu-bucket:
+    image: adobe/s3mock:latest
+    restart: on-failure
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: images
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: true
+      COM_ADOBE_TESTING_S3MOCK_STORE_REGION: us-east-1
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: images
+    volumes:
+      - menu-bucket-storage:/images
+
   menu-db:
     image: postgres:16
     environment:
@@ -24,7 +36,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: menu
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U database -d menu" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d menu" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -41,6 +53,12 @@ services:
       DATABASE_MAX_OPEN_CONNS: 10
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
+
+      AWS_ENDPOINT_URL: menu-bucket
+      AWS_S3_BUCKET_NAME: images
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID:
+      AWS_SECRET_ACCESS_KEY:
 
       VALKEY_URL: valkey://:password@valkey-cache:6379
 
