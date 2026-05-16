@@ -26,14 +26,15 @@ func NewPostgresProductRepository(db *sql.DB) *PostgresProductRepository {
 func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Product) error {
 	_, err := p.db.ExecContext(
 		ctx,
-		`INSERT INTO products(id, name, description, price, category_id, image_key, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		product.Id,
 		product.Name,
 		product.Description,
 		product.Price,
 		product.CategoryId,
 		product.ImageKey,
+		product.ImageContentType,
 		product.Status,
 		product.CreatedAt,
 		product.UpdatedAt,

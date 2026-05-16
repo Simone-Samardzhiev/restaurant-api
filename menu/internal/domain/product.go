@@ -18,6 +18,14 @@ const (
 	ProductStatusAwaitingImage ProductStatus = "awaiting_image"
 )
 
+type ImageContentType string
+
+const (
+	ImageContentTypeJPEG = "image/jpeg"
+	ImageContentTypePNG  = "image/png"
+	ImageContentTypeWebP = "image/webp"
+)
+
 // Product represents product in the menu.
 type Product struct {
 	Id          uuid.UUID
@@ -26,8 +34,9 @@ type Product struct {
 	Price       decimal.Decimal
 	CategoryId  uuid.UUID
 
-	ImageKey string
-	Status   ProductStatus
+	ImageKey         string
+	ImageContentType ImageContentType
+	Status           ProductStatus
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

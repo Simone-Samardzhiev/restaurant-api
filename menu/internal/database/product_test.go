@@ -24,15 +24,16 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 
 		product := domain.Product{
-			Id:          uuid.New(),
-			Name:        "Test",
-			Description: "Some test description for product",
-			Price:       decimal.NewFromInt(100),
-			CategoryId:  uuid.New(),
-			ImageKey:    "imageKey",
-			Status:      domain.ProductStatusReady,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       uuid.New(),
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
 		}
 
 		if _, err := testDb.Exec(`INSERT INTO categories(id, name, created_at, updated_at) VALUES ($1, 'Test', NOW(), NOW())`, product.CategoryId); err != nil {
@@ -84,20 +85,21 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 
 		product := domain.Product{
-			Id:          uuid.New(),
-			Name:        "Test",
-			Description: "Some test description for product",
-			Price:       decimal.NewFromInt(100),
-			CategoryId:  categoryId,
-			ImageKey:    "imageKey",
-			Status:      domain.ProductStatusReady,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       categoryId,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
 		}
 
 		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key, status, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1, 'Some test description for product', 10, $2, 'testImageKey', 'ready', NOW(), NOW())`,
+			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
+			VALUES (gen_random_uuid(), $1, 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
 			product.Name,
 			product.CategoryId,
 		); err != nil {
@@ -126,15 +128,16 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 
 		product := domain.Product{
-			Id:          uuid.New(),
-			Name:        "Test",
-			Description: "Some test description for product",
-			Price:       decimal.NewFromInt(100),
-			CategoryId:  uuid.New(),
-			ImageKey:    "imageKey",
-			Status:      domain.ProductStatusReady,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       uuid.New(),
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
 		}
 
 		err := repository.Save(context.Background(), &product)
