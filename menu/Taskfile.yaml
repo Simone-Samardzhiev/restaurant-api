@@ -7,6 +7,9 @@ dotenv:
   - .env
 
 tasks:
+  run:
+    cmd: "{{.CLI_ARGS}}"
+
   migrate-create:
     desc: "Create a new migration with specific name."
     summary: |
