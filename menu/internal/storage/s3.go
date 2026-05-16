@@ -38,7 +38,7 @@ func (s *S3ImageStorage) CreateUploadUrl(ctx context.Context, imageKey, contentT
 	})
 
 	if err != nil {
-		return "", domain.NewError("error presigning url for image uplaod", domain.ErrorCodeInternal, err)
+		return "", domain.NewError("error presigning url for image upload", domain.ErrorCodeInternal, err)
 	}
 
 	return req.URL, nil
