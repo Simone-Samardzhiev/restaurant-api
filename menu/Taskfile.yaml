@@ -8,11 +8,42 @@ dotenv:
 
 tasks:
   migrate-create:
-    desc: "Applies all migrations."
+    desc: "Create a new migration with specific name."
     summary: |
-      Applies all migrations.
-      The migration is creates at env variable `MIGRATIONS_PATH`
-      and the name is set to env variable NAME
-
+      Creates a new migration using NAME env variable and placing it 
+      in MIGRATIONS_PATH variable
     cmd:
       migrate create -ext sql -dir {{.MIGRATIONS_PATH}} {{.NAME}}
+
+  migrate-apply:
+    desc: "Applies all pending migrations."
+    cmd:
+      migrate -path={{.MIGRATIONS_PATH}} -database={{.DATABASE_URL}} up
+
+  start-valkey:
+    desc: "Starts a detached Valkey container in the background."
+    cmds:
+      - docker run -d --rm --name valkey-tmp -p 6379:6379 valkey/valkey:latest
+      - echo "Valkey is running in the background on port 6379."
+
+  stop-valkey:
+    desc: "Stops the running Valkey container."
+    cmds:
+      - docker stop valkey-tmp
+      - echo "Valkey container stopped and removed."
+
+  start-s3mock:
+    desc: "Starts a detached S3mock container in the background."
+    cmds:
+      - |
+        docker run -d --rm --name s3mock-tmp \
+          -p 9090:9090 -p 9191:9191 \
+          -e COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS=images adobe/s3mock:latest
+      - echo "S3mock is running in the background on port 9090 for HTTP and 9191 for HTTPS."
+
+  stop-s3mock:
+    desc: "Stops the running S3mock container."
+    cmds:
+      - docker stop s3mock-tmp
+      - echo "S3mock container stopped and removed."
+
