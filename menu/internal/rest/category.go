@@ -43,7 +43,6 @@ func (a *AddCategoryRequest) Validate() map[string][]string {
 	if length < MinCategoryLength {
 		fields["name"] = append(fields["name"], "Must be at least "+strconv.Itoa(MinCategoryLength)+" characters.")
 	}
-
 	if length > MaxCategoryLength {
 		fields["name"] = append(fields["name"], "Must be at most "+strconv.Itoa(MaxCategoryLength)+" characters.")
 	}

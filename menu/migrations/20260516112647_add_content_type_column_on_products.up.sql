@@ -7,7 +7,7 @@ CREATE DOMAIN image_content_type AS TEXT
 BEGIN;
 
 ALTER TABLE products
-    ADD column image_content_type image_content_type;
+    ADD COLUMN image_content_type image_content_type;
 
 UPDATE products
 SET image_content_type =
