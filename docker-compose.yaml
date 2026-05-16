@@ -17,6 +17,8 @@ services:
       watch:
         - path: "./valkey"
           action: rebuild
+    ports:
+      - "6379:6379"
 
   menu-bucket:
     image: adobe/s3mock:latest

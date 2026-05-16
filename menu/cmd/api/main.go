@@ -29,18 +29,18 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
+	if err = database.ApplyMigrations(db, appConfig.Database.MigrationsPath); err != nil {
+		log.Fatalf("Error applying migrations: %v", err)
+	}
+
 	valkeyOption, err := valkey.ParseURL(appConfig.Valkey.Url)
 	if err != nil {
-		log.Fatalf("Error parsing rate url: %v", err)
+		log.Fatalf("Error parsing valkey url: %v", err)
 	}
 
 	valkeyConn, err := valkey.NewClient(valkeyOption)
 	if err != nil {
-		log.Fatalf("Error connecting to rate: %v", err)
-	}
-
-	if err = database.ApplyMigrations(db, appConfig.Database.MigrationsPath); err != nil {
-		log.Fatalf("Error applying migrations: %v", err)
+		log.Fatalf("Error connecting to valkey: %v", err)
 	}
 
 	heathCheckHandler := rest.NewHealthHandler(db)
