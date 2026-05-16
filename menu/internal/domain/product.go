@@ -41,3 +41,12 @@ type Product struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+// AddProductRequest represents a request for adding a new product.
+type AddProductRequest struct {
+	Name             string
+	Description      string
+	Price            decimal.Decimal
+	CategoryId       uuid.UUID
+	ImageContentType ImageContentType
+}
