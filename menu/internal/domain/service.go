@@ -21,3 +21,9 @@ type CategoryService interface {
 	// Delete deletes a category by id.
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// ProductService describes how product business logic is accessed.
+type ProductService interface {
+	// Add creates a new product.
+	Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error)
+}

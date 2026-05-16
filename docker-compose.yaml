@@ -17,8 +17,6 @@ services:
       watch:
         - path: "./valkey"
           action: rebuild
-    ports:
-      - "6379:6379"
 
   menu-bucket:
     image: adobe/s3mock:latest
@@ -30,9 +28,6 @@ services:
       COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: images
     volumes:
       - menu-bucket-storage:/images
-    ports:
-      - "9090:9090"
-      - "9191:9191"
 
   menu-db:
     image: postgres:16
@@ -59,11 +54,11 @@ services:
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
 
-      AWS_ENDPOINT_URL: https://menu-bucket/9191
+      AWS_ENDPOINT_URL: https://menu-bucket:9191
       AWS_S3_BUCKET_NAME: images
       AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID:
-      AWS_SECRET_ACCESS_KEY:
+      AWS_ACCESS_KEY_ID: mock-key
+      AWS_SECRET_ACCESS_KEY: mock-secret
 
       VALKEY_URL: valkey://:password@valkey-cache:6379
 
