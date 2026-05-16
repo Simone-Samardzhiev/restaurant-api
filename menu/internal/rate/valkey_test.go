@@ -15,7 +15,7 @@ func TestValkeyStoreAllow(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	url := os.Getenv("VALKEY_URL")
+	url := os.Getenv("TEST_VALKEY_URL")
 	valkeyOption, err := valkey.ParseURL(url)
 	if err != nil {
 		t.Fatalf("Error parsing valkey url: %v", err)
