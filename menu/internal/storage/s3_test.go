@@ -23,9 +23,9 @@ func TestS3ImageStorageCreateUploadUrl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error loading aws config: %v", err)
 	}
-	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String("http://127.0.0.1:9090")
 
+	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String("http://localhost:9090")
 		o.UsePathStyle = true
 	})
 	storage := NewS3ImageStorage(client, 15*time.Second, "images")
