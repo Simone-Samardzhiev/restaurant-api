@@ -25,15 +25,13 @@ func NewProductService(repository ProductRepository, storage ImageStorage) *Defa
 var _ ProductService = (*DefaultProductService)(nil)
 
 func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error) {
-	now := time.Now()
-
 	_, ext, ok := strings.Cut(string(request.ImageContentType), "/")
 	if !ok {
 		return nil, NewError("invalid image content type format: "+string(request.ImageContentType), ErrorCodeInternal, nil)
 	}
 
+	now := time.Now()
 	productId := uuid.New()
-
 	product := Product{
 		Id:               productId,
 		Name:             request.Name,
