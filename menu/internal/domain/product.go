@@ -50,3 +50,9 @@ type AddProductRequest struct {
 	CategoryId       uuid.UUID
 	ImageContentType ImageContentType
 }
+
+// ProductDraft represent a product that has been saved, but image is needed to finalize it.
+type ProductDraft struct {
+	Id             uuid.UUID
+	ImageUploadUrl string
+}
