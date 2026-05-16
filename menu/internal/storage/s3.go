@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"log"
 	"menu/internal/domain"
 	"time"
 
@@ -28,16 +29,17 @@ func NewS3ImageStorage(client *s3.Client, urlExpiryTine time.Duration, bucket st
 
 var _ domain.ImageStorage = (*S3ImageStorage)(nil)
 
-func (s *S3ImageStorage) CreateUploadUrl(ctx context.Context, imageKey, contentType string) (string, error) {
+func (s *S3ImageStorage) CreateUploadUrl(ctx context.Context, imageKey string, contentType domain.ImageContentType) (string, error) {
 	req, err := s.presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(imageKey),
-		ContentType: aws.String(contentType),
+		ContentType: aws.String(string(contentType)),
 	}, func(options *s3.PresignOptions) {
 		options.Expires = s.urlExpiry
 	})
 
 	if err != nil {
+		log.Printf("Unable to create presign url: %v", err)
 		return "", domain.NewError("error presigning url for image upload", domain.ErrorCodeInternal, err)
 	}
 
