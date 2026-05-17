@@ -67,37 +67,74 @@ func newDatabase() (Database, error) {
 	if url, ok := os.LookupEnv("DATABASE_URL"); ok {
 		database.Url = url
 	} else {
-		return Database{}, errors.New("DATABASE_URL environment variable not defined")
+		return Database{}, errors.New("config: DATABASE_URL is required but not set")
 	}
 
 	if path, ok := os.LookupEnv("MIGRATIONS_PATH"); ok {
 		database.MigrationsPath = path
 	} else {
-		return Database{}, errors.New("MIGRATIONS_PATH environment variable not defined")
+		return Database{}, errors.New("config: MIGRATIONS_PATH is required but not set")
 	}
 
-	if maxIdleConns, err := strconv.Atoi(os.Getenv("DATABASE_MAX_IDLE_CONNS")); err == nil {
-		database.MaxIdleConns = maxIdleConns
+	if maxIdleConns, ok := os.LookupEnv("DATABASE_MAX_IDLE_CONNS"); ok {
+		val, err := strconv.Atoi(maxIdleConns)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABABE_MAX_IDLE_CONNS must be an integer (got: %s): %w", maxIdleConns, err)
+		}
+		database.MaxIdleConns = val
 	} else {
-		return Database{}, fmt.Errorf("DATABASE_MAX_IDLE_CONNS environment variable not defined: %v", err)
+		return Database{}, errors.New("config: DATABABE_MAX_IDLE_CONNS is required but not set")
 	}
 
-	if maxOpenConns, err := strconv.Atoi(os.Getenv("DATABASE_MAX_OPEN_CONNS")); err == nil {
-		database.MaxOpenConns = maxOpenConns
+	if maxIdleConns, ok := os.LookupEnv("DATABASE_MAX_IDLE_CONNS"); ok {
+		val, err := strconv.Atoi(maxIdleConns)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_CONNS must be an integer (got: %s): %w", maxIdleConns, err)
+		}
+		database.MaxIdleConns = val
 	} else {
-		return Database{}, fmt.Errorf("DATABASE_MAX_OPEN_CONNS environment variable not defined: %v", err)
+		return Database{}, errors.New("config: DATABASE_MAX_IDLE_CONNS is required but not set")
 	}
 
-	if maxIdleTime, err := time.ParseDuration(os.Getenv("DATABASE_MAX_IDLE_TIME")); err == nil {
-		database.MaxIdleTime = maxIdleTime
+	if maxOpenConns, ok := os.LookupEnv("DATABASE_MAX_OPEN_CONNS"); ok {
+		val, err := strconv.Atoi(maxOpenConns)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABASE_MAX_OPEN_CONNS must be an integer (got: %s): %w", maxOpenConns, err)
+		}
+		database.MaxOpenConns = val
 	} else {
-		return Database{}, fmt.Errorf("DATABASE_MAX_IDLE_TIME environment variable not defined: %v", err)
+		return Database{}, errors.New("config: DATABASE_MAX_OPEN_CONNS is required but not set")
 	}
 
-	if maxLifetime, err := time.ParseDuration(os.Getenv("DATABASE_MAX_LIFETIME")); err == nil {
-		database.MaxLifetime = maxLifetime
+	if maxIdleTime, ok := os.LookupEnv("DATABASE_MAX_IDLE_TIME"); ok {
+		val, err := time.ParseDuration(maxIdleTime)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_TIME must be a duration (got: %s): %w", maxIdleTime, err)
+		}
+		database.MaxIdleTime = val
 	} else {
-		return Database{}, fmt.Errorf("DATABASE_MAX_LIFETIME environment variable not defined: %v", err)
+		return Database{}, errors.New("config: DATABASE_MAX_IDLE_TIME is required but not set")
+	}
+
+	if maxIdleTime, ok := os.LookupEnv("DATABASE_MAX_IDLE_TIME"); ok {
+		val, err := time.ParseDuration(maxIdleTime)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_TIME must be a duration (got: %s): %w", maxIdleTime, err)
+
+		}
+		database.MaxIdleTime = val
+	} else {
+		return Database{}, errors.New("config: DATABASE_MAX_IDLE_TIME is required but not set")
+	}
+
+	if maxLifetime, ok := os.LookupEnv("DATABASE_MAX_LIFETIME"); ok {
+		val, err := time.ParseDuration(maxLifetime)
+		if err != nil {
+			return Database{}, fmt.Errorf("config: DATABASE_MAX_LIFETIME must be a duration (got: %s): %w", maxLifetime, err)
+		}
+		database.MaxLifetime = val
+	} else {
+		return Database{}, errors.New("config: DATABASE_MAX_LIFETIME is required but not set")
 	}
 
 	return database, nil
@@ -108,7 +145,7 @@ func newValkey() (Valkey, error) {
 	if url, ok := os.LookupEnv("VALKEY_URL"); ok {
 		valkey.Url = url
 	} else {
-		return Valkey{}, errors.New("VALKEY_URL environment variable not defined")
+		return Valkey{}, errors.New("config: VALKEY_URL is required but not set")
 	}
 
 	return valkey, nil
@@ -116,16 +153,25 @@ func newValkey() (Valkey, error) {
 
 func newRateLimit() (RateLimit, error) {
 	var ratelimit RateLimit
-	if limit, err := strconv.Atoi(os.Getenv("RATE_LIMIT_COUNT")); err == nil {
-		ratelimit.Limit = limit
+
+	if limit, ok := os.LookupEnv("RATE_LIMIT_COUNT"); ok {
+		val, err := strconv.Atoi(limit)
+		if err != nil {
+			return RateLimit{}, fmt.Errorf("config: RATE_LIMIT_COUNT must be an integer (got: %s): %w", limit, err)
+		}
+		ratelimit.Limit = val
 	} else {
-		return RateLimit{}, fmt.Errorf("RATE_LIMIT_COUNT environment variable not defined: %v", err)
+		return RateLimit{}, errors.New("config: RATE_LIMIT_COUNT is required but not set")
 	}
 
-	if window, err := time.ParseDuration(os.Getenv("RATE_LIMIT_WINDOW")); err == nil {
-		ratelimit.Window = window
+	if window, ok := os.LookupEnv("RATE_LIMIT_WINDOW"); ok {
+		val, err := time.ParseDuration(window)
+		if err != nil {
+			return RateLimit{}, fmt.Errorf("config: RATE_LIMIT_WINDOW must be a duration (got: %s): %w", window, err)
+		}
+		ratelimit.Window = val
 	} else {
-		return RateLimit{}, fmt.Errorf("RATE_LIMIT_WINDOW environment variable not defined: %v", err)
+		return RateLimit{}, errors.New("config: RATE_LIMIT_WINDOW is required but not set")
 	}
 
 	return ratelimit, nil
@@ -136,19 +182,23 @@ func newBucket() (Bucket, error) {
 	if url, ok := os.LookupEnv("BUCKET_URL"); ok {
 		bucket.BaseEndpoint = url
 	} else {
-		return Bucket{}, errors.New("BUCKET_URL environment variable not defined")
+		return Bucket{}, errors.New("config: BUCKET_URL is required but not set")
 	}
 
-	if expiry, err := time.ParseDuration(os.Getenv("BUCKET_EXPIRY")); err == nil {
-		bucket.UploadUrlExpiry = expiry
+	if expiry, ok := os.LookupEnv("BUCKET_UPLOAD_URL_EXPIRY"); ok {
+		val, err := time.ParseDuration(expiry)
+		if err != nil {
+			return Bucket{}, fmt.Errorf("config: BUCKET_EXPIRY must be a duration (got: %s): %w", expiry, err)
+		}
+		bucket.UploadUrlExpiry = val
 	} else {
-		return Bucket{}, fmt.Errorf("BUCKET_EXPIRY environment variable not defined: %v", err)
+		return Bucket{}, errors.New("config: BUCKET_EXPIRY is required but not set")
 	}
 
 	if name, ok := os.LookupEnv("BUCKET_NAME"); ok {
 		bucket.Name = name
 	} else {
-		return Bucket{}, errors.New("BUCKET_NAME environment variable not defined")
+		return Bucket{}, errors.New("config: BUCKET_NAME environment variable not defined")
 	}
 	return bucket, nil
 }
@@ -158,7 +208,7 @@ func newApp() (App, error) {
 	if port, ok := os.LookupEnv("ADDR"); ok {
 		app.Addr = port
 	} else {
-		return App{}, errors.New("ADDR environment variable not defined")
+		return App{}, errors.New("config: ADDR is required but not set")
 	}
 
 	if env, ok := os.LookupEnv("ENVIRONMENT"); ok {
@@ -167,7 +217,7 @@ func newApp() (App, error) {
 		case Production, Development:
 			app.Env = environment
 		default:
-			return App{}, errors.New("ENVIRONMENT environment variable not defined")
+			return App{}, errors.New("config: ENVIRONMENT is required but not set")
 		}
 	}
 
