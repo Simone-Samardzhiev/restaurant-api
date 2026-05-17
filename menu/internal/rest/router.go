@@ -23,6 +23,7 @@ type RouterConfig struct {
 
 	HeathHandler    *HealthHandler
 	CategoryHandler *CategoryHandler
+	ProductHandler  *ProductHandler
 }
 
 // NewRouter creates and allocates new [Router].
@@ -70,6 +71,10 @@ func NewRouter(c *RouterConfig) *Router {
 			categories.GET("", c.CategoryHandler.GetCategories)
 			categories.PATCH("/:id", c.CategoryHandler.UpdateCategory)
 			categories.DELETE("/:id", c.CategoryHandler.DeleteCategory)
+		}
+		{
+			products := api.Group("/products")
+			products.POST("", c.ProductHandler.Add)
 		}
 	}
 

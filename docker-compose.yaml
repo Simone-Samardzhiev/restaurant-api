@@ -21,6 +21,9 @@ services:
   menu-bucket:
     image: adobe/s3mock:latest
     restart: on-failure
+    ports:
+      - "9090:9090"
+      - "9191:9191"
     environment:
       COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: images
       COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: true
@@ -54,11 +57,15 @@ services:
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
 
-      AWS_ENDPOINT_URL: https://menu-bucket:9191
+      AWS_ENDPOINT_URL: http://menu-bucket.docker.orb.local:9090
       AWS_S3_BUCKET_NAME: images
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: mock-key
       AWS_SECRET_ACCESS_KEY: mock-secret
+
+      BUCKET_URL: http://menu-bucket.docker.orb.local:9090
+      BUCKET_UPLOAD_URL_EXPIRY: 15m
+      BUCKET_NAME: images
 
       VALKEY_URL: valkey://:password@valkey-cache:6379
 

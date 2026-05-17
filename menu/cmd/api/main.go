@@ -8,12 +8,16 @@ import (
 	"menu/internal/logger"
 	"menu/internal/rate"
 	"menu/internal/rest"
+	"menu/internal/storage"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/valkey-io/valkey-go"
 )
@@ -21,7 +25,7 @@ import (
 func main() {
 	appConfig, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
+		log.Fatal(err)
 	}
 
 	db, err := database.Connect(&appConfig.Database)
@@ -33,6 +37,16 @@ func main() {
 		log.Fatalf("Error applying migrations: %v", err)
 	}
 
+	awsConfig, err := awsconfig.LoadDefaultConfig(context.Background())
+	if err != nil {
+		log.Fatalf("Error loading AWS configuration: %v", err)
+	}
+
+	s3client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(appConfig.BaseEndpoint)
+		o.UsePathStyle = true
+	})
+
 	valkeyOption, err := valkey.ParseURL(appConfig.Valkey.Url)
 	if err != nil {
 		log.Fatalf("Error parsing valkey url: %v", err)
@@ -43,13 +57,17 @@ func main() {
 		log.Fatalf("Error connecting to valkey: %v", err)
 	}
 
+	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
 	heathCheckHandler := rest.NewHealthHandler(db)
 
 	categoryRepository := database.NewPostgresCategoryRepository(db)
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
-	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
+	productRepository := database.NewPostgresProductRepository(db)
+	imageStorage := storage.NewS3ImageStorage(s3client, 1, "images")
+	productService := domain.NewProductService(productRepository, imageStorage)
+	productHandler := rest.NewProductHandler(productService)
 
 	router := rest.NewRouter(&rest.RouterConfig{
 		App:    &appConfig.App,
@@ -58,6 +76,7 @@ func main() {
 
 		HeathHandler:    heathCheckHandler,
 		CategoryHandler: categoryHandler,
+		ProductHandler:  productHandler,
 	})
 
 	go func() {
