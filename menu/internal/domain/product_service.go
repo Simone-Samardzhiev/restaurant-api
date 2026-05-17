@@ -14,8 +14,8 @@ type DefaultProductService struct {
 	storage    ImageStorage
 }
 
-// NewProductService creates and allocates [DefaultProductService].
-func NewProductService(repository ProductRepository, storage ImageStorage) *DefaultProductService {
+// NewDefaultProductService creates and allocates [DefaultProductService].
+func NewDefaultProductService(repository ProductRepository, storage ImageStorage) *DefaultProductService {
 	return &DefaultProductService{
 		repository: repository,
 		storage:    storage,
