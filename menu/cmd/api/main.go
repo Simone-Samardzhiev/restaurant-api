@@ -44,7 +44,11 @@ func main() {
 
 	s3client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(appConfig.BaseEndpoint)
-		o.UsePathStyle = true
+		if appConfig.Env == config.Production {
+			o.UsePathStyle = false
+		} else {
+			o.UsePathStyle = true
+		}
 	})
 
 	valkeyOption, err := valkey.ParseURL(appConfig.Valkey.Url)
@@ -65,7 +69,7 @@ func main() {
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
 	productRepository := database.NewPostgresProductRepository(db)
-	imageStorage := storage.NewS3ImageStorage(s3client, 1, "images")
+	imageStorage := storage.NewS3ImageStorage(s3client, appConfig.UploadUrlExpiry, appConfig.Bucket.Name)
 	productService := domain.NewProductService(productRepository, imageStorage)
 	productHandler := rest.NewProductHandler(productService)
 

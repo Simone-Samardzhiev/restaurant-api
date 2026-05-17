@@ -62,14 +62,11 @@ services:
       DATABASE_MAX_LIFETIME: 10m
 
       AWS_ENDPOINT_URL: http://menu-bucket.docker.orb.local:9090
+      AWS_UPLOAD_URL_EXPIRY: 15m
       AWS_S3_BUCKET_NAME: images
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: mock-key
       AWS_SECRET_ACCESS_KEY: mock-secret
-
-      BUCKET_URL: http://menu-bucket.docker.orb.local:9090
-      BUCKET_UPLOAD_URL_EXPIRY: 15m
-      BUCKET_NAME: images
 
       VALKEY_URL: valkey://:password@valkey-cache:6379
 

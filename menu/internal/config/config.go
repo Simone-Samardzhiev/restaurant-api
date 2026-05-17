@@ -179,26 +179,26 @@ func newRateLimit() (RateLimit, error) {
 
 func newBucket() (Bucket, error) {
 	var bucket Bucket
-	if url, ok := os.LookupEnv("BUCKET_URL"); ok {
+	if url, ok := os.LookupEnv("AWS_ENDPOINT_URL"); ok {
 		bucket.BaseEndpoint = url
 	} else {
-		return Bucket{}, errors.New("config: BUCKET_URL is required but not set")
+		return Bucket{}, errors.New("config: AWS_ENDPOINT_URL is required but not set")
 	}
 
-	if expiry, ok := os.LookupEnv("BUCKET_UPLOAD_URL_EXPIRY"); ok {
+	if expiry, ok := os.LookupEnv("AWS_UPLOAD_URL_EXPIRY"); ok {
 		val, err := time.ParseDuration(expiry)
 		if err != nil {
-			return Bucket{}, fmt.Errorf("config: BUCKET_EXPIRY must be a duration (got: %s): %w", expiry, err)
+			return Bucket{}, fmt.Errorf("config: AWS_UPLOAD_URL_EXPIRY must be a duration (got: %s): %w", expiry, err)
 		}
 		bucket.UploadUrlExpiry = val
 	} else {
-		return Bucket{}, errors.New("config: BUCKET_EXPIRY is required but not set")
+		return Bucket{}, errors.New("config: AWS_UPLOAD_URL_EXPIRY is required but not set")
 	}
 
-	if name, ok := os.LookupEnv("BUCKET_NAME"); ok {
+	if name, ok := os.LookupEnv("AWS_S3_BUCKET_NAME"); ok {
 		bucket.Name = name
 	} else {
-		return Bucket{}, errors.New("config: BUCKET_NAME environment variable not defined")
+		return Bucket{}, errors.New("config: AWS_S3_BUCKET_NAME environment variable not defined")
 	}
 	return bucket, nil
 }
