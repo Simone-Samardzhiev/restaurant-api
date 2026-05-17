@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 )
@@ -25,7 +24,6 @@ func TestS3ImageStorageCreateUploadUrl(t *testing.T) {
 	}
 
 	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String("http://localhost:9090")
 		o.UsePathStyle = true
 	})
 	storage := NewS3ImageStorage(client, 15*time.Second, "images")
