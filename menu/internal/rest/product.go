@@ -90,7 +90,7 @@ func (a *AddProductRequest) Validate() map[string][]string {
 	return nil
 }
 
-func (p *ProductHandler) Add(ctx *echo.Context) error {
+func (p *ProductHandler) AddProduct(ctx *echo.Context) error {
 	var req AddProductRequest
 	if err := ctx.Bind(&req); err != nil {
 		return NewInvalidJSONError(err)

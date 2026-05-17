@@ -74,7 +74,7 @@ func NewRouter(c *RouterConfig) *Router {
 		}
 		{
 			products := api.Group("/products")
-			products.POST("", c.ProductHandler.Add)
+			products.POST("", c.ProductHandler.AddProduct)
 		}
 	}
 
