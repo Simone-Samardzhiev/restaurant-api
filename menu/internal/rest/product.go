@@ -40,12 +40,19 @@ func isValidContentType(imageContentType string) bool {
 	}
 }
 
+// AddProductRequest represents the JSON request for adding a new product.
 type AddProductRequest struct {
 	Name             string          `json:"name"`
 	Description      string          `json:"description"`
 	Price            decimal.Decimal `json:"price"`
 	CategoryID       uuid.UUID       `json:"categoryId"`
 	ImageContentType string          `json:"imageContentType"`
+}
+
+// ProductDraftResponse represents the JSON response of a product draft.
+type ProductDraftResponse struct {
+	Id             uuid.UUID `json:"id"`
+	ImageUploadUrl string    `json:"imageUploadUrl"`
 }
 
 func (a *AddProductRequest) Validate() map[string][]string {
@@ -104,5 +111,8 @@ func (p *ProductHandler) Add(ctx *echo.Context) error {
 		return NewError(err)
 	}
 
-	return ctx.JSON(http.StatusCreated, draft)
+	return ctx.JSON(http.StatusCreated, ProductDraftResponse{
+		Id:             draft.Id,
+		ImageUploadUrl: draft.ImageUploadUrl,
+	})
 }
