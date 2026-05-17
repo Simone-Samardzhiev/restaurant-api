@@ -8,6 +8,7 @@ const (
 
 	ErrorCodeCategoryNameConflict
 	ErrorCodeCategoryNotFound
+	ErrorCodeCategoryHasProducts
 
 	ErrorCodeProductNameConflict
 )
@@ -17,6 +18,7 @@ var mapErrorCodes = map[ErrorCode]string{
 
 	ErrorCodeCategoryNameConflict: "CATEGORY_NAME_CONFLICT",
 	ErrorCodeCategoryNotFound:     "CATEGORY_NOT_FOUND",
+	ErrorCodeCategoryHasProducts:  "CATEGORY_HAS_PRODUCTS",
 
 	ErrorCodeProductNameConflict: "PRODUCT_NAME_CONFLICT",
 }

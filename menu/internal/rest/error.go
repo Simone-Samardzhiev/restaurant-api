@@ -23,6 +23,7 @@ var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 
 	domain.ErrorCodeCategoryNameConflict: http.StatusConflict,
 	domain.ErrorCodeCategoryNotFound:     http.StatusNotFound,
+	domain.ErrorCodeCategoryHasProducts:  http.StatusConflict,
 
 	domain.ErrorCodeProductNameConflict: http.StatusConflict,
 }
@@ -33,6 +34,7 @@ var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 
 	domain.ErrorCodeCategoryNameConflict: "Category name already exists.",
 	domain.ErrorCodeCategoryNotFound:     "Category not found.",
+	domain.ErrorCodeCategoryHasProducts:  "Some product are linked to this category. Please delete the product before trying to delete the category.",
 
 	domain.ErrorCodeProductNameConflict: "Product name already exists.",
 }
