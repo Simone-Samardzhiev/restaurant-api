@@ -24,13 +24,22 @@ type (
 		MaxLifetime    time.Duration
 	}
 
+	// Valkey represents valkey config.
 	Valkey struct {
 		Url string
 	}
 
+	// RateLimit rate limiting config.
 	RateLimit struct {
 		Limit  int
 		Window time.Duration
+	}
+
+	// Bucket represents s3 bucket config.
+	Bucket struct {
+		BaseEndpoint    string
+		UploadUrlExpiry time.Duration
+		Name            string
 	}
 
 	// Environment represents app environment.
@@ -47,6 +56,7 @@ type (
 		Database
 		Valkey
 		RateLimit
+		Bucket
 		App
 	}
 )
@@ -121,6 +131,28 @@ func newRateLimit() (RateLimit, error) {
 	return ratelimit, nil
 }
 
+func newBucket() (Bucket, error) {
+	var bucket Bucket
+	if url, ok := os.LookupEnv("BUCKET_URL"); ok {
+		bucket.BaseEndpoint = url
+	} else {
+		return Bucket{}, errors.New("BUCKET_URL environment variable not defined")
+	}
+
+	if expiry, err := time.ParseDuration(os.Getenv("BUCKET_EXPIRY")); err == nil {
+		bucket.UploadUrlExpiry = expiry
+	} else {
+		return Bucket{}, fmt.Errorf("BUCKET_EXPIRY environment variable not defined: %v", err)
+	}
+
+	if name, ok := os.LookupEnv("BUCKET_NAME"); ok {
+		bucket.Name = name
+	} else {
+		return Bucket{}, errors.New("BUCKET_NAME environment variable not defined")
+	}
+	return bucket, nil
+}
+
 func newApp() (App, error) {
 	var app App
 	if port, ok := os.LookupEnv("ADDR"); ok {
@@ -159,6 +191,11 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	bucket, err := newBucket()
+	if err != nil {
+		return nil, err
+	}
+
 	app, err := newApp()
 	if err != nil {
 		return nil, err
@@ -168,6 +205,7 @@ func NewConfig() (*Config, error) {
 		database,
 		valkey,
 		rateLimit,
+		bucket,
 		app,
 	}, nil
 }
