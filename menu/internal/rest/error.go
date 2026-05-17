@@ -137,7 +137,7 @@ func ErrorHandler(ctx *echo.Context, err error) {
 		response := ErrorResponse{
 			Code:       e.Code,
 			HttpStatus: e.HttpStatus,
-			Message:    e.Error(),
+			Message:    e.Message,
 			RequestID:  requestId,
 		}
 		_ = ctx.JSON(response.HttpStatus, response)
