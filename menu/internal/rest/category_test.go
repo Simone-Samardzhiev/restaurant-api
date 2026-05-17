@@ -25,28 +25,28 @@ type fakeCategoryService struct {
 
 var _ domain.CategoryService = (*fakeCategoryService)(nil)
 
-func (f fakeCategoryService) Add(ctx context.Context, name string) (*domain.Category, error) {
+func (f *fakeCategoryService) Add(ctx context.Context, name string) (*domain.Category, error) {
 	if f.onAdd == nil {
 		panic("onAdd not implemented")
 	}
 	return f.onAdd(ctx, name)
 }
 
-func (f fakeCategoryService) GetAll(ctx context.Context) ([]domain.Category, error) {
+func (f *fakeCategoryService) GetAll(ctx context.Context) ([]domain.Category, error) {
 	if f.onGetAll == nil {
 		panic("onGetAll not implemented")
 	}
 	return f.onGetAll(ctx)
 }
 
-func (f fakeCategoryService) Update(ctx context.Context, id uuid.UUID, name string) error {
+func (f *fakeCategoryService) Update(ctx context.Context, id uuid.UUID, name string) error {
 	if f.onUpdate == nil {
 		panic("onUpdate not implemented")
 	}
 	return f.onUpdate(ctx, id, name)
 }
 
-func (f fakeCategoryService) Delete(ctx context.Context, id uuid.UUID) error {
+func (f *fakeCategoryService) Delete(ctx context.Context, id uuid.UUID) error {
 	if f.onDelete == nil {
 		panic("onDelete not implemented")
 	}
@@ -105,7 +105,7 @@ func TestAddCategoryRequestValidate(t *testing.T) {
 func TestCategoryHandlerAddCategory(t *testing.T) {
 	tests := []struct {
 		name               string
-		service            domain.CategoryService
+		handler            *CategoryHandler
 		request            string
 		wantHttpStatusCode int
 		wantName           string
@@ -113,14 +113,16 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 	}{
 		{
 			name: "success",
-			service: &fakeCategoryService{
-				onAdd: func(ctx context.Context, name string) (*domain.Category, error) {
-					return &domain.Category{
-						Id:        uuid.New(),
-						Name:      name,
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
-					}, nil
+			handler: &CategoryHandler{
+				service: &fakeCategoryService{
+					onAdd: func(ctx context.Context, name string) (*domain.Category, error) {
+						return &domain.Category{
+							Id:        uuid.New(),
+							Name:      name,
+							CreatedAt: time.Now(),
+							UpdatedAt: time.Now(),
+						}, nil
+					},
 				},
 			},
 			request:            `{ "name" : "test" }`,
@@ -129,14 +131,14 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 		},
 		{
 			name:               "invalid payload",
-			service:            &fakeCategoryService{},
+			handler:            &CategoryHandler{service: &fakeCategoryService{}},
 			request:            `{ "name": "n" }`,
 			wantHttpStatusCode: http.StatusUnprocessableEntity,
 			wantErrorCode:      ErrorCodeInvalidEntity,
 		},
 		{
 			name:               "invalid JSON",
-			service:            &fakeCategoryService{},
+			handler:            &CategoryHandler{service: &fakeCategoryService{}},
 			request:            `{{}`,
 			wantHttpStatusCode: http.StatusBadRequest,
 			wantErrorCode:      ErrorCodeInvalidJSON,
@@ -147,11 +149,10 @@ func TestCategoryHandlerAddCategory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := NewCategoryHandler(tt.service)
 			e := echo.NewWithConfig(echo.Config{
 				HTTPErrorHandler: ErrorHandler,
 			})
-			e.POST("/categories", handler.AddCategory)
+			e.POST("/categories", tt.handler.AddCategory)
 
 			req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(tt.request))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -420,7 +421,7 @@ func TestUpdateCategoryRequestValidate(t *testing.T) {
 func TestCategoryHandlerUpdateCategory(t *testing.T) {
 	tests := []struct {
 		name           string
-		service        domain.CategoryService
+		handler        *CategoryHandler
 		id             string
 		request        string
 		wantHttpStatus int
@@ -428,9 +429,11 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 	}{
 		{
 			name: "success",
-			service: &fakeCategoryService{
-				onUpdate: func(ctx context.Context, id uuid.UUID, name string) error {
-					return nil
+			handler: &CategoryHandler{
+				service: &fakeCategoryService{
+					onUpdate: func(ctx context.Context, id uuid.UUID, name string) error {
+						return nil
+					},
 				},
 			},
 			id:             uuid.NewString(),
@@ -439,7 +442,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		},
 		{
 			name:           "invalid payload",
-			service:        &fakeCategoryService{},
+			handler:        &CategoryHandler{service: &fakeCategoryService{}},
 			id:             uuid.NewString(),
 			request:        `{ "name":"t" }`,
 			wantHttpStatus: http.StatusUnprocessableEntity,
@@ -447,7 +450,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		},
 		{
 			name:           "invalid JSON",
-			service:        &fakeCategoryService{},
+			handler:        &CategoryHandler{service: &fakeCategoryService{}},
 			id:             uuid.NewString(),
 			request:        `{ "na:"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
@@ -455,7 +458,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		},
 		{
 			name:           "invalid uuid",
-			service:        &fakeCategoryService{},
+			handler:        &CategoryHandler{service: &fakeCategoryService{}},
 			id:             "invalid",
 			request:        `{ "name":"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
@@ -463,23 +466,22 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := NewCategoryHandler(test.service)
 			e := echo.NewWithConfig(echo.Config{
 				HTTPErrorHandler: ErrorHandler,
 			})
-			e.PATCH("/categories/:id", handler.UpdateCategory)
+			e.PATCH("/categories/:id", tt.handler.UpdateCategory)
 
-			req := httptest.NewRequest(http.MethodPatch, "/categories/"+test.id, strings.NewReader(test.request))
+			req := httptest.NewRequest(http.MethodPatch, "/categories/"+tt.id, strings.NewReader(tt.request))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			e.ServeHTTP(rec, req)
 
-			if rec.Code != test.wantHttpStatus {
-				t.Fatalf("Want http status code %d, got %d", test.wantHttpStatus, rec.Code)
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
 			}
 			if rec.Code == http.StatusNoContent {
 				return
@@ -490,8 +492,8 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 				t.Fatalf("Error decoding response body: %v", err)
 			}
 
-			if res.Code != test.wantErrorCode {
-				t.Fatalf("Want error code %s, got %s", test.wantErrorCode, res.Code)
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
 			}
 		})
 	}
@@ -604,16 +606,18 @@ func TestUpdateCategory(t *testing.T) {
 func TestCategoryHandlerDeleteCategory(t *testing.T) {
 	tests := []struct {
 		name           string
-		service        domain.CategoryService
+		handler        *CategoryHandler
 		id             string
 		wantHttpStatus int
 		wantErrorCode  string
 	}{
 		{
 			name: "success",
-			service: &fakeCategoryService{
-				onDelete: func(ctx context.Context, id uuid.UUID) error {
-					return nil
+			handler: &CategoryHandler{
+				service: &fakeCategoryService{
+					onDelete: func(ctx context.Context, id uuid.UUID) error {
+						return nil
+					},
 				},
 			},
 			id:             uuid.New().String(),
@@ -621,7 +625,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 		},
 		{
 			name:           "invalid id",
-			service:        &fakeCategoryService{},
+			handler:        &CategoryHandler{service: &fakeCategoryService{}},
 			id:             "invalid",
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  ErrorCodeInvalidUUID,
@@ -632,11 +636,10 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			handler := NewCategoryHandler(tt.service)
 			e := echo.NewWithConfig(echo.Config{
 				HTTPErrorHandler: ErrorHandler,
 			})
-			e.DELETE("/categories/:id", handler.DeleteCategory)
+			e.DELETE("/categories/:id", tt.handler.DeleteCategory)
 
 			req := httptest.NewRequest(http.MethodDelete, "/categories/"+tt.id, nil)
 			rec := httptest.NewRecorder()
