@@ -31,6 +31,10 @@ services:
       COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: images
     volumes:
       - menu-bucket-storage:/images
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9090/favicon.ico" ]
+      interval: 5s
+      retries: 3
 
   menu-db:
     image: postgres:16
@@ -75,6 +79,8 @@ services:
       ADDR: 0.0.0.0:8080
       ENVIRONMENT: development
     depends_on:
+      menu-bucket:
+        condition: service_healthy
       valkey-cache:
         condition: service_healthy
       menu-db:
