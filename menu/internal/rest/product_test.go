@@ -3,11 +3,15 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"menu/internal/database"
 	"menu/internal/domain"
+	"menu/internal/storage"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
@@ -164,8 +168,9 @@ func TestProductHandlerAdd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.POST("/products", tt.handler.AddProduct)
 
 			req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(tt.request))
@@ -194,4 +199,133 @@ func TestProductHandlerAdd(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddProduct(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+	service := domain.NewDefaultProductService(repository, imageStorage)
+	handler := NewProductHandler(service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.POST("/products", handler.AddProduct)
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	categoryId := uuid.New()
+	if _, err := testDb.Exec(
+		`INSERT INTO categories(id, name, created_at, updated_at)
+		VALUES ($1, 'test', NOW(), NOW())`,
+		categoryId,
+	); err != nil {
+		t.Fatalf("Error inserting category: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(
+			fmt.Sprintf(`{
+				"name": "French fries",
+				"description": "Fryied potatoes with cheese",
+				"price": "47.84",
+				"categoryId": "%s",
+				"imageContentType": "image/png"
+			}`,
+				categoryId,
+			),
+		))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("Want http status code %d, got %d", http.StatusCreated, rec.Code)
+		}
+		var res domain.ProductDraft
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+	})
+	t.Run("name conflict", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
+			VALUES (gen_random_uuid(), 'French fries', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
+			categoryId,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(
+			fmt.Sprintf(`{
+				"name": "French fries",
+				"description": "Fryied potatoes with cheese",
+				"price": "47.84",
+				"categoryId": "%s",
+				"imageContentType": "image/png"
+			}`,
+				categoryId,
+			),
+		))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
+		}
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+		if res.Code != domain.ErrorCodeProductNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict.String(), res.Code)
+		}
+	})
+
+	t.Run("category not found", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(
+			fmt.Sprintf(`{
+				"name": "French fries",
+				"description": "Fryied potatoes with cheese",
+				"price": "47.84",
+				"categoryId": "%s",
+				"imageContentType": "image/png"
+			}`,
+				uuid.New(),
+			),
+		))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
+		}
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict.String(), res.Code)
+		}
+	})
+
 }

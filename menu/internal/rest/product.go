@@ -12,10 +12,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// ProductHandler handles HTTP request for products.
 type ProductHandler struct {
 	service domain.ProductService
 }
 
+// NewProductHandler creates and allocates new [ProductHandler].
 func NewProductHandler(service domain.ProductService) *ProductHandler {
 	return &ProductHandler{
 		service: service,
