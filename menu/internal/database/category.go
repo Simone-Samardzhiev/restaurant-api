@@ -99,6 +99,11 @@ func (c *PostgresCategoryRepository) Update(ctx context.Context, id uuid.UUID, n
 func (c *PostgresCategoryRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	result, err := c.db.ExecContext(ctx, "DELETE FROM categories WHERE id = $1", id)
 	if err != nil {
+		if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+			if pqErr.Code == "23503" && pqErr.Constraint == "products_category_id_fkey" {
+				return domain.NewError("category has linked products", domain.ErrorCodeCategoryHasProducts, err)
+			}
+		}
 		return domain.NewError("error deleting category", domain.ErrorCodeInternal, err)
 	}
 

@@ -261,4 +261,42 @@ func TestPostgresCategoryRepositoryDelete(t *testing.T) {
 
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
+
+	t.Run("category has products", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'test', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error inserting category: %v", err)
+		}
+
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
+			VALUES (gen_random_uuid(), 'name', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		err := repository.Delete(context.Background(), id)
+		if err == nil {
+			t.Fatalf("Want category has products error, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeCategoryHasProducts {
+				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+			}
+
+			return
+		}
+
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
 }

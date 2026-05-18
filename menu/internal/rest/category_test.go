@@ -578,7 +578,7 @@ func TestUpdateCategory(t *testing.T) {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
 		if res.Code != domain.ErrorCodeCategoryNameConflict.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict.String(), res.Code)
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNameConflict, res.Code)
 		}
 	})
 
@@ -598,7 +598,7 @@ func TestUpdateCategory(t *testing.T) {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
 		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.Code)
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound, res.Code)
 		}
 	})
 }
@@ -714,7 +714,47 @@ func TestDeleteCategory(t *testing.T) {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
 		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound.String(), res.Code)
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound, res.Code)
+		}
+	})
+
+	t.Run("category has products", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		id := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'test', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error inserting category: %v", err)
+		}
+
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
+			VALUES (gen_random_uuid(), 'name', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
+			id,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+
+		if res.Code != domain.ErrorCodeCategoryHasProducts.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryHasProducts, res.Code)
 		}
 	})
 }
