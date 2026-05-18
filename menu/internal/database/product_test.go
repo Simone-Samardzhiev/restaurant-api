@@ -44,8 +44,8 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 
 		var fetchedProduct domain.Product
-		row := testDb.QueryRow(`SELECT id, name, description, price, category_id, image_key, status, created_at, updated_at FROM products WHERE id = $1`, product.Id)
-		if err := row.Scan(&fetchedProduct.Id, &fetchedProduct.Name, &fetchedProduct.Description, &fetchedProduct.Price, &fetchedProduct.CategoryId, &fetchedProduct.ImageKey, &fetchedProduct.Status, &fetchedProduct.CreatedAt, &fetchedProduct.UpdatedAt); err != nil {
+		row := testDb.QueryRow(`SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE id = $1`, product.Id)
+		if err := row.Scan(&fetchedProduct.Id, &fetchedProduct.Name, &fetchedProduct.Description, &fetchedProduct.Price, &fetchedProduct.CategoryId, &fetchedProduct.ImageKey, &fetchedProduct.ImageContentType, &fetchedProduct.Status, &fetchedProduct.CreatedAt, &fetchedProduct.UpdatedAt); err != nil {
 			t.Fatalf("Error scanning product: %v", err)
 		}
 
@@ -63,6 +63,9 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 		if fetchedProduct.ImageKey != product.ImageKey {
 			t.Errorf("Product image key mismatch: got %v, want %v", fetchedProduct.ImageKey, product.ImageKey)
+		}
+		if fetchedProduct.ImageContentType != domain.ImageContentTypePNG {
+			t.Errorf("Product image content type mismatch: got %v, want %v", fetchedProduct.ImageContentType, domain.ImageContentTypePNG)
 		}
 		if fetchedProduct.Status != product.Status {
 			t.Errorf("Product status mismatch: got %v, want %v", fetchedProduct.Status, product.Status)
