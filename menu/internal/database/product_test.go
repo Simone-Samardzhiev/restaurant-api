@@ -157,5 +157,98 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 		}
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
+}
+
+func TestPostgresProductRepositoryGet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	repository := NewPostgresProductRepository(testDb)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		product := domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       uuid.New(),
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+
+		if _, err := testDb.Exec(
+			`INSERT INTO categories(id, name, created_at, updated_at) 
+			VALUES ($1, 'test', NOW(), NOW())`,
+			product.CategoryId,
+		); err != nil {
+			t.Fatalf("Error inserting category: %v", err)
+		}
+
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			product.Id,
+			product.Name,
+			product.Description,
+			product.Price,
+			product.CategoryId,
+			product.ImageKey,
+			product.ImageContentType,
+			product.Status,
+			product.CreatedAt,
+			product.UpdatedAt,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		fetchedProduct, err := repository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error fetching product: %v", err)
+		}
+
+		if fetchedProduct.Name != product.Name {
+			t.Errorf("Want product name %s, got %s", product.Name, fetchedProduct.Name)
+		}
+		if fetchedProduct.Description != product.Description {
+			t.Errorf("Want product description %s, got %s", product.Description, fetchedProduct.Description)
+		}
+		if !fetchedProduct.Price.Equal(fetchedProduct.Price) {
+			t.Errorf("Want product price %s, got %s", product.Price, fetchedProduct.Price)
+		}
+		if fetchedProduct.CategoryId != product.CategoryId {
+			t.Errorf("Want product category id %s, got %s", product.CategoryId, fetchedProduct.CategoryId)
+		}
+		if fetchedProduct.ImageKey != product.ImageKey {
+			t.Errorf("Want product image key %s, got %s", product.ImageKey, fetchedProduct.ImageKey)
+		}
+		if fetchedProduct.ImageContentType != product.ImageContentType {
+			t.Errorf("Want product image content type %s, got %s", product.ImageContentType, fetchedProduct.ImageContentType)
+		}
+		if fetchedProduct.Status != domain.ProductStatusReady {
+			t.Errorf("Want product status %s, got %s", product.Status, fetchedProduct.Status)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := repository.Get(context.Background(), uuid.New())
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeProductNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, domainErr.Code)
+			}
+			return
+		}
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
 
 }
