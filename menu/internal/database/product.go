@@ -6,6 +6,7 @@ import (
 	"errors"
 	"menu/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -54,4 +55,19 @@ func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Pr
 	}
 
 	return domain.NewError("error saving product", domain.ErrorCodeInternal, err)
+}
+
+func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	row := p.db.QueryRowContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE id = $1`, id)
+	var product domain.Product
+	err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &product.CreatedAt, &product.UpdatedAt)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+		}
+		return nil, domain.NewError("error fetching product", domain.ErrorCodeInternal, err)
+	}
+
+	return &product, nil
 }

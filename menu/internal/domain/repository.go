@@ -24,5 +24,10 @@ type CategoryRepository interface {
 
 // ProductRepository describes how product data is accessed.
 type ProductRepository interface {
+
+	// Save saves a new product.
 	Save(ctx context.Context, product *Product) error
+
+	// Get fetches a product by id.
+	Get(ctx context.Context, id uuid.UUID) (*Product, error)
 }
