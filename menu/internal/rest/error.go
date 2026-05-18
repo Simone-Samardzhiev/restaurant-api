@@ -26,6 +26,7 @@ var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeCategoryHasProducts:  http.StatusConflict,
 
 	domain.ErrorCodeProductNameConflict: http.StatusConflict,
+	domain.ErrorCodeProductNotFound:     http.StatusNotFound,
 }
 
 // mapErrorCodesToMessage maps [domain.ErrorCode] to appropriate end user message.
@@ -37,6 +38,7 @@ var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 	domain.ErrorCodeCategoryHasProducts:  "Some product are linked to this category. Please delete the product before trying to delete the category.",
 
 	domain.ErrorCodeProductNameConflict: "Product name already exists.",
+	domain.ErrorCodeProductNotFound:     "Product not found.",
 }
 
 // NewError creates a new [Error]. If the error of type [domain.Error] the message and the code gets translated,

@@ -11,6 +11,7 @@ const (
 	ErrorCodeCategoryHasProducts
 
 	ErrorCodeProductNameConflict
+	ErrorCodeProductNotFound
 )
 
 var mapErrorCodes = map[ErrorCode]string{
@@ -21,6 +22,7 @@ var mapErrorCodes = map[ErrorCode]string{
 	ErrorCodeCategoryHasProducts:  "CATEGORY_HAS_PRODUCTS",
 
 	ErrorCodeProductNameConflict: "PRODUCT_NAME_CONFLICT",
+	ErrorCodeProductNotFound:     "PRODUCT_NOT_FOUND",
 }
 
 func (e ErrorCode) String() string {
