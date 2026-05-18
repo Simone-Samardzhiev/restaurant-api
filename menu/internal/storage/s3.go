@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"log"
 	"menu/internal/domain"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 
 // S3ImageStorage implements [domain.ImageStorage] using S3 bucket.
 type S3ImageStorage struct {
+	client        *s3.Client
 	presignClient *s3.PresignClient
 
 	urlExpiry time.Duration
@@ -21,6 +21,7 @@ type S3ImageStorage struct {
 // NewS3ImageStorage creates and allocates new [S3ImageStorage].
 func NewS3ImageStorage(client *s3.Client, urlExpiryTine time.Duration, bucket string) *S3ImageStorage {
 	return &S3ImageStorage{
+		client:        client,
 		presignClient: s3.NewPresignClient(client),
 		urlExpiry:     urlExpiryTine,
 		bucket:        bucket,
@@ -39,9 +40,20 @@ func (s *S3ImageStorage) CreateUploadUrl(ctx context.Context, imageKey string, c
 	})
 
 	if err != nil {
-		log.Printf("Unable to create presign url: %v", err)
 		return "", domain.NewError("error presigning url for image upload", domain.ErrorCodeInternal, err)
 	}
 
 	return req.URL, nil
+}
+
+func (s *S3ImageStorage) Delete(ctx context.Context, imageKey string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(imageKey),
+	})
+
+	if err == nil {
+		return nil
+	}
+	return domain.NewError("error deleting image", domain.ErrorCodeInternal, err)
 }

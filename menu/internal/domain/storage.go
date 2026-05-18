@@ -7,4 +7,7 @@ type ImageStorage interface {
 
 	// CreateUploadUrl creates an upload URL to which the client can upload the image.
 	CreateUploadUrl(ctx context.Context, imageKey string, contentType ImageContentType) (string, error)
+
+	// Delete deletes an image by key.
+	Delete(ctx context.Context, imageKey string) error
 }
