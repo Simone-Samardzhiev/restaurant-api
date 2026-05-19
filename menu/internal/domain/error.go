@@ -12,6 +12,9 @@ const (
 
 	ErrorCodeProductNameConflict
 	ErrorCodeProductNotFound
+
+	ErrorCodeImageNotFound
+	ErrorCodeInvalidImage
 )
 
 var mapErrorCodes = map[ErrorCode]string{
@@ -23,6 +26,9 @@ var mapErrorCodes = map[ErrorCode]string{
 
 	ErrorCodeProductNameConflict: "PRODUCT_NAME_CONFLICT",
 	ErrorCodeProductNotFound:     "PRODUCT_NOT_FOUND",
+
+	ErrorCodeImageNotFound: "IMAGE_NOT_FOUND",
+	ErrorCodeInvalidImage:  "INVALID_IMAGE",
 }
 
 func (e ErrorCode) String() string {
