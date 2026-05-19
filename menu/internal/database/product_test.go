@@ -250,5 +250,58 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 		}
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
+}
 
+func TestPostgresProductRepositoryDelete(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	repository := NewPostgresProductRepository(testDb)
+	categoryId := uuid.New()
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	if _, err := testDb.Exec(
+		`INSERT INTO categories(id, name, created_at, updated_at) 
+		VALUES ($1, 'test', NOW(), NOW())`,
+		categoryId,
+	); err != nil {
+		t.Fatalf("Error inserting category: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		productId := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
+			VALUES ($1, 'Some test name', 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
+			productId,
+			categoryId,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		if err := repository.Delete(context.Background(), productId); err != nil {
+			t.Fatalf("Error deleting product: %v", err)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		err := repository.Delete(context.Background(), uuid.New())
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeProductNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, domainErr.Code)
+			}
+			return
+		}
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
 }
