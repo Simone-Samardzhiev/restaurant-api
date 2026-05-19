@@ -30,4 +30,7 @@ type ProductRepository interface {
 
 	// Get fetches a product by id.
 	Get(ctx context.Context, id uuid.UUID) (*Product, error)
+
+	// Delete deletes a product by id.
+	Delete(ctx context.Context, id uuid.UUID) error
 }

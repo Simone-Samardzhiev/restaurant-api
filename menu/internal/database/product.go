@@ -15,6 +15,22 @@ type PostgresProductRepository struct {
 	db *sql.DB
 }
 
+func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := p.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
+	if err != nil {
+		return domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
 var _ domain.ProductRepository = (*PostgresProductRepository)(nil)
 
 // NewPostgresProductRepository creates and allocates new [PostgresProductRepository].
