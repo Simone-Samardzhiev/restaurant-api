@@ -305,3 +305,67 @@ func TestPostgresProductRepositoryDelete(t *testing.T) {
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
+
+func TestPostgresProductRepositoryUpdateStatus(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	repository := NewPostgresProductRepository(testDb)
+	categoryId := uuid.New()
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	if _, err := testDb.Exec(
+		`INSERT INTO categories(id, name, created_at, updated_at) 
+		VALUES ($1, 'test', NOW(), NOW())`,
+		categoryId,
+	); err != nil {
+		t.Fatalf("Error inserting category: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		productId := uuid.New()
+		if _, err := testDb.Exec(
+			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
+			VALUES ($1, 'Some test name', 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'awaiting_image', NOW(), NOW())`,
+			productId,
+			categoryId,
+		); err != nil {
+			t.Fatalf("Error inserting product: %v", err)
+		}
+
+		if err := repository.UpdateStatus(context.Background(), productId, domain.ProductStatusReady); err != nil {
+			t.Fatalf("Error updating status: %v", err)
+		}
+
+		var fetchedStatus domain.ProductStatus
+		row := testDb.QueryRow(`SELECT status FROM products WHERE id = $1`, productId)
+		if err := row.Scan(&fetchedStatus); err != nil {
+			t.Fatalf("Error getting product status: %v", err)
+		}
+
+		if fetchedStatus != domain.ProductStatusReady {
+			t.Errorf("Want product status %s, got %s", domain.ProductStatusReady, fetchedStatus)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		err := repository.UpdateStatus(context.Background(), uuid.New(), domain.ProductStatusReady)
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeProductNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, domainErr.Code)
+			}
+			return
+		}
+		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
+}
