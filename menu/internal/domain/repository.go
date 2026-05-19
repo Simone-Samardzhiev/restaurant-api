@@ -33,4 +33,7 @@ type ProductRepository interface {
 
 	// Delete deletes a product by id.
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	// UpdateStatus updates the status of a product by id.
+	UpdateStatus(ctx context.Context, id uuid.UUID, status ProductStatus) error
 }

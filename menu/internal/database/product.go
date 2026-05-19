@@ -87,3 +87,20 @@ func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*dom
 
 	return &product, nil
 }
+
+func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ProductStatus) error {
+	result, err := p.db.ExecContext(ctx, "UPDATE products SET status = $1 WHERE id = $2", status, id)
+	if err != nil {
+		return domain.NewError("error updating product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
