@@ -63,7 +63,7 @@ func main() {
 
 	appLogger := logger.New(&appConfig.App)
 	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
-	heathCheckHandler := rest.NewHealthHandler(db)
+	heathCheckHandler := rest.NewHealthHandler(db, valkeyConn)
 
 	categoryRepository := database.NewPostgresCategoryRepository(db)
 	categoryService := domain.NewDefaultCategoryService(categoryRepository)
