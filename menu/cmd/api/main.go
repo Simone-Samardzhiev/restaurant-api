@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"log/slog"
 	"menu/internal/config"
 	"menu/internal/database"
 	"menu/internal/domain"
@@ -63,8 +62,6 @@ func main() {
 	}
 
 	appLogger := logger.New(&appConfig.App)
-	slog.SetDefault(appLogger)
-
 	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
 	heathCheckHandler := rest.NewHealthHandler(db)
 
@@ -74,7 +71,7 @@ func main() {
 
 	productRepository := database.NewPostgresProductRepository(db)
 	imageStorage := storage.NewS3ImageStorage(s3client, appConfig.UploadUrlExpiry, appConfig.Bucket.Name)
-	productService := domain.NewDefaultProductService(productRepository, imageStorage)
+	productService := domain.NewDefaultProductService(productRepository, imageStorage, appLogger)
 	productHandler := rest.NewProductHandler(productService)
 
 	router := rest.NewRouter(&rest.RouterConfig{

@@ -14,13 +14,15 @@ import (
 type DefaultProductService struct {
 	repository ProductRepository
 	storage    ImageStorage
+	logger     *slog.Logger
 }
 
 // NewDefaultProductService creates and allocates [DefaultProductService].
-func NewDefaultProductService(repository ProductRepository, storage ImageStorage) *DefaultProductService {
+func NewDefaultProductService(repository ProductRepository, storage ImageStorage, logger *slog.Logger) *DefaultProductService {
 	return &DefaultProductService{
 		repository: repository,
 		storage:    storage,
+		logger:     logger,
 	}
 }
 
@@ -66,7 +68,7 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 // Any errors during the process are logged.
 func (d *DefaultProductService) cleanUpProduct(ctx context.Context, product *Product) {
 	if deleteErr := d.repository.Delete(ctx, product.Id); deleteErr != nil {
-		slog.Default().LogAttrs(
+		d.logger.LogAttrs(
 			ctx, slog.LevelWarn,
 			"Error deleting product record for cleanup",
 			slog.String("error", deleteErr.Error()),
@@ -74,7 +76,7 @@ func (d *DefaultProductService) cleanUpProduct(ctx context.Context, product *Pro
 	}
 
 	if deleteErr := d.storage.Delete(ctx, product.ImageKey); deleteErr != nil {
-		slog.Default().LogAttrs(
+		d.logger.LogAttrs(
 			ctx, slog.LevelWarn,
 			"Error deleting product image for cleanup",
 			slog.String("error", deleteErr.Error()),
