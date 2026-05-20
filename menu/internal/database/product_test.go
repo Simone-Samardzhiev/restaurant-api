@@ -369,3 +369,47 @@ func TestPostgresProductRepositoryUpdateStatus(t *testing.T) {
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
+
+func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	repository := NewPostgresProductRepository(testDb)
+	categoryId := uuid.New()
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	if _, err := testDb.Exec(
+		`INSERT INTO categories(id, name, created_at, updated_at) 
+		VALUES ($1, 'test', NOW(), NOW())`,
+		categoryId,
+	); err != nil {
+		t.Fatalf("Error inserting category: %v", err)
+	}
+
+	if _, err := testDb.Exec(
+		`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
+		VALUES (gen_random_uuid(), 'test 1', 'some test description', 10, $1, 'imageKey1', 'image/png', 'awaiting_image', '2025-01-01', NOW()),
+			   (gen_random_uuid(), 'test 2', 'some test description', 10, $1, 'imageKey2', 'image/png', 'awaiting_image', '2025-01-01', NOW()),
+			   (gen_random_uuid(), 'test 3', 'some test description', 10, $1, 'imageKey3', 'image/png', 'awaiting_image', NOW(), NOW())`,
+		categoryId,
+	); err != nil {
+		t.Fatalf("Error deleting category: %v", err)
+	}
+
+	if err := repository.DeleteExpiredByStatus(context.Background(), 15*time.Minute); err != nil {
+		t.Fatalf("Error deleting expired by status: %v", err)
+	}
+
+	row := testDb.QueryRow(`SELECT COUNT(*) FROM products`)
+	var count int
+	if err := row.Scan(&count); err != nil {
+		t.Fatalf("Error getting count of products: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Want count 1, got %d", count)
+	}
+}
