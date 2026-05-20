@@ -29,7 +29,7 @@ var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeProductNotFound:     http.StatusNotFound,
 
 	domain.ErrorCodeImageNotFound: http.StatusNotFound,
-	domain.ErrorCodeInvalidImage:  http.StatusForbidden,
+	domain.ErrorCodeInvalidImage:  http.StatusUnprocessableEntity,
 }
 
 // mapErrorCodesToMessage maps [domain.ErrorCode] to appropriate end user message.
