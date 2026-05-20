@@ -34,36 +34,13 @@ func NewRouter(c *RouterConfig) *Router {
 		IPExtractor:      echo.ExtractIPFromRealIPHeader(),
 	})
 
+	e.Use(requestIdExtractor)
 	e.Use(loggerMiddleware)
-	e.Use(middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
-		Skipper: middleware.DefaultSkipper,
-		IdentifierExtractor: func(c *echo.Context) (string, error) {
-			return c.RealIP(), nil
-		},
-		Store: c.Store,
-		ErrorHandler: func(c *echo.Context, err error) error {
-			return err
-		},
-		DenyHandler: func(c *echo.Context, identifier string, err error) error {
-			return c.JSON(http.StatusTooManyRequests, ErrorResponse{
-				Code:       ErrorCodeTooManyRequests,
-				HttpStatus: http.StatusTooManyRequests,
-				Message:    "Too many requests. Please try again later.",
-				RequestID:  c.Request().Header.Get(echo.HeaderXRequestID),
-			})
-		},
-	}))
-	e.RouteNotFound("/*", func(ctx *echo.Context) error {
-		return ctx.JSON(http.StatusNotFound, ErrorResponse{
-			Code:       "ENDPOINT_NOT_FOUND",
-			HttpStatus: http.StatusNotFound,
-			Message:    "Endpoint not found.",
-			RequestID:  ctx.Request().Header.Get(echo.HeaderXRequestID),
-		})
-	})
+	e.RouteNotFound("/*", notFoundHandler)
 	e.GET("/health", c.HeathHandler.IsHealthy)
 
 	api := e.Group("/api/v1")
+	api.Use(rateLimitMiddleware(c.Store))
 	{
 		{
 			categories := api.Group("/categories")
