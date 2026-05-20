@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"menu/internal/domain"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -13,22 +14,6 @@ import (
 // PostgresProductRepository implements [domain.ProductRepository] using postgres.
 type PostgresProductRepository struct {
 	db *sql.DB
-}
-
-func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	result, err := p.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
-	if err != nil {
-		return domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
-	}
-	if rows == 0 {
-		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
-	}
-	return nil
 }
 
 var _ domain.ProductRepository = (*PostgresProductRepository)(nil)
@@ -101,6 +86,36 @@ func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UU
 
 	if rows == 0 {
 		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
+func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := p.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
+	if err != nil {
+		return domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
+func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) error {
+	t := time.Now().Add(-olderThan)
+
+	if _, err := p.db.ExecContext(
+		ctx,
+		`DELETE FROM products 
+       WHERE status = 'awaiting_image' AND created_at < $1`,
+		t,
+	); err != nil {
+		return domain.NewError("error deleting old products", domain.ErrorCodeInternal, err)
 	}
 	return nil
 }
