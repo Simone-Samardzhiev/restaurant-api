@@ -5,16 +5,18 @@ import (
 	"errors"
 	"menu/internal/logger"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
 type fakeProductRepository struct {
-	onSave         func(ctx context.Context, product *Product) error
-	onGet          func(ctx context.Context, id uuid.UUID) (*Product, error)
-	onDelete       func(ctx context.Context, id uuid.UUID) error
-	onUpdateStatus func(ctx context.Context, id uuid.UUID, status ProductStatus) error
+	onSave                  func(ctx context.Context, product *Product) error
+	onGet                   func(ctx context.Context, id uuid.UUID) (*Product, error)
+	onDelete                func(ctx context.Context, id uuid.UUID) error
+	onUpdateStatus          func(ctx context.Context, id uuid.UUID, status ProductStatus) error
+	onDeleteExpiredByStatus func(ctx context.Context, olderThan time.Duration) error
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)
@@ -45,6 +47,13 @@ func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 		panic("onUpdateStatus not implemented")
 	}
 	return f.onUpdateStatus(ctx, id, status)
+}
+
+func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) error {
+	if f.onDeleteExpiredByStatus == nil {
+		panic("onDeleteExpiredByStatus not implemented")
+	}
+	return f.onDeleteExpiredByStatus(ctx, olderThan)
 }
 
 type fakeImageStorage struct {

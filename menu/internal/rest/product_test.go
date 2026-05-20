@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"menu/internal/database"
 	"menu/internal/domain"
+	"menu/internal/logger"
 	"menu/internal/storage"
 	"net/http"
 	"net/http/httptest"
@@ -19,7 +20,8 @@ import (
 )
 
 type fakeProductService struct {
-	onAdd func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
+	onAdd                func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
+	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID)
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -29,6 +31,13 @@ func (f *fakeProductService) Add(ctx context.Context, request *domain.AddProduct
 		panic("onAdd not implemented")
 	}
 	return f.onAdd(ctx, request)
+}
+
+func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error {
+	if f.onConfirmImageUpload != nil {
+		f.onConfirmImageUpload(ctx, productID)
+	}
+	return nil
 }
 
 func TestAddProductRequestValidate(t *testing.T) {
@@ -208,7 +217,7 @@ func TestAddProduct(t *testing.T) {
 
 	repository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
-	service := domain.NewDefaultProductService(repository, imageStorage)
+	service := domain.NewDefaultProductService(repository, imageStorage, logger.NewSilentLogger())
 	handler := NewProductHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
