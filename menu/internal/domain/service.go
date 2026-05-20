@@ -26,4 +26,7 @@ type CategoryService interface {
 type ProductService interface {
 	// Add creates a new product draft.
 	Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error)
+
+	// ConfirmImageUpload confirms an image is uploaded for a product.
+	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error
 }
