@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"menu/internal/config"
 	"menu/internal/database"
 	"menu/internal/domain"
@@ -61,6 +62,9 @@ func main() {
 		log.Fatalf("Error connecting to valkey: %v", err)
 	}
 
+	appLogger := logger.New(&appConfig.App)
+	slog.SetDefault(appLogger)
+
 	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
 	heathCheckHandler := rest.NewHealthHandler(db)
 
@@ -75,7 +79,7 @@ func main() {
 
 	router := rest.NewRouter(&rest.RouterConfig{
 		App:    &appConfig.App,
-		Logger: logger.New(&appConfig.App),
+		Logger: appLogger,
 		Store:  rateLimitStore,
 
 		HeathHandler:    heathCheckHandler,
