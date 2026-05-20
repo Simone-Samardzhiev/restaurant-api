@@ -97,7 +97,6 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 				d.cleanUpProduct(ctx, product)
 			}
 		}
-
 		return err
 	}
 
