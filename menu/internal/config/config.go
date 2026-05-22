@@ -61,8 +61,8 @@ type (
 	}
 )
 
-// newDatabase loads and return [Database] from environment variables.
-func newDatabase() (Database, error) {
+// NewDatabase loads and return [Database] from environment variables.
+func NewDatabase() (Database, error) {
 	var database Database
 	if url, ok := os.LookupEnv("DATABASE_URL"); ok {
 		database.Url = url
@@ -140,7 +140,7 @@ func newDatabase() (Database, error) {
 	return database, nil
 }
 
-func newValkey() (Valkey, error) {
+func NewValkey() (Valkey, error) {
 	var valkey Valkey
 	if url, ok := os.LookupEnv("VALKEY_URL"); ok {
 		valkey.Url = url
@@ -151,15 +151,15 @@ func newValkey() (Valkey, error) {
 	return valkey, nil
 }
 
-func newRateLimit() (RateLimit, error) {
-	var ratelimit RateLimit
+func NewRateLimit() (RateLimit, error) {
+	var rateLimit RateLimit
 
 	if limit, ok := os.LookupEnv("RATE_LIMIT_COUNT"); ok {
 		val, err := strconv.Atoi(limit)
 		if err != nil {
 			return RateLimit{}, fmt.Errorf("config: RATE_LIMIT_COUNT must be an integer (got: %s): %w", limit, err)
 		}
-		ratelimit.Limit = val
+		rateLimit.Limit = val
 	} else {
 		return RateLimit{}, errors.New("config: RATE_LIMIT_COUNT is required but not set")
 	}
@@ -169,15 +169,15 @@ func newRateLimit() (RateLimit, error) {
 		if err != nil {
 			return RateLimit{}, fmt.Errorf("config: RATE_LIMIT_WINDOW must be a duration (got: %s): %w", window, err)
 		}
-		ratelimit.Window = val
+		rateLimit.Window = val
 	} else {
 		return RateLimit{}, errors.New("config: RATE_LIMIT_WINDOW is required but not set")
 	}
 
-	return ratelimit, nil
+	return rateLimit, nil
 }
 
-func newBucket() (Bucket, error) {
+func NewBucket() (Bucket, error) {
 	var bucket Bucket
 	if url, ok := os.LookupEnv("AWS_ENDPOINT_URL"); ok {
 		bucket.BaseEndpoint = url
@@ -203,7 +203,7 @@ func newBucket() (Bucket, error) {
 	return bucket, nil
 }
 
-func newApp() (App, error) {
+func NewApp() (App, error) {
 	var app App
 	if port, ok := os.LookupEnv("ADDR"); ok {
 		app.Addr = port
@@ -226,27 +226,27 @@ func newApp() (App, error) {
 
 // NewConfig loads and returns [Config] from environment variables.
 func NewConfig() (*Config, error) {
-	database, err := newDatabase()
+	database, err := NewDatabase()
 	if err != nil {
 		return nil, err
 	}
 
-	valkey, err := newValkey()
+	valkey, err := NewValkey()
 	if err != nil {
 		return nil, err
 	}
 
-	rateLimit, err := newRateLimit()
+	rateLimit, err := NewRateLimit()
 	if err != nil {
 		return nil, err
 	}
 
-	bucket, err := newBucket()
+	bucket, err := NewBucket()
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := newApp()
+	app, err := NewApp()
 	if err != nil {
 		return nil, err
 	}

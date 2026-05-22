@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"menu/internal/domain"
+	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -396,20 +398,17 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 			   (gen_random_uuid(), 'test 3', 'some test description', 10, $1, 'imageKey3', 'image/png', 'awaiting_image', NOW(), NOW())`,
 		categoryId,
 	); err != nil {
-		t.Fatalf("Error deleting category: %v", err)
+		t.Fatalf("Error inserting products: %v", err)
 	}
 
-	if err := repository.DeleteExpiredByStatus(context.Background(), 15*time.Minute); err != nil {
-		t.Fatalf("Error deleting expired by status: %v", err)
+	wantKeys := []string{"imageKey1", "imageKey2"}
+	keys, err := repository.DeleteExpiredByStatus(context.Background(), 15*time.Minute)
+	if err != nil {
+		t.Fatalf("Error deleting expired products: %v", err)
 	}
+	slices.Sort(keys)
 
-	row := testDb.QueryRow(`SELECT COUNT(*) FROM products`)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		t.Fatalf("Error getting count of products: %v", err)
-	}
-
-	if count != 1 {
-		t.Errorf("Want count 1, got %d", count)
+	if !reflect.DeepEqual(keys, wantKeys) {
+		t.Errorf("Want keys %v, got %v", wantKeys, keys)
 	}
 }

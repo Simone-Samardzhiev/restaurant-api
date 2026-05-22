@@ -106,16 +106,30 @@ func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) er
 	return nil
 }
 
-func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) error {
+func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {
 	t := time.Now().Add(-olderThan)
-
-	if _, err := p.db.ExecContext(
+	rows, err := p.db.QueryContext(
 		ctx,
 		`DELETE FROM products 
-       WHERE status = 'awaiting_image' AND created_at < $1`,
-		t,
-	); err != nil {
-		return domain.NewError("error deleting old products", domain.ErrorCodeInternal, err)
+    	WHERE status = 'awaiting_image' AND created_at < $1 
+    	RETURNING image_key`, t,
+	)
+	if err != nil {
+		return nil, domain.NewError("error deleting products", domain.ErrorCodeInternal, err)
 	}
-	return nil
+	defer rows.Close()
+
+	var imageKeys []string
+	for rows.Next() {
+		var imageKey string
+		if err := rows.Scan(&imageKey); err != nil {
+			return nil, domain.NewError("error scanning row", domain.ErrorCodeInternal, err)
+		}
+
+		imageKeys = append(imageKeys, imageKey)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, domain.NewError("error scanning rows", domain.ErrorCodeInternal, err)
+	}
+	return imageKeys, nil
 }

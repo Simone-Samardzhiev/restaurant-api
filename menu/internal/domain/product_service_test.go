@@ -16,7 +16,7 @@ type fakeProductRepository struct {
 	onGet                   func(ctx context.Context, id uuid.UUID) (*Product, error)
 	onDelete                func(ctx context.Context, id uuid.UUID) error
 	onUpdateStatus          func(ctx context.Context, id uuid.UUID, status ProductStatus) error
-	onDeleteExpiredByStatus func(ctx context.Context, olderThan time.Duration) error
+	onDeleteExpiredByStatus func(ctx context.Context, olderThan time.Duration) ([]string, error)
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)
@@ -49,7 +49,7 @@ func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 	return f.onUpdateStatus(ctx, id, status)
 }
 
-func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) error {
+func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {
 	if f.onDeleteExpiredByStatus == nil {
 		panic("onDeleteExpiredByStatus not implemented")
 	}

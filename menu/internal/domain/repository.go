@@ -40,5 +40,8 @@ type ProductRepository interface {
 
 	// DeleteExpiredByStatus deletes all products whose status is [ProductStatusAwaitingImage] and a
 	// set duration has passed since it was created.
-	DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) error
+	//
+	// Returns the image keys for all delete products, so the images can be deleted
+	// if the client has forgotten to confirm upload.
+	DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error)
 }
