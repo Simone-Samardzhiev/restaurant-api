@@ -11,6 +11,9 @@ type ImageStorage interface {
 	// Delete deletes an image by key.
 	Delete(ctx context.Context, imageKey string) error
 
+	// DeleteMultiple deletes multiple images by key.
+	DeleteMultiple(ctx context.Context, imageKeys []string) error
+
 	// Validate validates an image exists and the content type matches.
 	Validate(ctx context.Context, imageKey string, contentType ImageContentType) error
 }

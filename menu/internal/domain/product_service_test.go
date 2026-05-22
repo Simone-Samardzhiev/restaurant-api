@@ -59,6 +59,7 @@ func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, older
 type fakeImageStorage struct {
 	onCreateUploadUrl func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error)
 	onDelete          func(ctx context.Context, imageKey string) error
+	onDeleteBatch     func(ctx context.Context, imageKeys []string) error
 	onValidate        func(ctx context.Context, imageKey string, contentType ImageContentType) error
 }
 
@@ -76,6 +77,13 @@ func (f *fakeImageStorage) Delete(ctx context.Context, imageKey string) error {
 		panic("onDelete not implemented")
 	}
 	return f.onDelete(ctx, imageKey)
+}
+
+func (f *fakeImageStorage) DeleteMultiple(ctx context.Context, imageKeys []string) error {
+	if f.onDeleteBatch == nil {
+		panic("onDeleteBatch not implemented")
+	}
+	return f.onDeleteBatch(ctx, imageKeys)
 }
 
 func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, contentType ImageContentType) error {

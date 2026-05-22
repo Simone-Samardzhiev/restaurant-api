@@ -79,6 +79,39 @@ func TestS3ImageStorageDelete(t *testing.T) {
 	}
 }
 
+func TestS3ImageStorageDeleteMultiple(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
+
+	key := uuid.NewString()
+	manager := transfermanager.New(testS3Client)
+	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+		Bucket: aws.String("images"),
+		Key:    aws.String(key),
+		Body:   strings.NewReader("fakeImage"),
+	}); err != nil {
+		t.Fatalf("Error uploading image: %v", err)
+	}
+
+	if err := storage.DeleteMultiple(context.Background(), []string{key}); err != nil {
+		t.Fatalf("Error deleting images: %v", err)
+	}
+
+	_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
+		Bucket: aws.String("images"),
+		Key:    aws.String(key),
+	})
+	if err == nil {
+		t.Fatalf("Want not found error, got nil")
+	}
+
+	if _, ok := errors.AsType[*types.NotFound](err); !ok {
+		t.Fatalf("Want *types.NotFound error, got: %T", err)
+	}
+}
+
 //go:embed testdata/french_fries.png
 var image []byte
 

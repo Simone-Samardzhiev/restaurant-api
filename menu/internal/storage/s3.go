@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"menu/internal/domain"
 	"net/http"
@@ -60,6 +61,46 @@ func (s *S3ImageStorage) Delete(ctx context.Context, imageKey string) error {
 		return nil
 	}
 	return domain.NewError("error deleting image", domain.ErrorCodeInternal, err)
+}
+
+func (s *S3ImageStorage) DeleteMultiple(ctx context.Context, imageKeys []string) error {
+	objects := make([]types.ObjectIdentifier, 0, len(imageKeys))
+	for _, imageKey := range imageKeys {
+		objects = append(objects, types.ObjectIdentifier{
+			Key: aws.String(imageKey),
+		})
+	}
+
+	var errs []error
+	for i := 0; i < len(objects); i += 1000 {
+		end := i + 1000
+		if end > len(objects) {
+			end = len(objects)
+		}
+		batch := objects[i:end]
+
+		out, err := s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(s.bucket),
+			Delete: &types.Delete{
+				Objects: batch,
+			},
+		})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("batch deletion failed at index %d: %w", i, err))
+			continue
+		}
+
+		if len(out.Errors) > 0 {
+			for _, err := range out.Errors {
+				errs = append(errs, fmt.Errorf("error deleting image with key %s: %s", *err.Key, *err.Message))
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return domain.NewError("error deleting images", domain.ErrorCodeInternal, errors.Join(errs...))
+	}
+	return nil
 }
 
 func (s *S3ImageStorage) Validate(ctx context.Context, imageKey string, contentType domain.ImageContentType) error {
