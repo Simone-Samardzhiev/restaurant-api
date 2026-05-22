@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"io"
 	"menu/internal/logger"
 	"testing"
 	"time"
@@ -61,6 +62,7 @@ type fakeImageStorage struct {
 	onDelete          func(ctx context.Context, imageKey string) error
 	onDeleteBatch     func(ctx context.Context, imageKeys []string) error
 	onValidate        func(ctx context.Context, imageKey string, contentType ImageContentType) error
+	onGet             func(imageKey string) (io.ReadCloser, error)
 }
 
 var _ ImageStorage = (*fakeImageStorage)(nil)
@@ -91,6 +93,13 @@ func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, conten
 		panic("onValidate not implemented")
 	}
 	return f.onValidate(ctx, imageKey, contentType)
+}
+
+func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (io.ReadCloser, error) {
+	if f.onGet == nil {
+		panic("onGet not implemented")
+	}
+	return f.onGet(imageKey)
 }
 
 func TestDefaultProductServiceAdd(t *testing.T) {
