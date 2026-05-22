@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"io"
 	"menu/internal/domain"
 	"net/http"
 	"strings"
@@ -55,7 +56,7 @@ func TestS3ImageStorageDelete(t *testing.T) {
 	key := uuid.NewString()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
-		Bucket: aws.String("images"),
+		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(key),
 		Body:   strings.NewReader("fakeImage"),
 	}); err != nil {
@@ -67,7 +68,7 @@ func TestS3ImageStorageDelete(t *testing.T) {
 	}
 
 	_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
-		Bucket: aws.String("images"),
+		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(key),
 	})
 	if err == nil {
@@ -88,7 +89,7 @@ func TestS3ImageStorageDeleteMultiple(t *testing.T) {
 	key := uuid.NewString()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
-		Bucket: aws.String("images"),
+		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(key),
 		Body:   strings.NewReader("fakeImage"),
 	}); err != nil {
@@ -124,7 +125,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 	imageKey := uuid.NewString()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
-		Bucket: aws.String("images"),
+		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(imageKey),
 		Body:   bytes.NewReader(image),
 	}); err != nil {
@@ -161,6 +162,53 @@ func TestS3ImageStorageValidate(t *testing.T) {
 		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
 			if domainErr.Code != domain.ErrorCodeImageNotFound {
 				t.Fatalf("Want error code %s, got %s", domainErr.Code, domainErr.Code)
+			}
+			return
+		}
+		t.Fatalf("Want error type domain.Error, gor: %T", err)
+	})
+}
+
+func TestS3ImageStorageGet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
+	imageKey := uuid.NewString()
+
+	fakeImage := []byte("fakeImage")
+	manager := transfermanager.New(testS3Client)
+	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+		Bucket: aws.String(testS3BucketName),
+		Key:    aws.String(imageKey),
+		Body:   bytes.NewReader(fakeImage),
+	}); err != nil {
+		t.Fatalf("Error uploading image: %v", err)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		fetchedImage, err := storage.Get(context.Background(), imageKey)
+		if err != nil {
+			t.Fatalf("Error getting image: %v", err)
+		}
+
+		data, err := io.ReadAll(fetchedImage)
+		if err != nil {
+			t.Fatalf("Error reading image: %v", err)
+		}
+		if !bytes.Equal(data, fakeImage) {
+			t.Fatalf("Want image data %s, got %s", fakeImage, data)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		_, err := storage.Get(context.Background(), uuid.NewString())
+		if err == nil {
+			t.Fatalf("Want error image not found, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeImageNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeImageNotFound, domainErr.Code)
 			}
 			return
 		}

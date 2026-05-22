@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"io"
+)
 
 // ImageStorage describes how image data is accessed.
 type ImageStorage interface {
@@ -16,4 +19,7 @@ type ImageStorage interface {
 
 	// Validate validates an image exists and the content type matches.
 	Validate(ctx context.Context, imageKey string, contentType ImageContentType) error
+
+	// Get fetches an image by key.
+	Get(ctx context.Context, imageKey string) (io.ReadCloser, error)
 }

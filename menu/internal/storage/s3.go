@@ -23,6 +23,8 @@ type S3ImageStorage struct {
 	bucket    string
 }
 
+var _ domain.ImageStorage = (*S3ImageStorage)(nil)
+
 // NewS3ImageStorage creates and allocates new [S3ImageStorage].
 func NewS3ImageStorage(client *s3.Client, urlExpiryTine time.Duration, bucket string) *S3ImageStorage {
 	return &S3ImageStorage{
@@ -32,8 +34,6 @@ func NewS3ImageStorage(client *s3.Client, urlExpiryTine time.Duration, bucket st
 		bucket:        bucket,
 	}
 }
-
-var _ domain.ImageStorage = (*S3ImageStorage)(nil)
 
 func (s *S3ImageStorage) CreateUploadUrl(ctx context.Context, imageKey string, contentType domain.ImageContentType) (string, error) {
 	req, err := s.presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
@@ -132,4 +132,23 @@ func (s *S3ImageStorage) Validate(ctx context.Context, imageKey string, contentT
 	}
 
 	return nil
+}
+
+func (s *S3ImageStorage) Get(ctx context.Context, imageKey string) (io.ReadCloser, error) {
+	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(imageKey),
+	})
+	if err == nil {
+		return out.Body, nil
+	}
+
+	if _, ok := errors.AsType[*types.NoSuchKey](err); ok {
+		return nil, domain.NewError("image not found", domain.ErrorCodeImageNotFound, nil)
+	}
+	if _, ok := errors.AsType[*types.NotFound](err); ok {
+		return nil, domain.NewError("image not found", domain.ErrorCodeImageNotFound, nil)
+	}
+
+	return nil, domain.NewError("error getting image", domain.ErrorCodeInternal, err)
 }
