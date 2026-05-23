@@ -5,6 +5,8 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"image"
+	"image/png"
 	"io"
 	"menu/internal/domain"
 	"net/http"
@@ -113,8 +115,16 @@ func TestS3ImageStorageDeleteMultiple(t *testing.T) {
 	}
 }
 
-//go:embed testdata/french_fries.png
-var image []byte
+// generateTestImage generates a 10 * 10 png image.
+func generateTestImage(t *testing.T) []byte {
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	var buf bytes.Buffer
+
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("Error encoding image: %v", err)
+	}
+	return buf.Bytes()
+}
 
 func TestS3ImageStorageValidate(t *testing.T) {
 	if testing.Short() {
@@ -127,7 +137,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(imageKey),
-		Body:   bytes.NewReader(image),
+		Body:   bytes.NewReader(generateTestImage(t)),
 	}); err != nil {
 		t.Fatalf("Error uploading image: %v", err)
 	}
