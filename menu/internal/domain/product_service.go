@@ -90,6 +90,11 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 		return err
 	}
 
+	// If the product image has already been confirmed return nil.
+	if product.Status == ProductStatusReady {
+		return nil
+	}
+
 	if err = d.storage.Validate(ctx, product.ImageKey, product.ImageContentType); err != nil {
 		domainErr, ok := errors.AsType[*Error](err)
 		if ok {
