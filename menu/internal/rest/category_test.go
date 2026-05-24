@@ -3,6 +3,7 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"menu/internal/database"
 	"menu/internal/domain"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	"github.com/shopspring/decimal"
 )
 
 type fakeCategoryService struct {
@@ -210,7 +212,6 @@ func TestAddCategory(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 
@@ -233,15 +234,17 @@ func TestAddCategory(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at)
-			VALUES (gen_random_uuid(), 'test', NOW(), NOW())`); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		if err := repository.Save(context.Background(), &domain.Category{
+			Id:        uuid.New(),
+			Name:      "test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
 		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test"}`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 
@@ -307,7 +310,6 @@ func TestGetCategories(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
 	if _, err := testDb.Exec(`TRUNCATE categories CASCADE `); err != nil {
 		t.Fatalf("Error truncating table: %v", err)
 	}
@@ -323,24 +325,20 @@ func TestGetCategories(t *testing.T) {
 	e.GET("/categories", handler.GetCategories)
 
 	// Add categories before fetching
-	req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test1"}`))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	names := []string{"test1", "test2"}
+	for _, name := range names {
+		req := httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(fmt.Sprintf(`{ "name":"%s" }`, name)))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("Error adding category: status: %d", rec.Code)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/categories", nil)
 	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
-	}
-
-	req = httptest.NewRequest(http.MethodPost, "/categories", strings.NewReader(`{ "name":"test2"}`))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	rec = httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
-	}
-
-	req = httptest.NewRequest(http.MethodGet, "/categories", nil)
-	rec = httptest.NewRecorder()
 	e.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
@@ -355,16 +353,14 @@ func TestGetCategories(t *testing.T) {
 		t.Fatalf("Want 2 category, got %d", len(res))
 	}
 
-	wantNames := []string{"test1", "test2"}
-	slices.Sort(wantNames)
-
+	slices.Sort(names)
 	slices.SortFunc(res, func(a, b CategoryResponse) int {
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	for i := 0; i < len(wantNames); i++ {
-		if wantNames[i] != res[i].Name {
-			t.Errorf("Want name %s, got %s", wantNames[i], res[i].Name)
+	for i := 0; i < len(names); i++ {
+		if names[i] != res[i].Name {
+			t.Errorf("Want name: %s, got %s", names[i], res[i].Name)
 		}
 	}
 }
@@ -518,17 +514,18 @@ func TestUpdateCategory(t *testing.T) {
 			t.Fatalf("Error truncating categories: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at)
-			VALUES ($1, 'Old name', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
 		const newName = "New Name"
-		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{ "name":"New Name" }`))
+		req := httptest.NewRequest(http.MethodPatch, "/categories/"+category.Id.String(), strings.NewReader(`{ "name":"New Name" }`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -538,7 +535,7 @@ func TestUpdateCategory(t *testing.T) {
 		}
 
 		// Validate its updated
-		row := testDb.QueryRow(`SELECT name FROM categories WHERE id = $1`, id)
+		row := testDb.QueryRow(`SELECT name FROM categories WHERE id = $1`, category.Id)
 		var name string
 		if err := row.Scan(&name); err != nil {
 			t.Fatalf("Error getting category name: %v", err)
@@ -554,17 +551,27 @@ func TestUpdateCategory(t *testing.T) {
 			t.Fatalf("Error truncating categories: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'Test1', NOW(), NOW()),
-			(gen_random_uuid(), 'Test2', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category1 := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test 1",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category1); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		req := httptest.NewRequest(http.MethodPatch, "/categories/"+id.String(), strings.NewReader(`{ "name":"Test2" }`))
+		category2 := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test 2",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category2); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPatch, "/categories/"+category2.Id.String(), strings.NewReader(`{ "name":"Test 1" }`))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -668,8 +675,9 @@ func TestDeleteCategory(t *testing.T) {
 		t.Skip("Skipping test in short mode")
 	}
 
-	repository := database.NewPostgresCategoryRepository(testDb)
-	service := domain.NewDefaultCategoryService(repository)
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+	service := domain.NewDefaultCategoryService(categoryRepository)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -681,16 +689,17 @@ func TestDeleteCategory(t *testing.T) {
 			t.Fatalf("Error truncating categories: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'test', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id.String(), nil)
+		req := httptest.NewRequest(http.MethodDelete, "/categories/"+category.Id.String(), nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 
@@ -723,24 +732,34 @@ func TestDeleteCategory(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'test', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error inserting category: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
-			VALUES (gen_random_uuid(), 'name', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Product test name",
+			Description:      "Product test description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "image_key",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+			t.Fatalf("Error saving product: %v", err)
 		}
 
-		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id.String(), nil)
+		req := httptest.NewRequest(http.MethodDelete, "/categories/"+category.Id.String(), nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 
