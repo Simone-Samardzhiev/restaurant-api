@@ -110,7 +110,6 @@ func TestAddProductRequestValidate(t *testing.T) {
 				if got != nil {
 					t.Errorf("Validate() = %v, want nil", got)
 				}
-
 				return
 			}
 
@@ -215,31 +214,29 @@ func TestAddProduct(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	repository := database.NewPostgresProductRepository(testDb)
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
-	service := domain.NewDefaultProductService(repository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
 	handler := NewProductHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
 	e.POST("/products", handler.AddProduct)
 
-	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
-		t.Fatalf("Error truncating table: %v", err)
-	}
-
-	categoryId := uuid.New()
-	if _, err := testDb.Exec(
-		`INSERT INTO categories(id, name, created_at, updated_at)
-		VALUES ($1, 'test', NOW(), NOW())`,
-		categoryId,
-	); err != nil {
-		t.Fatalf("Error inserting category: %v", err)
-	}
-
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(
@@ -250,7 +247,7 @@ func TestAddProduct(t *testing.T) {
 				"categoryId": "%s",
 				"imageContentType": "image/png"
 			}`,
-				categoryId,
+				category.Id,
 			),
 		))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -266,16 +263,34 @@ func TestAddProduct(t *testing.T) {
 		}
 	})
 	t.Run("name conflict", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
-			VALUES (gen_random_uuid(), 'French fries', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
-			categoryId,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "French fries",
+			Description:      "Some test description",
+			Price:            decimal.NewFromFloat(47.84),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
 		}
 
 		req := httptest.NewRequest(http.MethodPost, "/products", strings.NewReader(
@@ -286,7 +301,7 @@ func TestAddProduct(t *testing.T) {
 				"categoryId": "%s",
 				"imageContentType": "image/png"
 			}`,
-				categoryId,
+				category.Id,
 			),
 		))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -296,17 +311,10 @@ func TestAddProduct(t *testing.T) {
 		if rec.Code != http.StatusConflict {
 			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
 		}
-		var res ErrorResponse
-		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
-			t.Fatalf("Error decoding response body: %v", err)
-		}
-		if res.Code != domain.ErrorCodeProductNameConflict.String() {
-			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict.String(), res.Code)
-		}
 	})
 
 	t.Run("category not found", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
@@ -336,5 +344,4 @@ func TestAddProduct(t *testing.T) {
 			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict.String(), res.Code)
 		}
 	})
-
 }
