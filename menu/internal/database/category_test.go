@@ -11,13 +11,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 func TestPostgresCategoryRepositorySave(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
 	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
@@ -41,7 +41,6 @@ func TestPostgresCategoryRepositorySave(t *testing.T) {
 		if err := row.Scan(&name); err != nil {
 			t.Fatalf("Error getting category name: %v", err)
 		}
-
 		if name != category.Name {
 			t.Fatalf("Category name mismatch: got %s, want %s", name, category.Name)
 		}
@@ -52,20 +51,19 @@ func TestPostgresCategoryRepositorySave(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES (gen_random_uuid(), 'Conflicting name', NOW(), NOW())`,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
-		}
-
 		category := &domain.Category{
 			Id:        uuid.New(),
-			Name:      "Conflicting name",
+			Name:      "Conflict name",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 
+		if err := repository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		// change the id so there is no primary key conflict
+		category.Id = uuid.New()
 		err := repository.Save(context.Background(), category)
 		if err == nil {
 			t.Fatalf("Want conflict error, got nil")
@@ -75,10 +73,8 @@ func TestPostgresCategoryRepositorySave(t *testing.T) {
 			if domainErr.Code != domain.ErrorCodeCategoryNameConflict {
 				t.Fatalf("Want error code: %s, got: %s", domain.ErrorCodeCategoryNameConflict, domainErr.Code)
 			}
-
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
@@ -87,42 +83,41 @@ func TestPostgresCategoryRepositoryGetAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
+	repository := NewPostgresCategoryRepository(testDb)
 
 	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 		t.Fatalf("Error truncating table: %v", err)
 	}
 
-	if _, err := testDb.Exec(
-		`INSERT INTO categories(id, name, created_at, updated_at) 
-		VALUES (gen_random_uuid(), 'Category 1', NOW(), NOW()),
-		       (gen_random_uuid(), 'Category 2', NOW(), NOW()),
-		       (gen_random_uuid(), 'Category 3', NOW(), NOW()),
-		       (gen_random_uuid(), 'Category 4', NOW(), NOW())`,
-	); err != nil {
-		t.Fatalf("Error seeding data: %v", err)
+	names := []string{"Category 1", "Category 2", "Category 3", "Category 4"}
+
+	for _, name := range names {
+		if err := repository.Save(context.Background(), &domain.Category{
+			Id:        uuid.New(),
+			Name:      name,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
 	}
 
-	repository := NewPostgresCategoryRepository(testDb)
 	categories, err := repository.GetAll(context.Background())
 	if err != nil {
 		t.Fatalf("Error getting all categories: %v", err)
 	}
-
-	wantNames := []string{"Category 1", "Category 2", "Category 3", "Category 4"}
-
-	if len(categories) != len(wantNames) {
-		t.Fatalf("Unexpected category length: %d", len(categories))
-	}
-
 	slices.SortFunc(categories, func(a, b domain.Category) int {
 		return strings.Compare(a.Name, b.Name)
 	})
+	slices.Sort(names)
 
-	slices.Sort(wantNames)
+	if len(names) != len(categories) {
+		t.Fatalf("Want %d categories, got %d", len(names), len(categories))
+	}
 
-	for i := 0; i < len(categories); i++ {
-		if categories[i].Name != wantNames[i] {
-			t.Fatalf("Unexpected category name: %s", categories[i].Name)
+	for i := 0; i < len(names); i++ {
+		if categories[i].Name != names[i] {
+			t.Fatalf("Want category %s, got %s", names[i], categories[i].Name)
 		}
 	}
 }
@@ -131,7 +126,6 @@ func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
 	repository := NewPostgresCategoryRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
@@ -139,24 +133,22 @@ func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		id := uuid.New()
-
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at)
-			VALUES ($1, 'test', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New category",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
 		const newName = "New Name"
-
-		if err := repository.Update(context.Background(), id, newName); err != nil {
-			t.Logf("Cause: %v", errors.Unwrap(err))
+		if err := repository.Update(context.Background(), category.Id, newName); err != nil {
 			t.Fatalf("Error updating category: %v", err)
 		}
 
-		row := testDb.QueryRowContext(context.Background(), `SELECT name FROM categories WHERE id = $1`, id)
+		row := testDb.QueryRowContext(context.Background(), `SELECT name FROM categories WHERE id = $1`, category.Id)
 		var name string
 		if err := row.Scan(&name); err != nil {
 			t.Fatalf("Error getting category name: %v", err)
@@ -172,30 +164,37 @@ func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'Test1', NOW(), NOW()),
-			(gen_random_uuid(), 'Test2', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category1 := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name 1",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category1); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		const newName = "Test2"
-		err := repository.Update(context.Background(), id, newName)
+		category2 := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name 2",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := repository.Save(context.Background(), category2); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		err := repository.Update(context.Background(), category2.Id, category1.Name)
 		if err == nil {
 			t.Fatalf("Want conflict error, got nil")
 		}
 
 		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
 			if domainErr.Code != domain.ErrorCodeCategoryNameConflict {
-				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+				t.Fatalf("Want error code: %s, got: %s", domain.ErrorCodeCategoryNameConflict, domainErr.Code)
 			}
-
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 
@@ -208,12 +207,10 @@ func TestPostgresCategoryRepositoryUpdate(t *testing.T) {
 
 		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
 			if domainErr.Code != domain.ErrorCodeCategoryNotFound {
-				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+				t.Fatalf("Want error code: %s, got: %s", domain.ErrorCodeCategoryNotFound, domainErr.Code)
 			}
-
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
@@ -222,31 +219,41 @@ func TestPostgresCategoryRepositoryDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
-	repository := NewPostgresCategoryRepository(testDb)
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at)
-			VALUES ($1, 'test', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error seeding data: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New category",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		if err := repository.Delete(context.Background(), id); err != nil {
+		if err := categoryRepository.Delete(context.Background(), category.Id); err != nil {
 			t.Fatalf("Error deleting category: %v", err)
+		}
+
+		var exists bool
+		row := testDb.QueryRow(`SELECT EXISTS (SELECT 1 FROM categories WHERE id = $1)`, category.Id)
+		if err := row.Scan(&exists); err != nil {
+			t.Fatalf("Error checking if category exists: %v", err)
+		}
+		if exists {
+			t.Fatalf("Category exists after deletion")
 		}
 	})
 
 	t.Run("category not found", func(t *testing.T) {
 		id := uuid.New()
-		err := repository.Delete(context.Background(), id)
+		err := categoryRepository.Delete(context.Background(), id)
 
 		if err == nil {
 			t.Fatalf("Want not found error, got nil")
@@ -258,7 +265,6 @@ func TestPostgresCategoryRepositoryDelete(t *testing.T) {
 			}
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 
@@ -267,36 +273,42 @@ func TestPostgresCategoryRepositoryDelete(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		id := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'test', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error inserting category: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New category",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
-			VALUES (gen_random_uuid(), 'name', 'Some test description for product', 10, $1, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
-			id,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		if err := productRepository.Save(context.Background(), &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test product name",
+			Description:      "Test product description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "image/key/",
+			ImageContentType: "image/png",
+			Status:           "ready",
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}); err != nil {
+			t.Fatalf("Error saving product: %v", err)
 		}
 
-		err := repository.Delete(context.Background(), id)
+		err := categoryRepository.Delete(context.Background(), category.Id)
 		if err == nil {
 			t.Fatalf("Want category has products error, got nil")
 		}
 
 		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
 			if domainErr.Code != domain.ErrorCodeCategoryHasProducts {
-				t.Fatalf("Want error code: %s, got: %s", domainErr.Code, domainErr.Code)
+				t.Fatalf("Want error code: %s, got: %s", domain.ErrorCodeCategoryHasProducts, domainErr.Code)
 			}
-
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 }
