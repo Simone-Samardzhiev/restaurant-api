@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"menu/internal/domain"
-	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -17,20 +16,30 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
-	repository := NewPostgresProductRepository(testDb)
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		product := domain.Product{
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
 			Id:               uuid.New(),
 			Name:             "Test",
 			Description:      "Some test description for product",
 			Price:            decimal.NewFromInt(100),
-			CategoryId:       uuid.New(),
+			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: domain.ImageContentTypePNG,
 			Status:           domain.ProductStatusReady,
@@ -38,39 +47,34 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			UpdatedAt:        time.Now(),
 		}
 
-		if _, err := testDb.Exec(`INSERT INTO categories(id, name, created_at, updated_at) VALUES ($1, 'Test', NOW(), NOW())`, product.CategoryId); err != nil {
-			t.Fatalf("Error inserting category: %v", err)
-		}
-		if err := repository.Save(context.Background(), &product); err != nil {
+		if err := productRepository.Save(context.Background(), product); err != nil {
 			t.Fatalf("Error saving product: %v", err)
 		}
-
-		var fetchedProduct domain.Product
-		row := testDb.QueryRow(`SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE id = $1`, product.Id)
-		if err := row.Scan(&fetchedProduct.Id, &fetchedProduct.Name, &fetchedProduct.Description, &fetchedProduct.Price, &fetchedProduct.CategoryId, &fetchedProduct.ImageKey, &fetchedProduct.ImageContentType, &fetchedProduct.Status, &fetchedProduct.CreatedAt, &fetchedProduct.UpdatedAt); err != nil {
-			t.Fatalf("Error scanning product: %v", err)
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error fetching product: %v", err)
 		}
 
 		if fetchedProduct.Name != product.Name {
-			t.Errorf("Product name mismatch: got %s, want %s", fetchedProduct.Name, product.Name)
+			t.Errorf("Want name: %s, got: %s", product.Name, fetchedProduct.Name)
 		}
 		if fetchedProduct.Description != product.Description {
-			t.Errorf("Product description mismatch: got %s, want %s", fetchedProduct.Description, product.Description)
+			t.Errorf("Want description: %s, got: %s", product.Description, fetchedProduct.Description)
 		}
 		if !fetchedProduct.Price.Equal(fetchedProduct.Price) {
-			t.Errorf("Product price mismatch: got %v, want %v", fetchedProduct.Price, product.Price)
+			t.Errorf("Want price: %s, got: %s", product.Price, fetchedProduct.Price)
 		}
 		if fetchedProduct.CategoryId != product.CategoryId {
-			t.Errorf("Product category id mismatch: got %v, want %v", fetchedProduct.CategoryId, product.CategoryId)
+			t.Errorf("Want category id: %s, got: %s", product.CategoryId, fetchedProduct.CategoryId)
 		}
 		if fetchedProduct.ImageKey != product.ImageKey {
-			t.Errorf("Product image key mismatch: got %v, want %v", fetchedProduct.ImageKey, product.ImageKey)
+			t.Errorf("Want image key: %s, got: %s", product.ImageKey, fetchedProduct.ImageKey)
 		}
 		if fetchedProduct.ImageContentType != domain.ImageContentTypePNG {
-			t.Errorf("Product image content type mismatch: got %v, want %v", fetchedProduct.ImageContentType, domain.ImageContentTypePNG)
+			t.Errorf("Want image content type: %s, got: %s", product.ImageContentType, fetchedProduct.ImageContentType)
 		}
 		if fetchedProduct.Status != product.Status {
-			t.Errorf("Product status mismatch: got %v, want %v", fetchedProduct.Status, product.Status)
+			t.Errorf("Want status: %s, got: %s", product.Status, fetchedProduct.Status)
 		}
 	})
 
@@ -79,39 +83,38 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		categoryId := uuid.New()
-
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'Test', NOW(), NOW())`,
-			categoryId,
-		); err != nil {
-			t.Fatalf("Error inserting category: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		product := domain.Product{
+		product := &domain.Product{
 			Id:               uuid.New(),
-			Name:             "Test",
+			Name:             "Conflicting name",
 			Description:      "Some test description for product",
 			Price:            decimal.NewFromInt(100),
-			CategoryId:       categoryId,
-			ImageKey:         "imageKey",
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
 			ImageContentType: domain.ImageContentTypePNG,
 			Status:           domain.ProductStatusReady,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
-
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key,image_content_type, status, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1, 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
-			product.Name,
-			product.CategoryId,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
 		}
 
-		err := repository.Save(context.Background(), &product)
+		// change the id so there is no primary key conflict
+		product.Id = uuid.New()
+		// change the image key so there is no unique conflict
+		product.ImageKey = "imageKey2"
+
+		err := productRepository.Save(context.Background(), product)
 		if err == nil {
 			t.Fatalf("Want conflict error, got nil")
 		}
@@ -120,10 +123,8 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			if domainErr.Code != domain.ErrorCodeProductNameConflict {
 				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict, domainErr.Code)
 			}
-
 			return
 		}
-
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
 
@@ -132,7 +133,7 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		product := domain.Product{
+		product := &domain.Product{
 			Id:               uuid.New(),
 			Name:             "Test",
 			Description:      "Some test description for product",
@@ -145,7 +146,7 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			UpdatedAt:        time.Now(),
 		}
 
-		err := repository.Save(context.Background(), &product)
+		err := productRepository.Save(context.Background(), product)
 		if err == nil {
 			t.Fatalf("Want not found error, got nil")
 		}
@@ -154,7 +155,6 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			if domainErr.Code != domain.ErrorCodeCategoryNotFound {
 				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound, domainErr.Code)
 			}
-
 			return
 		}
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
@@ -165,82 +165,70 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-
-	repository := NewPostgresProductRepository(testDb)
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		product := domain.Product{
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
 			Id:               uuid.New(),
 			Name:             "Test",
 			Description:      "Some test description for product",
 			Price:            decimal.NewFromInt(100),
-			CategoryId:       uuid.New(),
+			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: domain.ImageContentTypePNG,
 			Status:           domain.ProductStatusReady,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
-
-		if _, err := testDb.Exec(
-			`INSERT INTO categories(id, name, created_at, updated_at) 
-			VALUES ($1, 'test', NOW(), NOW())`,
-			product.CategoryId,
-		); err != nil {
-			t.Fatalf("Error inserting category: %v", err)
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
 		}
 
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-			product.Id,
-			product.Name,
-			product.Description,
-			product.Price,
-			product.CategoryId,
-			product.ImageKey,
-			product.ImageContentType,
-			product.Status,
-			product.CreatedAt,
-			product.UpdatedAt,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
-		}
-
-		fetchedProduct, err := repository.Get(context.Background(), product.Id)
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
 		if err != nil {
 			t.Fatalf("Error fetching product: %v", err)
 		}
 
 		if fetchedProduct.Name != product.Name {
-			t.Errorf("Want product name %s, got %s", product.Name, fetchedProduct.Name)
+			t.Errorf("Want name: %s, got: %s", product.Name, fetchedProduct.Name)
 		}
 		if fetchedProduct.Description != product.Description {
-			t.Errorf("Want product description %s, got %s", product.Description, fetchedProduct.Description)
+			t.Errorf("Want description: %s, got: %s", product.Description, fetchedProduct.Description)
 		}
 		if !fetchedProduct.Price.Equal(fetchedProduct.Price) {
-			t.Errorf("Want product price %s, got %s", product.Price, fetchedProduct.Price)
+			t.Errorf("Want price: %s, got: %s", product.Price, fetchedProduct.Price)
 		}
 		if fetchedProduct.CategoryId != product.CategoryId {
-			t.Errorf("Want product category id %s, got %s", product.CategoryId, fetchedProduct.CategoryId)
+			t.Errorf("Want category id: %s, got: %s", product.CategoryId, fetchedProduct.CategoryId)
 		}
 		if fetchedProduct.ImageKey != product.ImageKey {
-			t.Errorf("Want product image key %s, got %s", product.ImageKey, fetchedProduct.ImageKey)
+			t.Errorf("Want image key: %s, got: %s", product.ImageKey, fetchedProduct.ImageKey)
 		}
 		if fetchedProduct.ImageContentType != product.ImageContentType {
-			t.Errorf("Want product image content type %s, got %s", product.ImageContentType, fetchedProduct.ImageContentType)
+			t.Errorf("Want image content type: %s, got: %s", product.ImageContentType, fetchedProduct.ImageContentType)
 		}
-		if fetchedProduct.Status != domain.ProductStatusReady {
-			t.Errorf("Want product status %s, got %s", product.Status, fetchedProduct.Status)
+		if fetchedProduct.Status != product.Status {
+			t.Errorf("Want status: %s, got: %s", product.Status, fetchedProduct.Status)
 		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		_, err := repository.Get(context.Background(), uuid.New())
+		_, err := productRepository.Get(context.Background(), uuid.New())
 		if err == nil {
 			t.Fatalf("Want not found error, got nil")
 		}
@@ -258,43 +246,56 @@ func TestPostgresProductRepositoryDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	repository := NewPostgresProductRepository(testDb)
-	categoryId := uuid.New()
-
-	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
-		t.Fatalf("Error truncating table: %v", err)
-	}
-
-	if _, err := testDb.Exec(
-		`INSERT INTO categories(id, name, created_at, updated_at) 
-		VALUES ($1, 'test', NOW(), NOW())`,
-		categoryId,
-	); err != nil {
-		t.Fatalf("Error inserting category: %v", err)
-	}
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		productId := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
-			VALUES ($1, 'Some test name', 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'ready', NOW(), NOW())`,
-			productId,
-			categoryId,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		if err := repository.Delete(context.Background(), productId); err != nil {
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		if err := productRepository.Delete(context.Background(), product.Id); err != nil {
 			t.Fatalf("Error deleting product: %v", err)
+		}
+
+		var exists bool
+		row := testDb.QueryRow(`SELECT EXISTS (SELECT 1 FROM products WHERE id = $1)`, product.Id)
+		if err := row.Scan(&exists); err != nil {
+			t.Fatalf("Error checking if product exists: %v", err)
+		}
+		if exists {
+			t.Fatalf("Product exists after deletion")
 		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		err := repository.Delete(context.Background(), uuid.New())
+		err := productRepository.Delete(context.Background(), uuid.New())
 		if err == nil {
 			t.Fatalf("Want not found error, got nil")
 		}
@@ -312,53 +313,56 @@ func TestPostgresProductRepositoryUpdateStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	repository := NewPostgresProductRepository(testDb)
-	categoryId := uuid.New()
-
-	if _, err := testDb.Exec(`TRUNCATE TABLE categories CASCADE`); err != nil {
-		t.Fatalf("Error truncating table: %v", err)
-	}
-
-	if _, err := testDb.Exec(
-		`INSERT INTO categories(id, name, created_at, updated_at) 
-		VALUES ($1, 'test', NOW(), NOW())`,
-		categoryId,
-	); err != nil {
-		t.Fatalf("Error inserting category: %v", err)
-	}
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
 	t.Run("success", func(t *testing.T) {
-		if _, err := testDb.Exec(`TRUNCATE TABLE products CASCADE`); err != nil {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
 			t.Fatalf("Error truncating table: %v", err)
 		}
 
-		productId := uuid.New()
-		if _, err := testDb.Exec(
-			`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
-			VALUES ($1, 'Some test name', 'Some test description for product', 10, $2, 'testImageKey', 'image/png', 'awaiting_image', NOW(), NOW())`,
-			productId,
-			categoryId,
-		); err != nil {
-			t.Fatalf("Error inserting product: %v", err)
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
 		}
 
-		if err := repository.UpdateStatus(context.Background(), productId, domain.ProductStatusReady); err != nil {
-			t.Fatalf("Error updating status: %v", err)
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		if err := productRepository.UpdateStatus(context.Background(), product.Id, domain.ProductStatusReady); err != nil {
+			t.Fatalf("Error updating product status: %v", err)
 		}
 
 		var fetchedStatus domain.ProductStatus
-		row := testDb.QueryRow(`SELECT status FROM products WHERE id = $1`, productId)
+		row := testDb.QueryRow(`SELECT status FROM products WHERE id = $1`, product.Id)
 		if err := row.Scan(&fetchedStatus); err != nil {
 			t.Fatalf("Error getting product status: %v", err)
 		}
-
 		if fetchedStatus != domain.ProductStatusReady {
 			t.Errorf("Want product status %s, got %s", domain.ProductStatusReady, fetchedStatus)
 		}
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		err := repository.UpdateStatus(context.Background(), uuid.New(), domain.ProductStatusReady)
+		err := productRepository.UpdateStatus(context.Background(), uuid.New(), domain.ProductStatusReady)
 		if err == nil {
 			t.Fatalf("Want not found error, got nil")
 		}
@@ -376,39 +380,96 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	repository := NewPostgresProductRepository(testDb)
-	categoryId := uuid.New()
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
 
-	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
 		t.Fatalf("Error truncating table: %v", err)
 	}
 
-	if _, err := testDb.Exec(
-		`INSERT INTO categories(id, name, created_at, updated_at) 
-		VALUES ($1, 'test', NOW(), NOW())`,
-		categoryId,
-	); err != nil {
-		t.Fatalf("Error inserting category: %v", err)
+	category := &domain.Category{
+		Id:        uuid.New(),
+		Name:      "Test name",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := categoryRepository.Save(context.Background(), category); err != nil {
+		t.Fatalf("Error saving category: %v", err)
 	}
 
-	if _, err := testDb.Exec(
-		`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at) 
-		VALUES (gen_random_uuid(), 'test 1', 'some test description', 10, $1, 'imageKey1', 'image/png', 'awaiting_image', '2025-01-01', NOW()),
-			   (gen_random_uuid(), 'test 2', 'some test description', 10, $1, 'imageKey2', 'image/png', 'awaiting_image', '2025-01-01', NOW()),
-			   (gen_random_uuid(), 'test 3', 'some test description', 10, $1, 'imageKey3', 'image/png', 'awaiting_image', NOW(), NOW())`,
-		categoryId,
-	); err != nil {
-		t.Fatalf("Error inserting products: %v", err)
+	products := []domain.Product{
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 1",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 2",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey2",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 3",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey3",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 4",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey4",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
 	}
 
-	wantKeys := []string{"imageKey1", "imageKey2"}
-	keys, err := repository.DeleteExpiredByStatus(context.Background(), 15*time.Minute)
+	for _, product := range products {
+		if err := productRepository.Save(context.Background(), &product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+	}
+
+	wantKeys := []string{"imageKey3", "imageKey4"}
+	slices.Sort(wantKeys)
+
+	keys, err := productRepository.DeleteExpiredByStatus(context.Background(), 15*time.Minute)
 	if err != nil {
 		t.Fatalf("Error deleting expired products: %v", err)
 	}
 	slices.Sort(keys)
 
-	if !reflect.DeepEqual(keys, wantKeys) {
-		t.Errorf("Want keys %v, got %v", wantKeys, keys)
+	if len(wantKeys) != len(keys) {
+		t.Fatalf("Want %d keys, got %d", len(wantKeys), len(keys))
+	}
+
+	for i := 0; i < len(wantKeys); i++ {
+		if wantKeys[i] != keys[i] {
+			t.Fatalf("Want key %s, got %s", wantKeys[i], keys[i])
+		}
 	}
 }
