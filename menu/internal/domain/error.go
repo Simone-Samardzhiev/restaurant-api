@@ -56,6 +56,10 @@ func (e *Error) Error() string {
 
 // NewError creates and allocates a new error.
 func NewError(message string, code ErrorCode, cause error) *Error {
+	if cause != nil {
+		message = message + ": " + cause.Error()
+	}
+
 	return &Error{
 		message: message,
 		Code:    code,
