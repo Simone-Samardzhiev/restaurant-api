@@ -13,11 +13,20 @@ import (
 )
 
 type fakeProductRepository struct {
-	onSave                  func(ctx context.Context, product *Product) error
-	onGet                   func(ctx context.Context, id uuid.UUID) (*Product, error)
-	onDelete                func(ctx context.Context, id uuid.UUID) error
-	onUpdateStatus          func(ctx context.Context, id uuid.UUID, status ProductStatus) error
-	onDeleteExpiredByStatus func(ctx context.Context, olderThan time.Duration) ([]string, error)
+	onSave      func(ctx context.Context, product *Product) error
+	onSaveCount int
+
+	onGet      func(ctx context.Context, id uuid.UUID) (*Product, error)
+	onGetCount int
+
+	onDelete      func(ctx context.Context, id uuid.UUID) error
+	onDeleteCount int
+
+	onUpdateStatus      func(ctx context.Context, id uuid.UUID, status ProductStatus) error
+	onUpdateStatusCount int
+
+	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
+	onDeleteExpiredByStatusCount int
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)
@@ -26,6 +35,7 @@ func (f *fakeProductRepository) Save(ctx context.Context, product *Product) erro
 	if f.onSave == nil {
 		panic("onSave not implemented")
 	}
+	f.onSaveCount++
 	return f.onSave(ctx, product)
 }
 
@@ -33,6 +43,7 @@ func (f *fakeProductRepository) Get(ctx context.Context, id uuid.UUID) (*Product
 	if f.onGet == nil {
 		panic("onGet not implemented")
 	}
+	f.onGetCount++
 	return f.onGet(ctx, id)
 }
 
@@ -40,6 +51,7 @@ func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error 
 	if f.onDelete == nil {
 		panic("onDelete not implemented")
 	}
+	f.onDeleteCount++
 	return f.onDelete(ctx, id)
 }
 
@@ -47,6 +59,7 @@ func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 	if f.onUpdateStatus == nil {
 		panic("onUpdateStatus not implemented")
 	}
+	f.onUpdateStatusCount++
 	return f.onUpdateStatus(ctx, id, status)
 }
 
@@ -54,15 +67,25 @@ func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, older
 	if f.onDeleteExpiredByStatus == nil {
 		panic("onDeleteExpiredByStatus not implemented")
 	}
+	f.onDeleteExpiredByStatusCount++
 	return f.onDeleteExpiredByStatus(ctx, olderThan)
 }
 
 type fakeImageStorage struct {
-	onCreateUploadUrl func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error)
-	onDelete          func(ctx context.Context, imageKey string) error
-	onDeleteBatch     func(ctx context.Context, imageKeys []string) error
-	onValidate        func(ctx context.Context, imageKey string, contentType ImageContentType) error
-	onGet             func(imageKey string) (io.ReadCloser, error)
+	onCreateUploadUrl      func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error)
+	onCreateUploadUrlCount int
+
+	onDelete      func(ctx context.Context, imageKey string) error
+	onDeleteCount int
+
+	onDeleteBatch      func(ctx context.Context, imageKeys []string) error
+	onDeleteBatchCount int
+
+	onValidate      func(ctx context.Context, imageKey string, contentType ImageContentType) error
+	onValidateCount int
+
+	onGet      func(imageKey string) (io.ReadCloser, error)
+	onGetCount int
 }
 
 var _ ImageStorage = (*fakeImageStorage)(nil)
@@ -71,6 +94,7 @@ func (f *fakeImageStorage) CreateUploadUrl(ctx context.Context, imageKey string,
 	if f.onCreateUploadUrl == nil {
 		panic("onCreateUploadUrl not implemented")
 	}
+	f.onCreateUploadUrlCount++
 	return f.onCreateUploadUrl(ctx, imageKey, contentType)
 }
 
@@ -78,6 +102,7 @@ func (f *fakeImageStorage) Delete(ctx context.Context, imageKey string) error {
 	if f.onDelete == nil {
 		panic("onDelete not implemented")
 	}
+	f.onDeleteCount++
 	return f.onDelete(ctx, imageKey)
 }
 
@@ -85,6 +110,7 @@ func (f *fakeImageStorage) DeleteMultiple(ctx context.Context, imageKeys []strin
 	if f.onDeleteBatch == nil {
 		panic("onDeleteBatch not implemented")
 	}
+	f.onDeleteBatchCount++
 	return f.onDeleteBatch(ctx, imageKeys)
 }
 
@@ -92,6 +118,7 @@ func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, conten
 	if f.onValidate == nil {
 		panic("onValidate not implemented")
 	}
+	f.onValidateCount++
 	return f.onValidate(ctx, imageKey, contentType)
 }
 
@@ -99,32 +126,36 @@ func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (io.ReadClo
 	if f.onGet == nil {
 		panic("onGet not implemented")
 	}
+	f.onGetCount++
 	return f.onGet(imageKey)
 }
 
 func TestDefaultProductServiceAdd(t *testing.T) {
 	tests := []struct {
-		name      string
+		name string
+
+		repository      *fakeProductRepository
+		wantOnSaveCount int
+
+		storage                    *fakeImageStorage
+		wantOnCreateUploadUrlCount int
+
 		request   *AddProductRequest
-		service   ProductService
 		wantDraft *ProductDraft
 		wantError *Error
 	}{
 		{
 			name: "success",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onSave: func(ctx context.Context, product *Product) error {
-						return nil
-					},
-				},
-				storage: &fakeImageStorage{
-					onCreateUploadUrl: func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error) {
-						return "upload.url", nil
-					},
-				},
-				logger: logger.NewSilentLogger(),
+			repository: &fakeProductRepository{
+				onSave: func(ctx context.Context, product *Product) error { return nil },
 			},
+			wantOnSaveCount: 1,
+			storage: &fakeImageStorage{
+				onCreateUploadUrl: func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error) {
+					return "imageKey", nil
+				},
+			},
+			wantOnCreateUploadUrlCount: 1,
 			request: &AddProductRequest{
 				Name:             "Product name",
 				Description:      "Product description",
@@ -133,16 +164,13 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 				ImageContentType: ImageContentTypePNG,
 			},
 			wantDraft: &ProductDraft{
-				ImageUploadUrl: "upload.url",
+				ImageUploadUrl: "imageKey",
 			},
 		},
 		{
-			name: "invalid content type format",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{},
-				storage:    &fakeImageStorage{},
-				logger:     logger.NewSilentLogger(),
-			},
+			name:       "invalid content type format",
+			repository: &fakeProductRepository{},
+			storage:    &fakeImageStorage{},
 			request: &AddProductRequest{
 				ImageContentType: "invalid",
 			},
@@ -150,14 +178,13 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 		},
 		{
 			name: "error saving product",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onSave: func(ctx context.Context, product *Product) error {
-						return NewError("error saving product", ErrorCodeInternal, nil)
-					},
+			repository: &fakeProductRepository{
+				onSave: func(ctx context.Context, product *Product) error {
+					return NewError("error saving", ErrorCodeInternal, nil)
 				},
-				storage: &fakeImageStorage{},
 			},
+			wantOnSaveCount: 1,
+			storage:         &fakeImageStorage{},
 			request: &AddProductRequest{
 				Name:             "Product name",
 				Description:      "Product description",
@@ -169,19 +196,16 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 		},
 		{
 			name: "error creating upload url",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onSave: func(ctx context.Context, product *Product) error {
-						return nil
-					},
-				},
-				storage: &fakeImageStorage{
-					onCreateUploadUrl: func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error) {
-						return "", NewError("error creating upload url", ErrorCodeInternal, nil)
-					},
-				},
-				logger: logger.NewSilentLogger(),
+			repository: &fakeProductRepository{
+				onSave: func(ctx context.Context, product *Product) error { return nil },
 			},
+			wantOnSaveCount: 1,
+			storage: &fakeImageStorage{
+				onCreateUploadUrl: func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error) {
+					return "", NewError("error creating upload url", ErrorCodeInternal, nil)
+				},
+			},
+			wantOnCreateUploadUrlCount: 1,
 			request: &AddProductRequest{
 				Name:             "Product name",
 				Description:      "Product description",
@@ -196,8 +220,16 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			draft, err := service.Add(context.Background(), tt.request)
 
-			draft, err := tt.service.Add(context.Background(), tt.request)
+			if tt.repository.onSaveCount != tt.wantOnSaveCount {
+				t.Errorf("Want onSave count: %d, got: %d", tt.wantOnSaveCount, tt.repository.onSaveCount)
+			}
+			if tt.storage.onCreateUploadUrlCount != tt.wantOnCreateUploadUrlCount {
+				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount)
+			}
+
 			if tt.wantError != nil {
 				if domainErr, ok := errors.AsType[*Error](err); ok {
 					if domainErr.Code != tt.wantError.Code {
@@ -219,84 +251,181 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 
 func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 	tests := []struct {
-		name      string
-		service   *DefaultProductService
+		name string
+		id   uuid.UUID
+
+		repository               *fakeProductRepository
+		wantOnGetCount           int
+		wantOnUpdateStatusCount  int
+		wantOnDeleteProductCount int
+
+		storage                *fakeImageStorage
+		wantOnValidateCount    int
+		wantOnDeleteImageCount int
+
 		wantError *Error
 	}{
 		{
 			name: "success",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
-						return &Product{}, nil
-					},
-					onUpdateStatus: func(ctx context.Context, id uuid.UUID, status ProductStatus) error {
-						return nil
-					},
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusAwaitingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
 				},
-				storage: &fakeImageStorage{
-					onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
-						return nil
-					},
+				onUpdateStatus: func(ctx context.Context, id uuid.UUID, status ProductStatus) error {
+					return nil
 				},
 			},
+			wantOnGetCount:          1,
+			wantOnUpdateStatusCount: 1,
+
+			storage: &fakeImageStorage{
+				onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
+					return nil
+				},
+			},
+			wantOnValidateCount: 1,
+		},
+		{
+			name: "success already confirmed",
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusReady,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+			wantOnGetCount: 1,
+			storage:        &fakeImageStorage{},
 		},
 		{
 			name: "invalid image",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
-						return &Product{}, nil
-					},
-					onDelete: func(ctx context.Context, id uuid.UUID) error {
-						return nil
-					},
-					onUpdateStatus: func(ctx context.Context, id uuid.UUID, status ProductStatus) error {
-						return nil
-					},
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusAwaitingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
 				},
-				storage: &fakeImageStorage{
-					onDelete: func(ctx context.Context, imageKey string) error {
-						return nil
-					},
-					onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
-						return NewError("invalid image", ErrorCodeInvalidImage, nil)
-					},
+				onDelete: func(ctx context.Context, id uuid.UUID) error {
+					return nil
 				},
 			},
-			wantError: NewError("invalid image", ErrorCodeInvalidImage, nil),
+			wantOnGetCount:           1,
+			wantOnDeleteProductCount: 1,
+
+			storage: &fakeImageStorage{
+				onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
+					return NewError("invalid image type", ErrorCodeInvalidImage, nil)
+				},
+				onDelete: func(ctx context.Context, imageKey string) error {
+					return nil
+				},
+			},
+			wantOnValidateCount:    1,
+			wantOnDeleteImageCount: 1,
+
+			wantError: NewError("invalid image type", ErrorCodeInvalidImage, nil),
 		},
 		{
-			name: "error updating status",
-			service: &DefaultProductService{
-				repository: &fakeProductRepository{
-					onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
-						return &Product{}, nil
-					},
-					onDelete: func(ctx context.Context, id uuid.UUID) error {
-						return nil
-					},
-					onUpdateStatus: func(ctx context.Context, id uuid.UUID, status ProductStatus) error {
-						return NewError("error updating product status", ErrorCodeInternal, nil)
-					},
+			name: "error updating product",
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusAwaitingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
 				},
-				storage: &fakeImageStorage{
-					onDelete: func(ctx context.Context, imageKey string) error {
-						return nil
-					},
-					onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
-						return nil
-					},
+				onUpdateStatus: func(ctx context.Context, id uuid.UUID, status ProductStatus) error {
+					return NewError("product not found", ErrorCodeProductNotFound, nil)
+				},
+				onDelete: func(ctx context.Context, id uuid.UUID) error {
+					return nil
 				},
 			},
-			wantError: NewError("error updating product status", ErrorCodeInternal, nil),
+			wantOnGetCount:          1,
+			wantOnUpdateStatusCount: 1,
+
+			storage: &fakeImageStorage{
+				onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
+					return nil
+				},
+				onDelete: func(ctx context.Context, imageKey string) error {
+					return nil
+				},
+			},
+			wantOnValidateCount:    1,
+			wantOnDeleteImageCount: 1,
+
+			wantError: NewError("product not found", ErrorCodeProductNotFound, nil),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			err := tt.service.ConfirmImageUpload(context.Background(), uuid.New())
+			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			err := service.ConfirmImageUpload(context.Background(), tt.id)
+
+			if tt.wantOnGetCount != tt.repository.onGetCount {
+				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount)
+			}
+			if tt.wantOnUpdateStatusCount != tt.repository.onUpdateStatusCount {
+				t.Errorf("Want onUpdateStatus count: %d, got: %d", tt.wantOnUpdateStatusCount, tt.repository.onUpdateStatusCount)
+			}
+			if tt.wantOnDeleteProductCount != tt.repository.onDeleteCount {
+				t.Errorf("Want onDeleteProduct count: %d, got: %d", tt.wantOnDeleteProductCount, tt.repository.onDeleteCount)
+			}
+			if tt.wantOnValidateCount != tt.storage.onValidateCount {
+				t.Errorf("Want onValidate count: %d, got: %d", tt.wantOnValidateCount, tt.storage.onValidateCount)
+			}
+			if tt.wantOnDeleteImageCount != tt.storage.onDeleteCount {
+				t.Errorf("Want onDeleteImage count: %d, got: %d", tt.wantOnDeleteImageCount, tt.storage.onDeleteCount)
+			}
+
 			if tt.wantError != nil {
 				if domainErr, ok := errors.AsType[*Error](err); ok {
 					if domainErr.Code != tt.wantError.Code {
