@@ -163,5 +163,5 @@ func (c *CategoryHandler) DeleteCategory(ctx *echo.Context) error {
 		return NewError(err)
 	}
 
-	return ctx.NoContent(http.StatusOK)
+	return ctx.NoContent(http.StatusNoContent)
 }

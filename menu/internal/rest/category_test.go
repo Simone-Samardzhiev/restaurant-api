@@ -628,7 +628,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 				},
 			},
 			id:             uuid.New().String(),
-			wantHttpStatus: http.StatusOK,
+			wantHttpStatus: http.StatusNoContent,
 		},
 		{
 			name:           "invalid id",
@@ -655,7 +655,7 @@ func TestCategoryHandlerDeleteCategory(t *testing.T) {
 			if rec.Code != tt.wantHttpStatus {
 				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
 			}
-			if rec.Code == http.StatusOK {
+			if rec.Code == http.StatusNoContent {
 				return
 			}
 
@@ -703,7 +703,7 @@ func TestDeleteCategory(t *testing.T) {
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 
-		if rec.Code != http.StatusOK {
+		if rec.Code != http.StatusNoContent {
 			t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
 		}
 	})
