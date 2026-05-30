@@ -116,14 +116,14 @@ func TestS3ImageStorageDeleteMultiple(t *testing.T) {
 }
 
 // generateTestImage generates a 10 * 10 png image.
-func generateTestImage(t *testing.T) []byte {
+func generateTestImage(t *testing.T) io.Reader {
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 	var buf bytes.Buffer
 
 	if err := png.Encode(&buf, img); err != nil {
 		t.Fatalf("Error encoding image: %v", err)
 	}
-	return buf.Bytes()
+	return &buf
 }
 
 func TestS3ImageStorageValidate(t *testing.T) {
@@ -137,7 +137,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket: aws.String(testS3BucketName),
 		Key:    aws.String(imageKey),
-		Body:   bytes.NewReader(generateTestImage(t)),
+		Body:   generateTestImage(t),
 	}); err != nil {
 		t.Fatalf("Error uploading image: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 			}
 			return
 		}
-		t.Fatalf("Want error type domain.Error, gor: %T", err)
+		t.Fatalf("Want error type domain.Error, got: %T", err)
 	})
 
 	t.Run("not found", func(t *testing.T) {
