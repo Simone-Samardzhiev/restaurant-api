@@ -47,8 +47,9 @@ type (
 
 	// App represents the application config.
 	App struct {
-		Addr string
-		Env  Environment
+		Addr          string
+		Env           Environment
+		BaseImagesUrl string
 	}
 
 	// Config combines all configurations.
@@ -219,6 +220,12 @@ func NewApp() (App, error) {
 		default:
 			return App{}, errors.New("config: ENVIRONMENT is required but not set")
 		}
+	}
+
+	if baseImagesUrl, ok := os.LookupEnv("BASE_IMAGES_URL"); ok {
+		app.BaseImagesUrl = baseImagesUrl
+	} else {
+		return App{}, errors.New("config: BASE_IMAGES_URL is required but not set")
 	}
 
 	return app, nil
