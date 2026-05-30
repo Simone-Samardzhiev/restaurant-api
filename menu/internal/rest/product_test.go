@@ -363,6 +363,185 @@ func TestAddProduct(t *testing.T) {
 	})
 }
 
+func TestProductHandlerGetDraft(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             string
+		handler        *ProductHandler
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			id:   uuid.NewString(),
+			handler: &ProductHandler{
+				service: &fakeProductService{
+					onGetDraft: func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error) {
+						return &domain.ProductDraft{
+							Id:             id,
+							ImageUploadUrl: "http://upload/image",
+						}, nil
+					},
+				},
+			},
+			wantHttpStatus: http.StatusOK,
+		},
+		{
+			name: "invalid id",
+			id:   "invalid",
+			handler: &ProductHandler{
+				service: &fakeProductService{},
+			},
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			e := echo.New()
+			e.HTTPErrorHandler = ErrorHandler
+			e.GET("/draft/:id", tt.handler.GetDraft)
+
+			req := httptest.NewRequest(http.MethodGet, "/draft/"+tt.id, nil)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusOK {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response body: %v", err)
+			}
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
+			}
+		})
+	}
+}
+
+func TestGetDraft(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler(service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.GET("/draft/:id", handler.GetDraft)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test 1",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test product",
+			Description:      "Test product description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypeJPEG,
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/draft/"+product.Id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var res ProductDraftResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+
+		if product.Id != res.Id {
+			t.Fatalf("Want product id %s, got %s", product.Id, res.Id)
+		}
+	})
+
+	t.Run("product already finished", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test 1",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test product",
+			Description:      "Test product description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypeJPEG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/draft/"+product.Id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response body: %v", err)
+		}
+
+		if domain.ErrorCodeProductAlreadyFinished.String() != res.Code {
+			t.Fatalf("Want error code %s, got %s", res.Code, domain.ErrorCodeProductAlreadyFinished.String())
+		}
+	})
+}
+
 func TestProductHandlerConfirmImageUpload(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -402,7 +581,6 @@ func TestProductHandlerConfirmImageUpload(t *testing.T) {
 			e.POST("/products/confirm-image-upload/:id", tt.handler.ConfirmImageUpload)
 
 			req := httptest.NewRequest(http.MethodPost, "/products/confirm-image-upload/"+tt.id, nil)
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			e.ServeHTTP(rec, req)
 

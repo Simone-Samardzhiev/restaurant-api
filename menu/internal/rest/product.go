@@ -119,6 +119,23 @@ func (p *ProductHandler) AddProduct(ctx *echo.Context) error {
 	})
 }
 
+func (p *ProductHandler) GetDraft(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	draft, err := p.service.GetDraft(ctx.Request().Context(), id)
+	if err != nil {
+		return NewError(err)
+	}
+
+	return ctx.JSON(http.StatusOK, ProductDraftResponse{
+		Id:             draft.Id,
+		ImageUploadUrl: draft.ImageUploadUrl,
+	})
+}
+
 func (p *ProductHandler) ConfirmImageUpload(ctx *echo.Context) error {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
