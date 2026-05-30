@@ -72,7 +72,7 @@ func main() {
 	productRepository := database.NewPostgresProductRepository(db)
 	imageStorage := storage.NewS3ImageStorage(s3client, appConfig.UploadUrlExpiry, appConfig.Bucket.Name)
 	productService := domain.NewDefaultProductService(productRepository, imageStorage, appLogger)
-	productHandler := rest.NewProductHandler(productService)
+	productHandler := rest.NewProductHandler(appConfig.BaseImagesUrl, productService)
 
 	router := rest.NewRouter(&rest.RouterConfig{
 		App:    &appConfig.App,

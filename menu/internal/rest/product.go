@@ -14,13 +14,15 @@ import (
 
 // ProductHandler handles HTTP request for products.
 type ProductHandler struct {
-	service domain.ProductService
+	baseImageUrl string
+	service      domain.ProductService
 }
 
 // NewProductHandler creates and allocates new [ProductHandler].
-func NewProductHandler(service domain.ProductService) *ProductHandler {
+func NewProductHandler(baseImageUlr string, service domain.ProductService) *ProductHandler {
 	return &ProductHandler{
-		service: service,
+		baseImageUrl: baseImageUlr,
+		service:      service,
 	}
 }
 

@@ -235,7 +235,7 @@ func TestAddProduct(t *testing.T) {
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
-	handler := NewProductHandler(service)
+	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
@@ -437,7 +437,7 @@ func TestGetDraft(t *testing.T) {
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 
 	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
-	handler := NewProductHandler(service)
+	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
@@ -625,7 +625,7 @@ func TestConfirmImageUpload(t *testing.T) {
 	manager := transfermanager.New(testS3Client)
 
 	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
-	handler := NewProductHandler(service)
+	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
