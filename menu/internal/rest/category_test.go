@@ -756,7 +756,6 @@ func TestDeleteCategory(t *testing.T) {
 		}
 		if err := productRepository.Save(context.Background(), product); err != nil {
 			t.Fatalf("Error saving product: %v", err)
-			t.Fatalf("Error saving product: %v", err)
 		}
 
 		req := httptest.NewRequest(http.MethodDelete, "/categories/"+category.Id.String(), nil)
