@@ -118,3 +118,16 @@ func (p *ProductHandler) AddProduct(ctx *echo.Context) error {
 		ImageUploadUrl: draft.ImageUploadUrl,
 	})
 }
+
+func (p *ProductHandler) ConfirmImageUpload(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	if err = p.service.ConfirmImageUpload(ctx.Request().Context(), id); err != nil {
+		return NewError(err)
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}

@@ -52,6 +52,7 @@ func NewRouter(c *RouterConfig) *Router {
 		{
 			products := api.Group("/products")
 			products.POST("", c.ProductHandler.AddProduct)
+			products.POST("/:id/image", c.ProductHandler.ConfirmImageUpload)
 		}
 	}
 

@@ -1,9 +1,14 @@
 package rest
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"image"
+	"image/png"
+	"io"
 	"menu/internal/database"
 	"menu/internal/domain"
 	"menu/internal/logger"
@@ -14,6 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/shopspring/decimal"
@@ -21,7 +30,7 @@ import (
 
 type fakeProductService struct {
 	onAdd                func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
-	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID)
+	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID) error
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -35,7 +44,7 @@ func (f *fakeProductService) Add(ctx context.Context, request *domain.AddProduct
 
 func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error {
 	if f.onConfirmImageUpload != nil {
-		f.onConfirmImageUpload(ctx, productID)
+		return f.onConfirmImageUpload(ctx, productID)
 	}
 	return nil
 }
@@ -342,6 +351,215 @@ func TestAddProduct(t *testing.T) {
 		}
 		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
 			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict.String(), res.Code)
+		}
+	})
+}
+
+func TestProductHandlerConfirmImageUpload(t *testing.T) {
+	tests := []struct {
+		name           string
+		handler        *ProductHandler
+		id             string
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			handler: &ProductHandler{
+				service: &fakeProductService{
+					onConfirmImageUpload: func(ctx context.Context, productID uuid.UUID) error {
+						return nil
+					},
+				},
+			},
+			id:             uuid.NewString(),
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name: "invalid id",
+			handler: &ProductHandler{
+				service: &fakeProductService{},
+			},
+			id:             "invalid",
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			e := echo.New()
+			e.HTTPErrorHandler = ErrorHandler
+			e.POST("/products/confirm-image-upload/:id", tt.handler.ConfirmImageUpload)
+
+			req := httptest.NewRequest(http.MethodPost, "/products/confirm-image-upload/"+tt.id, nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusNoContent {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response body: %v", err)
+			}
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
+			}
+		})
+	}
+}
+
+// generateTestImage generates a 10 * 10 png image.
+func generateTestImage(t *testing.T) io.Reader {
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	var buf bytes.Buffer
+
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("Error encoding image: %v", err)
+	}
+	return &buf
+}
+
+func TestConfirmImageUpload(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+	manager := transfermanager.New(testS3Client)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler(service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.POST("/products/confirm-image-upload/:id", handler.ConfirmImageUpload)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "French fries",
+			Description:      "Some test description",
+			Price:            decimal.NewFromFloat(47.84),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+			Bucket: aws.String(testS3BucketName),
+			Key:    aws.String(product.ImageKey),
+			Body:   generateTestImage(t),
+		}); err != nil {
+			t.Fatalf("Error uploading image: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/products/confirm-image-upload/"+product.Id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNoContent, rec.Code)
+		}
+
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error fetching product: %v", err)
+		}
+
+		if fetchedProduct.Status != domain.ProductStatusReady {
+			t.Fatalf("Want product status %s, got %s", domain.ProductStatusReady, fetchedProduct.Status)
+		}
+	})
+
+	t.Run("invalid image type", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "French fries",
+			Description:      "Some test description",
+			Price:            decimal.NewFromFloat(47.84),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+			Bucket: aws.String(testS3BucketName),
+			Key:    aws.String(product.ImageKey),
+			Body:   strings.NewReader("fakeImage"),
+		}); err != nil {
+			t.Fatalf("Error uploading image: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/products/confirm-image-upload/"+product.Id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("Want http status code %d, got %d", http.StatusUnprocessableEntity, rec.Code)
+		}
+
+		// validate product is deleted
+		var exists bool
+		row := testDb.QueryRow("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", product.Id)
+		if err := row.Scan(&exists); err != nil {
+			t.Fatalf("Error fetching product: %v", err)
+		}
+		if exists {
+			t.Fatalf("Product should be deleted if the image content type is invalid")
+		}
+
+		// validate the image is deleted
+		_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
+			Bucket: aws.String(testS3BucketName),
+			Key:    aws.String(product.ImageKey),
+		})
+		if _, ok := errors.AsType[*types.NotFound](err); !ok {
+			t.Fatalf("Want *types.NotFound error, got: %T", err)
 		}
 	})
 }
