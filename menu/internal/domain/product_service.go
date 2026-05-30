@@ -64,6 +64,23 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 	}, nil
 }
 
+func (d *DefaultProductService) GetDraft(ctx context.Context, id uuid.UUID) (*ProductDraft, error) {
+	product, err := d.repository.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if product.Status == ProductStatusReady {
+		return nil, NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil)
+	}
+
+	uploadUrl, err := d.storage.CreateUploadUrl(ctx, product.ImageKey, product.ImageContentType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProductDraft{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
+}
+
 // cleanUpProduct deletes the product from the repository and the image from the storage.
 // Any errors during the process are logged.
 func (d *DefaultProductService) cleanUpProduct(ctx context.Context, product *Product) {

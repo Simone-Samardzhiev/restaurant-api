@@ -235,6 +235,8 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 					if domainErr.Code != tt.wantError.Code {
 						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
 					}
+				} else {
+					t.Fatalf("Want error type *Error, got: %T", err)
 				}
 				return
 			}
@@ -243,6 +245,102 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 				t.Fatalf("Want no error, got: %v", err)
 			}
 			if draft.ImageUploadUrl != tt.wantDraft.ImageUploadUrl {
+				t.Fatalf("Want upload url: %s, got: %s", tt.wantDraft.ImageUploadUrl, draft.ImageUploadUrl)
+			}
+		})
+	}
+}
+
+func TestDefaultProductServiceGetDraft(t *testing.T) {
+	tests := []struct {
+		name string
+		id   uuid.UUID
+
+		repository     *fakeProductRepository
+		wantOnGetCount int
+
+		storage                    *fakeImageStorage
+		wantOnCreateUploadUrlCount int
+
+		wantDraft *ProductDraft
+		wantError *Error
+	}{
+		{
+			name: "success",
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusAwaitingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+			wantOnGetCount: 1,
+
+			storage: &fakeImageStorage{
+				onCreateUploadUrl: func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error) {
+					return "https://images/upload", nil
+				},
+			},
+			wantOnCreateUploadUrlCount: 1,
+
+			wantDraft: &ProductDraft{
+				ImageUploadUrl: "https://images/upload",
+			},
+		},
+		{
+			name: "error product already finished",
+			id:   uuid.New(),
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return nil, NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil)
+				},
+			},
+			wantOnGetCount: 1,
+			storage:        &fakeImageStorage{},
+
+			wantError: NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			draft, err := service.GetDraft(context.Background(), tt.id)
+			if tt.wantOnGetCount != tt.repository.onGetCount {
+				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount)
+			}
+			if tt.wantOnCreateUploadUrlCount != tt.storage.onCreateUploadUrlCount {
+				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount)
+			}
+
+			if tt.wantError != nil {
+				if domainErr, ok := errors.AsType[*Error](err); ok {
+					if tt.wantError.Code != domainErr.Code {
+						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
+					}
+				} else {
+					t.Fatalf("Want error type *Error, got: %T", err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Want no error, got: %v", err)
+			}
+			if tt.wantDraft.ImageUploadUrl != draft.ImageUploadUrl {
 				t.Fatalf("Want upload url: %s, got: %s", tt.wantDraft.ImageUploadUrl, draft.ImageUploadUrl)
 			}
 		})
@@ -431,6 +529,8 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 					if domainErr.Code != tt.wantError.Code {
 						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
 					}
+				} else {
+					t.Fatalf("Want error type *Error, got: %T", err)
 				}
 				return
 			}

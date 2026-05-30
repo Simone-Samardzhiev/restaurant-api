@@ -27,6 +27,9 @@ type ProductService interface {
 	// Add creates a new product draft.
 	Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error)
 
+	// GetDraft returns a draft for a product by id.
+	GetDraft(ctx context.Context, id uuid.UUID) (*ProductDraft, error)
+
 	// ConfirmImageUpload confirms an image is uploaded for a product.
 	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error
 }

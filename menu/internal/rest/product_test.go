@@ -30,6 +30,7 @@ import (
 
 type fakeProductService struct {
 	onAdd                func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
+	onGetDraft           func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
 	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID) error
 }
 
@@ -40,6 +41,13 @@ func (f *fakeProductService) Add(ctx context.Context, request *domain.AddProduct
 		panic("onAdd not implemented")
 	}
 	return f.onAdd(ctx, request)
+}
+
+func (f *fakeProductService) GetDraft(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error) {
+	if f.onGetDraft == nil {
+		panic("onGetDraft not implemented")
+	}
+	return f.onGetDraft(ctx, id)
 }
 
 func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error {
