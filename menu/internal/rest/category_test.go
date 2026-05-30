@@ -249,7 +249,7 @@ func TestAddCategory(t *testing.T) {
 		e.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusConflict {
-			t.Fatalf("Want http status code %d, got %d", http.StatusCreated, rec.Code)
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
 		}
 
 		var res ErrorResponse
