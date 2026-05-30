@@ -42,6 +42,9 @@ var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 
 	domain.ErrorCodeProductNameConflict: "Product name already exists.",
 	domain.ErrorCodeProductNotFound:     "Product not found.",
+
+	domain.ErrorCodeImageNotFound: "Image not found.",
+	domain.ErrorCodeInvalidImage:  "Invalid image.",
 }
 
 // NewError creates a new [Error]. If the error of type [domain.Error] the message and the code gets translated,
