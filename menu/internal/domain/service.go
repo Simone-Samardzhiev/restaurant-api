@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"io"
 
 	"github.com/google/uuid"
 )
@@ -32,4 +33,7 @@ type ProductService interface {
 
 	// ConfirmImageUpload confirms an image is uploaded for a product.
 	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error
+
+	// GetImage fetches an image by key.
+	GetImage(ctx context.Context, key string) (io.ReadCloser, error)
 }

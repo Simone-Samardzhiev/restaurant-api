@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"strings"
 	"time"
@@ -134,4 +135,8 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 	}
 
 	return nil
+}
+
+func (d *DefaultProductService) GetImage(ctx context.Context, key string) (io.ReadCloser, error) {
+	return d.storage.Get(ctx, key)
 }
