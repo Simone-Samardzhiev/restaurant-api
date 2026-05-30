@@ -12,6 +12,8 @@ RUN go build -o /app/bin/api ./cmd/api/main.go
 
 FROM debian:bookworm-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+
 WORKDIR /app
 COPY --from=builder /app/bin/api ./bin/api
 COPY ./migrations ./migrations
