@@ -80,16 +80,6 @@ func NewDatabase() (Database, error) {
 	if maxIdleConns, ok := os.LookupEnv("DATABASE_MAX_IDLE_CONNS"); ok {
 		val, err := strconv.Atoi(maxIdleConns)
 		if err != nil {
-			return Database{}, fmt.Errorf("config: DATABABE_MAX_IDLE_CONNS must be an integer (got: %s): %w", maxIdleConns, err)
-		}
-		database.MaxIdleConns = val
-	} else {
-		return Database{}, errors.New("config: DATABABE_MAX_IDLE_CONNS is required but not set")
-	}
-
-	if maxIdleConns, ok := os.LookupEnv("DATABASE_MAX_IDLE_CONNS"); ok {
-		val, err := strconv.Atoi(maxIdleConns)
-		if err != nil {
 			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_CONNS must be an integer (got: %s): %w", maxIdleConns, err)
 		}
 		database.MaxIdleConns = val
@@ -111,17 +101,6 @@ func NewDatabase() (Database, error) {
 		val, err := time.ParseDuration(maxIdleTime)
 		if err != nil {
 			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_TIME must be a duration (got: %s): %w", maxIdleTime, err)
-		}
-		database.MaxIdleTime = val
-	} else {
-		return Database{}, errors.New("config: DATABASE_MAX_IDLE_TIME is required but not set")
-	}
-
-	if maxIdleTime, ok := os.LookupEnv("DATABASE_MAX_IDLE_TIME"); ok {
-		val, err := time.ParseDuration(maxIdleTime)
-		if err != nil {
-			return Database{}, fmt.Errorf("config: DATABASE_MAX_IDLE_TIME must be a duration (got: %s): %w", maxIdleTime, err)
-
 		}
 		database.MaxIdleTime = val
 	} else {
