@@ -54,6 +54,7 @@ func NewRouter(c *RouterConfig) *Router {
 			products.POST("", c.ProductHandler.AddProduct)
 			products.GET("/:id/draft", c.ProductHandler.GetDraft)
 			products.POST("/:id/image", c.ProductHandler.ConfirmImageUpload)
+			products.GET("/:id", c.ProductHandler.GetProduct)
 		}
 	}
 

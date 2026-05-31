@@ -32,6 +32,7 @@ type fakeProductService struct {
 	onAdd                func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
 	onGetDraft           func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
 	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID) error
+	onGetProduct         func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
 	onGetImage           func(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
@@ -56,6 +57,13 @@ func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID u
 		return f.onConfirmImageUpload(ctx, productID)
 	}
 	return nil
+}
+
+func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	if f.onGetProduct == nil {
+		panic("onGetProduct not implemented")
+	}
+	return f.onGetProduct(ctx, id)
 }
 
 func (f *fakeProductService) GetImage(ctx context.Context, key string) (io.ReadCloser, error) {
@@ -756,4 +764,86 @@ func TestConfirmImageUpload(t *testing.T) {
 			t.Fatalf("Want *types.NotFound error, got: %T", err)
 		}
 	})
+}
+
+func TestProductHandlerGetProduct(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             string
+		handler        *ProductHandler
+		wantHttpStatus int
+		wantImageUrl   string
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			id:   uuid.NewString(),
+			handler: &ProductHandler{
+				baseImageUrl: "http://images/download",
+				service: &fakeProductService{
+					onGetProduct: func(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+						return &domain.Product{
+							Id:               uuid.New(),
+							Name:             "French fries",
+							Description:      "Some test description",
+							Price:            decimal.NewFromFloat(47.84),
+							CategoryId:       uuid.New(),
+							ImageKey:         "imageKey",
+							ImageContentType: "image/png",
+							Status:           domain.ProductStatusAwaitingImage,
+						}, nil
+					},
+				},
+			},
+			wantHttpStatus: http.StatusOK,
+			wantImageUrl:   "http://images/download/imageKey",
+		},
+		{
+			name: "invalid id",
+			id:   "invalid",
+			handler: &ProductHandler{
+				baseImageUrl: "http://images/download",
+				service:      &fakeProductService{},
+			},
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			e := echo.New()
+			e.HTTPErrorHandler = ErrorHandler
+			e.GET("/products/:id", tt.handler.GetProduct)
+
+			req := httptest.NewRequest(http.MethodGet, "/products/"+tt.id, nil)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+
+			if rec.Code == http.StatusOK {
+				var res ProductResponse
+				if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+					t.Fatalf("Error decoding response: %v", err)
+				}
+
+				if res.ImageUrl != tt.wantImageUrl {
+					t.Fatalf("Want image url %s, got %s", tt.wantImageUrl, res.ImageUrl)
+				}
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response: %v", err)
+			}
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
+			}
+		})
+	}
 }

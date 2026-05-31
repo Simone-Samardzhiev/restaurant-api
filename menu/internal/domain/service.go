@@ -34,6 +34,9 @@ type ProductService interface {
 	// ConfirmImageUpload confirms an image is uploaded for a product.
 	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error
 
+	// GetProduct fetches a product by id.
+	GetProduct(ctx context.Context, id uuid.UUID) (*Product, error)
+
 	// GetImage fetches an image by key.
 	GetImage(ctx context.Context, key string) (io.ReadCloser, error)
 }

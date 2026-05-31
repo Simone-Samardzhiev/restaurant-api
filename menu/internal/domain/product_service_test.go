@@ -541,3 +541,71 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultProductServiceGetProduct(t *testing.T) {
+	tests := []struct {
+		name       string
+		id         uuid.UUID
+		repository *fakeProductRepository
+		wantError  *Error
+	}{
+		{
+			name: "success",
+			id:   uuid.New(),
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusReady,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+		},
+		{
+			name: "product not ready",
+			id:   uuid.New(),
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               uuid.New(),
+						Name:             "Test name",
+						Description:      "Test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: "image/png",
+						Status:           ProductStatusAwaitingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, logger.NewSilentLogger())
+
+			_, err := service.GetProduct(context.Background(), tt.id)
+			if tt.wantError != nil {
+				if domainErr, ok := errors.AsType[*Error](err); ok {
+					if domainErr.Code != tt.wantError.Code {
+						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
+					}
+				} else {
+					t.Fatalf("Want error type *Error, got: %T", err)
+				}
+			}
+		})
+	}
+}

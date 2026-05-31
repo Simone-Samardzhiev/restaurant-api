@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -149,4 +150,39 @@ func (p *ProductHandler) ConfirmImageUpload(ctx *echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
+}
+
+// ProductResponse represent the JSON response of a product.
+type ProductResponse struct {
+	Id          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Price       decimal.Decimal `json:"price"`
+	CategoryId  uuid.UUID       `json:"categoryId"`
+	ImageUrl    string          `json:"imageUrl"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
+}
+
+func (p *ProductHandler) GetProduct(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	product, err := p.service.GetProduct(ctx.Request().Context(), id)
+	if err != nil {
+		return NewError(err)
+	}
+
+	return ctx.JSON(http.StatusOK, ProductResponse{
+		Id:          product.Id,
+		Name:        product.Name,
+		Description: product.Description,
+		Price:       product.Price,
+		CategoryId:  product.CategoryId,
+		ImageUrl:    p.baseImageUrl + "/" + product.ImageKey,
+		CreatedAt:   product.CreatedAt,
+		UpdatedAt:   product.UpdatedAt,
+	})
 }

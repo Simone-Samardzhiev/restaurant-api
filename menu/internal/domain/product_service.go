@@ -137,6 +137,20 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 	return nil
 }
 
+func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*Product, error) {
+	product, err := d.repository.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// product is not ready, return not found
+	if product.Status != ProductStatusReady {
+		return nil, NewError("product is not ready to be displayed", ErrorCodeProductNotFound, nil)
+	}
+
+	return product, nil
+}
+
 func (d *DefaultProductService) GetImage(ctx context.Context, key string) (io.ReadCloser, error) {
 	return d.storage.Get(ctx, key)
 }
