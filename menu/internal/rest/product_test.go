@@ -847,3 +847,51 @@ func TestProductHandlerGetProduct(t *testing.T) {
 		})
 	}
 }
+
+func TestGetImage(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	productRepository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+	manager := transfermanager.New(testS3Client)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler("https://images", service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.GET("/product/image/:key", handler.GetImage)
+
+	const key = "imageKey"
+	fakeImage := []byte("fakeImage")
+
+	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+		Bucket:      aws.String(testS3BucketName),
+		Key:         aws.String(key),
+		ContentType: aws.String("image/png"),
+		Body:        bytes.NewReader(fakeImage),
+	}); err != nil {
+		t.Fatalf("Error uploading image: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/product/image/"+key, nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	data, err := io.ReadAll(rec.Body)
+	if err != nil {
+		t.Fatalf("Error reading response body: %v", err)
+	}
+	if !bytes.Equal(fakeImage, data) {
+		t.Fatalf("Want image data %s, got %s", fakeImage, data)
+	}
+	if rec.Header().Get("Content-Type") != "image/png" {
+		t.Fatalf("Want image/png got %s", rec.Header().Get("Content-Type"))
+	}
+}

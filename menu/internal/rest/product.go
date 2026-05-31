@@ -186,3 +186,17 @@ func (p *ProductHandler) GetProduct(ctx *echo.Context) error {
 		UpdatedAt:   product.UpdatedAt,
 	})
 }
+
+func (p *ProductHandler) GetImage(ctx *echo.Context) error {
+	key := ctx.Param("key")
+
+	image, err := p.service.GetImage(ctx.Request().Context(), key)
+	if err != nil {
+		return NewError(err)
+	}
+
+	defer image.Close()
+
+	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=604800, s-maxage=604800")
+	return ctx.Stream(http.StatusOK, string(image.ContentType), image.Data)
+}
