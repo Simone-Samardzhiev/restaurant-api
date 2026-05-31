@@ -33,7 +33,7 @@ type fakeProductService struct {
 	onGetDraft           func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
 	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID) error
 	onGetProduct         func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
-	onGetImage           func(ctx context.Context, key string) (io.ReadCloser, error)
+	onGetImage           func(ctx context.Context, key string) (*domain.Image, error)
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -66,7 +66,7 @@ func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*dom
 	return f.onGetProduct(ctx, id)
 }
 
-func (f *fakeProductService) GetImage(ctx context.Context, key string) (io.ReadCloser, error) {
+func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.Image, error) {
 	if f.onGetImage == nil {
 		panic("onGetImage not implemented")
 	}

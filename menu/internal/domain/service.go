@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"io"
 
 	"github.com/google/uuid"
 )
@@ -38,5 +37,5 @@ type ProductService interface {
 	GetProduct(ctx context.Context, id uuid.UUID) (*Product, error)
 
 	// GetImage fetches an image by key.
-	GetImage(ctx context.Context, key string) (io.ReadCloser, error)
+	GetImage(ctx context.Context, key string) (*Image, error)
 }

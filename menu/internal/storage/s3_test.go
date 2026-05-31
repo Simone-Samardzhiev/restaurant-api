@@ -202,7 +202,7 @@ func TestS3ImageStorageGet(t *testing.T) {
 			t.Fatalf("Error getting image: %v", err)
 		}
 
-		data, err := io.ReadAll(fetchedImage)
+		data, err := io.ReadAll(fetchedImage.Data)
 		if err != nil {
 			t.Fatalf("Error reading image: %v", err)
 		}

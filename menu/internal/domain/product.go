@@ -18,14 +18,6 @@ const (
 	ProductStatusAwaitingImage ProductStatus = "awaiting_image"
 )
 
-type ImageContentType string
-
-const (
-	ImageContentTypeJPEG = "image/jpeg"
-	ImageContentTypePNG  = "image/png"
-	ImageContentTypeWebP = "image/webp"
-)
-
 // Product represents product in the menu.
 type Product struct {
 	Id          uuid.UUID

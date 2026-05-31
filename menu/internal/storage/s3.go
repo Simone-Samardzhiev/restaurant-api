@@ -134,13 +134,21 @@ func (s *S3ImageStorage) Validate(ctx context.Context, imageKey string, contentT
 	return nil
 }
 
-func (s *S3ImageStorage) Get(ctx context.Context, imageKey string) (io.ReadCloser, error) {
+func (s *S3ImageStorage) Get(ctx context.Context, imageKey string) (*domain.Image, error) {
 	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(imageKey),
 	})
 	if err == nil {
-		return out.Body, nil
+		var contentType domain.ImageContentType = domain.ImageContentTypeJPEG
+		if out.ContentType != nil {
+			contentType = domain.ImageContentType(*out.ContentType)
+		}
+
+		return &domain.Image{
+			Data:        out.Body,
+			ContentType: contentType,
+		}, nil
 	}
 
 	if _, ok := errors.AsType[*types.NoSuchKey](err); ok {

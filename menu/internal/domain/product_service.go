@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"strings"
 	"time"
@@ -151,6 +150,6 @@ func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*
 	return product, nil
 }
 
-func (d *DefaultProductService) GetImage(ctx context.Context, key string) (io.ReadCloser, error) {
+func (d *DefaultProductService) GetImage(ctx context.Context, key string) (*Image, error) {
 	return d.storage.Get(ctx, key)
 }

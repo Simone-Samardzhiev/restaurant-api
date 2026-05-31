@@ -3,7 +3,6 @@ package domain
 import (
 	"context"
 	"errors"
-	"io"
 	"menu/internal/logger"
 	"testing"
 	"time"
@@ -84,7 +83,7 @@ type fakeImageStorage struct {
 	onValidate      func(ctx context.Context, imageKey string, contentType ImageContentType) error
 	onValidateCount int
 
-	onGet      func(imageKey string) (io.ReadCloser, error)
+	onGet      func(ctx context.Context, imageKey string) (*Image, error)
 	onGetCount int
 }
 
@@ -122,12 +121,12 @@ func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, conten
 	return f.onValidate(ctx, imageKey, contentType)
 }
 
-func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (io.ReadCloser, error) {
+func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (*Image, error) {
 	if f.onGet == nil {
 		panic("onGet not implemented")
 	}
 	f.onGetCount++
-	return f.onGet(imageKey)
+	return f.onGet(ctx, imageKey)
 }
 
 func TestDefaultProductServiceAdd(t *testing.T) {
