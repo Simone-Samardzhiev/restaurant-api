@@ -102,9 +102,7 @@ func (c *CategoryHandler) GetCategories(ctx *echo.Context) error {
 		})
 	}
 
-	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=60")
-	ctx.Response().Header().Set("Surrogate-Control", "public, max-age=3600")
-
+	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=3600, s-maxage=3600")
 	return ctx.JSON(http.StatusOK, response)
 }
 
