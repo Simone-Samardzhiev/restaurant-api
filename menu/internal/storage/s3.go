@@ -109,6 +109,7 @@ func (s *S3ImageStorage) Validate(ctx context.Context, imageKey string, contentT
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(imageKey),
 		Range:  aws.String("bytes=0-511"),
+	}, func(options *s3.Options) {
 	})
 	if err != nil {
 		if _, ok := errors.AsType[*types.NoSuchKey](err); ok {
@@ -144,6 +145,8 @@ func (s *S3ImageStorage) Get(ctx context.Context, imageKey string) (*domain.Imag
 	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(imageKey),
+	}, func(o *s3.Options) {
+		o.DisableLogOutputChecksumValidationSkipped = true
 	})
 	if err == nil {
 		buffer, err := io.ReadAll(io.LimitReader(out.Body, 512))
