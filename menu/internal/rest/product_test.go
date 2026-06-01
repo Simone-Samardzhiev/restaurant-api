@@ -15,6 +15,7 @@ import (
 	"menu/internal/storage"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -627,14 +628,14 @@ func TestProductHandlerConfirmImageUpload(t *testing.T) {
 }
 
 // generateTestImage generates a 10 * 10 png image.
-func generateTestImage(t *testing.T) io.Reader {
+func generateTestImage(t *testing.T) []byte {
 	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 	var buf bytes.Buffer
 
 	if err := png.Encode(&buf, img); err != nil {
 		t.Fatalf("Error encoding image: %v", err)
 	}
-	return &buf
+	return buf.Bytes()
 }
 
 func TestConfirmImageUpload(t *testing.T) {
@@ -687,7 +688,7 @@ func TestConfirmImageUpload(t *testing.T) {
 		if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 			Bucket: aws.String(testS3BucketName),
 			Key:    aws.String(product.ImageKey),
-			Body:   generateTestImage(t),
+			Body:   bytes.NewReader(generateTestImage(t)),
 		}); err != nil {
 			t.Fatalf("Error uploading image: %v", err)
 		}
@@ -856,6 +857,125 @@ func TestProductHandlerGetProduct(t *testing.T) {
 	}
 }
 
+func TestGetAllReadyProducts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 10*time.Second, testS3BucketName)
+	productService := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	productHandler := NewProductHandler("https://images/download", productService)
+
+	e := echo.New()
+	e.HTTPErrorHandler = ErrorHandler
+	e.GET("/products", productHandler.GetAllReadyProducts)
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	category := &domain.Category{
+		Id:        uuid.New(),
+		Name:      "Test name",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := categoryRepository.Save(context.Background(), category); err != nil {
+		t.Fatalf("Error saving category: %v", err)
+	}
+
+	products := []domain.Product{
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 1",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 2",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey2",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 3",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey3",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test name 4",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey4",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now().AddDate(-1, 0, 0),
+			UpdatedAt:        time.Now(),
+		},
+	}
+
+	for _, product := range products {
+		if err := productRepository.Save(context.Background(), &product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+	}
+
+	products = slices.DeleteFunc(products, func(product domain.Product) bool {
+		return product.Status == domain.ProductStatusAwaitingImage
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/products", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+	}
+	var res []ProductResponse
+	if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+		t.Fatalf("Error decoding response: %v", err)
+	}
+
+	if len(res) != len(products) {
+		t.Fatalf("Want %d products, got %d", len(products), len(res))
+	}
+
+	slices.SortFunc(products, func(a, b domain.Product) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	slices.SortFunc(res, func(a, b ProductResponse) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	for i := 0; i < len(products); i++ {
+		if products[i].Name != res[i].Name {
+			t.Errorf("Want product %s, got %s", products[i].Name, res[i].Name)
+		}
+	}
+}
+
 func TestGetImage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -873,7 +993,7 @@ func TestGetImage(t *testing.T) {
 	e.GET("/product/image/:key", handler.GetImage)
 
 	const key = "imageKey"
-	fakeImage := []byte("fakeImage")
+	fakeImage := generateTestImage(t)
 
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket:      aws.String(testS3BucketName),

@@ -187,6 +187,29 @@ func (p *ProductHandler) GetProduct(ctx *echo.Context) error {
 	})
 }
 
+func (p *ProductHandler) GetAllReadyProducts(ctx *echo.Context) error {
+	products, err := p.service.GetAllReadyProducts(ctx.Request().Context())
+	if err != nil {
+		return NewError(err)
+	}
+
+	res := make([]ProductResponse, 0, len(products))
+	for _, product := range products {
+		res = append(res, ProductResponse{
+			Id:          product.Id,
+			Name:        product.Name,
+			Description: product.Description,
+			Price:       product.Price,
+			CategoryId:  product.CategoryId,
+			ImageUrl:    p.baseImageUrl + "/" + product.ImageKey,
+			CreatedAt:   product.CreatedAt,
+			UpdatedAt:   product.UpdatedAt,
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, res)
+}
+
 func (p *ProductHandler) GetImage(ctx *echo.Context) error {
 	key := ctx.Param("key")
 
