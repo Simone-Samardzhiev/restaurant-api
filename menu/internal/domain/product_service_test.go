@@ -18,6 +18,9 @@ type fakeProductRepository struct {
 	onGet      func(ctx context.Context, id uuid.UUID) (*Product, error)
 	onGetCount int
 
+	onGetAllReady      func(ctx context.Context) ([]Product, error)
+	onGetAllReadyCount int
+
 	onDelete      func(ctx context.Context, id uuid.UUID) error
 	onDeleteCount int
 
@@ -26,6 +29,14 @@ type fakeProductRepository struct {
 
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
 	onDeleteExpiredByStatusCount int
+}
+
+func (f *fakeProductRepository) GetAllReady(ctx context.Context) ([]Product, error) {
+	if f.onGetAllReady == nil {
+		panic("onGetAllReady not implemented")
+	}
+	f.onGetAllReadyCount++
+	return f.onGetAllReady(ctx)
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)

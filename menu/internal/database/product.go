@@ -73,6 +73,29 @@ func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*dom
 	return &product, nil
 }
 
+func (p *PostgresProductRepository) GetAllReady(ctx context.Context) ([]domain.Product, error) {
+	rows, err := p.db.QueryContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE status = 'ready'`)
+	if err != nil {
+		return nil, domain.NewError("error fetching all ready products", domain.ErrorCodeInternal, err)
+	}
+
+	defer rows.Close()
+	var products []domain.Product
+	for rows.Next() {
+		var product domain.Product
+		if err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &product.CreatedAt, &product.UpdatedAt); err != nil {
+			return nil, domain.NewError("error scanning product", domain.ErrorCodeInternal, err)
+		}
+		products = append(products, product)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, domain.NewError("error scanning products", domain.ErrorCodeInternal, err)
+	}
+
+	return products, nil
+}
+
 func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ProductStatus) error {
 	result, err := p.db.ExecContext(ctx, "UPDATE products SET status = $1 WHERE id = $2", status, id)
 	if err != nil {

@@ -150,6 +150,10 @@ func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*
 	return product, nil
 }
 
+func (d *DefaultProductService) GetAllReadyProducts(ctx context.Context) ([]Product, error) {
+	return d.repository.GetAllReady(ctx)
+}
+
 func (d *DefaultProductService) GetImage(ctx context.Context, key string) (*Image, error) {
 	return d.storage.Get(ctx, key)
 }

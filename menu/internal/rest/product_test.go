@@ -29,11 +29,12 @@ import (
 )
 
 type fakeProductService struct {
-	onAdd                func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
-	onGetDraft           func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
-	onConfirmImageUpload func(ctx context.Context, productID uuid.UUID) error
-	onGetProduct         func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
-	onGetImage           func(ctx context.Context, key string) (*domain.Image, error)
+	onAdd                 func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
+	onGetDraft            func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
+	onConfirmImageUpload  func(ctx context.Context, productID uuid.UUID) error
+	onGetProduct          func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
+	onGetAllReadyProducts func(ctx context.Context) ([]domain.Product, error)
+	onGetImage            func(ctx context.Context, key string) (*domain.Image, error)
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -64,6 +65,13 @@ func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*dom
 		panic("onGetProduct not implemented")
 	}
 	return f.onGetProduct(ctx, id)
+}
+
+func (f *fakeProductService) GetAllReadyProducts(ctx context.Context) ([]domain.Product, error) {
+	if f.onGetAllReadyProducts == nil {
+		panic("onGetAllReadyProducts not implemented")
+	}
+	return f.onGetAllReadyProducts(ctx)
 }
 
 func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.Image, error) {

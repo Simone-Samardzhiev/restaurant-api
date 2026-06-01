@@ -5,6 +5,7 @@ import (
 	"errors"
 	"menu/internal/domain"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -240,6 +241,98 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 		}
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
 	})
+}
+
+func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
+
+	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+		t.Fatalf("Error truncating table: %v", err)
+	}
+
+	category := &domain.Category{
+		Id:        uuid.New(),
+		Name:      "Test name",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	if err := categoryRepository.Save(context.Background(), category); err != nil {
+		t.Fatalf("Error saving category: %v", err)
+	}
+
+	products := []domain.Product{
+		{
+			Id:               uuid.New(),
+			Name:             "Test 1",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test 2",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey2",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+		{
+			Id:               uuid.New(),
+			Name:             "Test 3",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey3",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+	}
+
+	for _, product := range products {
+		if err := productRepository.Save(context.Background(), &product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+	}
+	products = slices.DeleteFunc(products, func(product domain.Product) bool {
+		return product.Status == domain.ProductStatusAwaitingImage
+	})
+
+	slices.SortFunc(products, func(a, b domain.Product) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	fetchedProducts, err := productRepository.GetAllReady(context.Background())
+	if err != nil {
+		t.Fatalf("Error fetching products: %v", err)
+	}
+	if len(fetchedProducts) != len(products) {
+		t.Fatalf("Want %d products, got %d", len(products), len(fetchedProducts))
+	}
+
+	slices.SortFunc(fetchedProducts, func(a, b domain.Product) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	for i := 0; i < len(products); i++ {
+		if products[i].Name != fetchedProducts[i].Name {
+			t.Fatalf("Want product: %s, got: %s", products[i].Name, fetchedProducts[i].Name)
+		}
+	}
 }
 
 func TestPostgresProductRepositoryDelete(t *testing.T) {
