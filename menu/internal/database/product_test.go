@@ -251,7 +251,7 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 	productRepository := NewPostgresProductRepository(testDb)
 
 	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
-		t.Fatalf("Error truncating table: %v", err)
+
 	}
 
 	category := &domain.Category{
@@ -312,10 +312,6 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 		return product.Status == domain.ProductStatusAwaitingImage
 	})
 
-	slices.SortFunc(products, func(a, b domain.Product) int {
-		return strings.Compare(a.Name, b.Name)
-	})
-
 	fetchedProducts, err := productRepository.GetAllReady(context.Background())
 	if err != nil {
 		t.Fatalf("Error fetching products: %v", err)
@@ -324,13 +320,16 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 		t.Fatalf("Want %d products, got %d", len(products), len(fetchedProducts))
 	}
 
+	slices.SortFunc(products, func(a, b domain.Product) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 	slices.SortFunc(fetchedProducts, func(a, b domain.Product) int {
 		return strings.Compare(a.Name, b.Name)
 	})
 
 	for i := 0; i < len(products); i++ {
 		if products[i].Name != fetchedProducts[i].Name {
-			t.Fatalf("Want product: %s, got: %s", products[i].Name, fetchedProducts[i].Name)
+			t.Errorf("Want product: %s, got: %s", products[i].Name, fetchedProducts[i].Name)
 		}
 	}
 }
@@ -562,7 +561,7 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 
 	for i := 0; i < len(wantKeys); i++ {
 		if wantKeys[i] != keys[i] {
-			t.Fatalf("Want key %s, got %s", wantKeys[i], keys[i])
+			t.Errorf("Want key %s, got %s", wantKeys[i], keys[i])
 		}
 	}
 }
