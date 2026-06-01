@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -134,20 +135,29 @@ func (s *S3ImageStorage) Validate(ctx context.Context, imageKey string, contentT
 	return nil
 }
 
+type imageReader struct {
+	io.Reader
+	io.Closer
+}
+
 func (s *S3ImageStorage) Get(ctx context.Context, imageKey string) (*domain.Image, error) {
 	out, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(imageKey),
 	})
 	if err == nil {
-		var contentType domain.ImageContentType = domain.ImageContentTypeJPEG
-		if out.ContentType != nil {
-			contentType = domain.ImageContentType(*out.ContentType)
+		buffer, err := io.ReadAll(io.LimitReader(out.Body, 512))
+		if err != nil {
+			return nil, domain.NewError("error detecting content type of image", domain.ErrorCodeInternal, err)
 		}
 
+		contentType := http.DetectContentType(buffer)
 		return &domain.Image{
-			Data:        out.Body,
-			ContentType: contentType,
+			Data: &imageReader{
+				Reader: io.MultiReader(bytes.NewReader(buffer), out.Body),
+				Closer: out.Body,
+			},
+			ContentType: domain.ImageContentType(contentType),
 		}, nil
 	}
 
