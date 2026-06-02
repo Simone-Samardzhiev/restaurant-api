@@ -39,6 +39,9 @@ type ProductService interface {
 	// GetAllReadyProducts fetches all ready products.
 	GetAllReadyProducts(ctx context.Context) ([]Product, error)
 
+	// UpdateProduct updates the data of a product.
+	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error
+
 	// GetImage fetches an image by key.
 	GetImage(ctx context.Context, key string) (*Image, error)
 }

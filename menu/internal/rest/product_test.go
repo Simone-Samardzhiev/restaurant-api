@@ -35,6 +35,7 @@ type fakeProductService struct {
 	onConfirmImageUpload  func(ctx context.Context, productID uuid.UUID) error
 	onGetProduct          func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
 	onGetAllReadyProducts func(ctx context.Context) ([]domain.Product, error)
+	onUpdateProduct       func(ctx context.Context, request *domain.UpdateProductRequest) error
 	onGetImage            func(ctx context.Context, key string) (*domain.Image, error)
 }
 
@@ -73,6 +74,13 @@ func (f *fakeProductService) GetAllReadyProducts(ctx context.Context) ([]domain.
 		panic("onGetAllReadyProducts not implemented")
 	}
 	return f.onGetAllReadyProducts(ctx)
+}
+
+func (f *fakeProductService) UpdateProduct(ctx context.Context, request *domain.UpdateProductRequest) error {
+	if f.onUpdateProduct == nil {
+		panic("onUpdateProduct not implemented")
+	}
+	return f.onUpdateProduct(ctx, request)
 }
 
 func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.Image, error) {

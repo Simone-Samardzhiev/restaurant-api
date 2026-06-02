@@ -154,6 +154,10 @@ func (d *DefaultProductService) GetAllReadyProducts(ctx context.Context) ([]Prod
 	return d.repository.GetAllReady(ctx)
 }
 
+func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
+	return d.repository.Update(ctx, request)
+}
+
 func (d *DefaultProductService) GetImage(ctx context.Context, key string) (*Image, error) {
 	return d.storage.Get(ctx, key)
 }
