@@ -48,3 +48,12 @@ type ProductDraft struct {
 	Id             uuid.UUID
 	ImageUploadUrl string
 }
+
+// UpdateProductRequest represents a request for updating products data.
+type UpdateProductRequest struct {
+	Id          uuid.UUID
+	Name        *string
+	Description *string
+	Price       *decimal.Decimal
+	CategoryId  *uuid.UUID
+}

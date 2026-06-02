@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"menu/internal/domain"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -96,21 +98,58 @@ func (p *PostgresProductRepository) GetAllReady(ctx context.Context) ([]domain.P
 	return products, nil
 }
 
-func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ProductStatus) error {
-	result, err := p.db.ExecContext(ctx, "UPDATE products SET status = $1 WHERE id = $2", status, id)
-	if err != nil {
-		return domain.NewError("error updating product", domain.ErrorCodeInternal, err)
+func (p *PostgresProductRepository) Update(ctx context.Context, request *domain.UpdateProductRequest) error {
+	updates := make([]string, 0, 4)
+	args := make([]any, 0, 5)
+
+	if request.Name != nil {
+		updates = append(updates, "name = $"+strconv.Itoa(len(updates)+1))
+		args = append(args, *request.Name)
+	}
+	if request.Description != nil {
+		updates = append(updates, "description = $"+strconv.Itoa(len(updates)+1))
+		args = append(args, *request.Description)
+	}
+	if request.Price != nil {
+		updates = append(updates, "price = $"+strconv.Itoa(len(updates)+1))
+		args = append(args, *request.Price)
+	}
+	if request.CategoryId != nil {
+		updates = append(updates, "category_id = $"+strconv.Itoa(len(updates)+1))
+		args = append(args, *request.CategoryId)
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	if len(updates) == 0 {
+		return nil
 	}
 
-	if rows == 0 {
-		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	query := "UPDATE products SET " + strings.Join(updates, ", ") + " WHERE id = $" + strconv.Itoa(len(updates)+1)
+	args = append(args, request.Id)
+
+	result, err := p.db.ExecContext(ctx, query, args...)
+	if err == nil {
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+		}
+		if rows == 0 {
+			return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+		}
+
+		return nil
 	}
-	return nil
+
+	if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+		if pqErr.Code == "23505" && pqErr.Constraint == "products_name_key" {
+			return domain.NewError("product name conflict", domain.ErrorCodeProductNameConflict, pqErr)
+		}
+
+		if pqErr.Code == "23503" && pqErr.Constraint == "products_category_id_fkey" {
+			return domain.NewError("category not found", domain.ErrorCodeCategoryNotFound, pqErr)
+		}
+	}
+
+	return domain.NewError("error updating product", domain.ErrorCodeInternal, err)
 }
 
 func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
@@ -123,6 +162,23 @@ func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) er
 	if err != nil {
 		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
 	}
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
+func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ProductStatus) error {
+	result, err := p.db.ExecContext(ctx, "UPDATE products SET status = $1 WHERE id = $2", status, id)
+	if err != nil {
+		return domain.NewError("error updating product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+
 	if rows == 0 {
 		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
 	}

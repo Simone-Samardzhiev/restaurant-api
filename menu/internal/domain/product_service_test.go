@@ -21,6 +21,9 @@ type fakeProductRepository struct {
 	onGetAllReady      func(ctx context.Context) ([]Product, error)
 	onGetAllReadyCount int
 
+	onUpdate      func(ctx context.Context, request *UpdateProductRequest) error
+	onUpdateCount int
+
 	onDelete      func(ctx context.Context, id uuid.UUID) error
 	onDeleteCount int
 
@@ -29,14 +32,6 @@ type fakeProductRepository struct {
 
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
 	onDeleteExpiredByStatusCount int
-}
-
-func (f *fakeProductRepository) GetAllReady(ctx context.Context) ([]Product, error) {
-	if f.onGetAllReady == nil {
-		panic("onGetAllReady not implemented")
-	}
-	f.onGetAllReadyCount++
-	return f.onGetAllReady(ctx)
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)
@@ -55,6 +50,22 @@ func (f *fakeProductRepository) Get(ctx context.Context, id uuid.UUID) (*Product
 	}
 	f.onGetCount++
 	return f.onGet(ctx, id)
+}
+
+func (f *fakeProductRepository) GetAllReady(ctx context.Context) ([]Product, error) {
+	if f.onGetAllReady == nil {
+		panic("onGetAllReady not implemented")
+	}
+	f.onGetAllReadyCount++
+	return f.onGetAllReady(ctx)
+}
+
+func (f *fakeProductRepository) Update(ctx context.Context, request *UpdateProductRequest) error {
+	if f.onUpdate == nil {
+		panic("onUpdate not implemented")
+	}
+	f.onUpdateCount++
+	return f.onUpdate(ctx, request)
 }
 
 func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error {

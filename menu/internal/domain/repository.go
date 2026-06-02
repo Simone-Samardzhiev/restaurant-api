@@ -35,6 +35,9 @@ type ProductRepository interface {
 	// GetAllReady fetches all products with status [domain.ProductStatusReady].
 	GetAllReady(ctx context.Context) ([]Product, error)
 
+	// Update updates the data of a product.
+	Update(ctx context.Context, request *UpdateProductRequest) error
+
 	// Delete deletes a product by id.
 	Delete(ctx context.Context, id uuid.UUID) error
 
