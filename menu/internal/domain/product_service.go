@@ -128,7 +128,7 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 
 	if err = d.repository.UpdateStatus(ctx, product.Id, ProductStatusReady); err != nil {
 		if deleteErr := d.storage.Delete(ctx, product.ImageKey); deleteErr != nil {
-			slog.Default().LogAttrs(
+			d.logger.LogAttrs(
 				ctx, slog.LevelWarn,
 				"Image could not be deleted after failing to update product status",
 				slog.String("error", deleteErr.Error()),
