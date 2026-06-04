@@ -72,7 +72,7 @@ func (p *PostgresCategoryRepository) GetAll(ctx context.Context) ([]domain.Categ
 }
 
 func (p *PostgresCategoryRepository) Update(ctx context.Context, id uuid.UUID, name string) error {
-	result, err := p.db.ExecContext(ctx, "UPDATE categories SET name = $1, updated_at = NOW() WHERE id = $2", name, id)
+	result, err := p.db.ExecContext(ctx, "UPDATE categories SET name = $1 WHERE id = $2", name, id)
 	if err == nil {
 		rows, err := result.RowsAffected()
 		if err != nil {
