@@ -35,7 +35,11 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 	}
 
 	now := time.Now()
-	productId := uuid.New()
+	productId, err := uuid.NewV7()
+	if err != nil {
+		return nil, NewError("error create uuid for product", ErrorCodeInternal, err)
+	}
+
 	product := Product{
 		Id:               productId,
 		Name:             request.Name,

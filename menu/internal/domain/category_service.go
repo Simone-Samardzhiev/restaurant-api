@@ -21,9 +21,13 @@ func NewDefaultCategoryService(repository CategoryRepository) *DefaultCategorySe
 
 func (d *DefaultCategoryService) Add(ctx context.Context, name string) (*Category, error) {
 	now := time.Now()
+	categoryId, err := uuid.NewV7()
+	if err != nil {
+		return nil, NewError("error create uuid for category", ErrorCodeInternal, err)
+	}
 
 	category := Category{
-		Id:        uuid.New(),
+		Id:        categoryId,
 		Name:      name,
 		CreatedAt: now,
 		UpdatedAt: now,
