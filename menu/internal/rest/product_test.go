@@ -984,6 +984,337 @@ func TestGetAllReadyProducts(t *testing.T) {
 	}
 }
 
+func TestUpdateProductRequestValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		request   *UpdateProductRequest
+		wantField string
+	}{
+		{
+			name: "Valid",
+			request: &UpdateProductRequest{
+				Name: new("New name"),
+			},
+		},
+		{
+			name: "Invalid name",
+			request: &UpdateProductRequest{
+				Name: new(""),
+			},
+			wantField: "name",
+		},
+		{
+			name: "Invalid description",
+			request: &UpdateProductRequest{
+				Description: new(""),
+			},
+			wantField: "description",
+		},
+		{
+			name: "Invalid price",
+			request: &UpdateProductRequest{
+				Price: new(decimal.NewFromInt(-1)),
+			},
+			wantField: "price",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := tt.request.Validate()
+			if tt.wantField == "" {
+				if got != nil {
+					t.Errorf("Validate() = %v, want nil", got)
+				}
+				return
+			}
+
+			_, ok := got[tt.wantField]
+			if !ok {
+				t.Errorf("Missing field %v", tt.wantField)
+			}
+		})
+	}
+}
+
+func TestProductHandlerUpdateProduct(t *testing.T) {
+	tests := []struct {
+		name           string
+		handler        *ProductHandler
+		id             string
+		request        string
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "sucess",
+			handler: &ProductHandler{
+				service: &fakeProductService{onUpdateProduct: func(ctx context.Context, request *domain.UpdateProductRequest) error {
+					return nil
+				}},
+			},
+			id:             uuid.NewString(),
+			request:        `{"name":"New name"}`,
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name:           "empty",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			id:             uuid.NewString(),
+			request:        `{}`,
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid id",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			id:             "invalid",
+			request:        `{"name":"New name"}`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+		{
+			name:           "invalid json",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			id:             uuid.NewString(),
+			request:        `{"name":"New name}`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidJSON,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			e := echo.New()
+			e.HTTPErrorHandler = ErrorHandler
+			e.PATCH("/products/:id", tt.handler.UpdateProduct)
+
+			req := httptest.NewRequest(http.MethodPatch, "/products/"+tt.id, strings.NewReader(tt.request))
+			req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusNoContent {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response: %v", err)
+			}
+			if res.Code != tt.wantErrorCode {
+				t.Errorf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
+			}
+		})
+	}
+}
+
+func TestUpdateProduct(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler("https://images", service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.PATCH("/products/:id", handler.UpdateProduct)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE `); err != nil {
+			t.Fatalf("Error truncating table categories: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error creating category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+product.Id.String(), strings.NewReader(`{"name":"New name"}`))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNoContent, rec.Code)
+		}
+
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error fetching product: %v", err)
+		}
+
+		if fetchedProduct.Name != "New name" {
+			t.Fatalf("Want New name got %s", fetchedProduct.Name)
+		}
+	})
+
+	t.Run("conflicting name", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product1 := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test1",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product1); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		product2 := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test2",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey2",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product2); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+product1.Id.String(), strings.NewReader(`{"name":"Test2"}`))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusConflict {
+			t.Fatalf("Want http status code %d, got %d", http.StatusConflict, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response: %v", err)
+		}
+
+		if res.Code != domain.ErrorCodeProductNameConflict.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNameConflict, res.Code)
+		}
+	})
+
+	t.Run("category not found", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error creating category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusAwaitingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+product.Id.String(), strings.NewReader(fmt.Sprintf(`{"categoryId": "%s"}`, uuid.NewString())))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response: %v", err)
+		}
+		if res.Code != domain.ErrorCodeCategoryNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeCategoryNotFound, res.Code)
+		}
+	})
+
+	t.Run("product not found", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.NewString(), strings.NewReader(`{"name":"New name"}`))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response: %v", err)
+		}
+		if res.Code != domain.ErrorCodeProductNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, res.Code)
+		}
+	})
+}
+
 func TestGetImage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")

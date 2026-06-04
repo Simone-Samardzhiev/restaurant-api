@@ -210,6 +210,84 @@ func (p *ProductHandler) GetAllReadyProducts(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, res)
 }
 
+// UpdateProductRequest represents the JSON request for updating the data of a product.
+type UpdateProductRequest struct {
+	Name        *string          `json:"name,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Price       *decimal.Decimal `json:"price,omitempty"`
+	CategoryID  *uuid.UUID       `json:"categoryId,omitempty"`
+}
+
+func (u *UpdateProductRequest) Validate() map[string][]string {
+	fields := make(map[string][]string)
+
+	if u.Name != nil {
+		u.Name = new(strings.TrimSpace(*u.Name))
+		length := utf8.RuneCountInString(*u.Name)
+		if length < MinProductNameLength {
+			fields["name"] = append(fields["name"], "Must be at least "+strconv.Itoa(MinProductNameLength)+" characters.")
+		}
+		if length > MaxProductNameLength {
+			fields["name"] = append(fields["name"], "Must be at most "+strconv.Itoa(MaxProductNameLength)+" characters.")
+		}
+	}
+
+	if u.Description != nil {
+		u.Description = new(strings.TrimSpace(*u.Description))
+		length := utf8.RuneCountInString(*u.Description)
+		if length < MinProductDescriptionLength {
+			fields["description"] = append(fields["description"], "Must be at least "+strconv.Itoa(MinProductDescriptionLength)+" characters.")
+		}
+	}
+
+	if u.Price != nil {
+		if u.Price.LessThan(decimal.Zero) {
+			fields["price"] = append(fields["price"], "Price must be greater than zero.")
+		}
+	}
+
+	if len(fields) > 0 {
+		return fields
+	}
+
+	return nil
+}
+
+func (u *UpdateProductRequest) IsEmpty() bool {
+	return u.Name == nil && u.Description == nil && u.Price == nil && u.CategoryID == nil
+}
+
+func (p *ProductHandler) UpdateProduct(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	var req UpdateProductRequest
+	if err = ctx.Bind(&req); err != nil {
+		return NewInvalidJSONError(err)
+	}
+	if req.IsEmpty() {
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
+	if fields := req.Validate(); fields != nil {
+		return NewValidationError(fields)
+	}
+
+	if err = p.service.UpdateProduct(ctx.Request().Context(), &domain.UpdateProductRequest{
+		Id:          id,
+		Name:        req.Name,
+		Description: req.Description,
+		Price:       req.Price,
+		CategoryId:  req.CategoryID,
+	}); err != nil {
+		return NewError(err)
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}
+
 func (p *ProductHandler) GetImage(ctx *echo.Context) error {
 	key := ctx.Param("key")
 

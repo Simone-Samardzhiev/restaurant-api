@@ -57,6 +57,7 @@ func NewRouter(c *RouterConfig) *Router {
 			products.GET("/:id", c.ProductHandler.GetProduct)
 			products.GET("", c.ProductHandler.GetAllReadyProducts)
 			products.GET("/image/:key", c.ProductHandler.GetImage)
+			products.PATCH("/:id", c.ProductHandler.UpdateProduct)
 		}
 	}
 
