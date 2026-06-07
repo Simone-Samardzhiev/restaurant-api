@@ -74,7 +74,7 @@ func (d *DefaultProductService) GetUploadInfo(ctx context.Context, id uuid.UUID)
 		return nil, err
 	}
 	if product.Status == ProductStatusReady {
-		return nil, NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil)
+		return nil, NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil)
 	}
 
 	uploadUrl, err := d.storage.CreateUploadUrl(ctx, product.ImageKey, product.ImageContentType)

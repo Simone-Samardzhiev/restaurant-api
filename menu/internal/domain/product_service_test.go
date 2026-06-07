@@ -324,13 +324,13 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 			id:   uuid.New(),
 			repository: &fakeProductRepository{
 				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
-					return nil, NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil)
+					return nil, NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil)
 				},
 			},
 			wantOnGetCount: 1,
 			storage:        &fakeImageStorage{},
 
-			wantError: NewError("product is already completed", ErrorCodeProductAlreadyFinished, nil),
+			wantError: NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil),
 		},
 	}
 

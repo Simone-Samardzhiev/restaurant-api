@@ -27,7 +27,7 @@ var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 
 	domain.ErrorCodeProductNameConflict:    http.StatusConflict,
 	domain.ErrorCodeProductNotFound:        http.StatusNotFound,
-	domain.ErrorCodeProductAlreadyFinished: http.StatusConflict,
+	domain.ErrorCodeProductAlreadyHasImage: http.StatusConflict,
 
 	domain.ErrorCodeImageNotFound: http.StatusNotFound,
 	domain.ErrorCodeInvalidImage:  http.StatusUnprocessableEntity,
@@ -43,7 +43,7 @@ var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 
 	domain.ErrorCodeProductNameConflict:    "Product name already exists.",
 	domain.ErrorCodeProductNotFound:        "Product not found.",
-	domain.ErrorCodeProductAlreadyFinished: "Cannot get the draft of a product that is already finished.",
+	domain.ErrorCodeProductAlreadyHasImage: "Cannot get upload info about a product with already uploaded image. Please mark the product for update to change the image.",
 
 	domain.ErrorCodeImageNotFound: "Image not found.",
 	domain.ErrorCodeInvalidImage:  "Invalid image.",

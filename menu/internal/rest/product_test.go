@@ -569,8 +569,8 @@ func TestGetUploadInfo(t *testing.T) {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
 
-		if domain.ErrorCodeProductAlreadyFinished.String() != res.Code {
-			t.Fatalf("Want error code %s, got %s", res.Code, domain.ErrorCodeProductAlreadyFinished.String())
+		if domain.ErrorCodeProductAlreadyHasImage.String() != res.Code {
+			t.Fatalf("Want error code %s, got %s", res.Code, domain.ErrorCodeProductAlreadyHasImage.String())
 		}
 	})
 }
