@@ -300,7 +300,7 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 						CategoryId:       uuid.New(),
 						ImageKey:         "imageKey",
 						ImageContentType: "image/png",
-						Status:           ProductStatusAwaitingImage,
+						Status:           ProductStatusMissingImage,
 						CreatedAt:        time.Now(),
 						UpdatedAt:        time.Now(),
 					}, nil
@@ -398,7 +398,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 						CategoryId:       uuid.New(),
 						ImageKey:         "imageKey",
 						ImageContentType: "image/png",
-						Status:           ProductStatusAwaitingImage,
+						Status:           ProductStatusMissingImage,
 						CreatedAt:        time.Now(),
 						UpdatedAt:        time.Now(),
 					}, nil
@@ -454,7 +454,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 						CategoryId:       uuid.New(),
 						ImageKey:         "imageKey",
 						ImageContentType: "image/png",
-						Status:           ProductStatusAwaitingImage,
+						Status:           ProductStatusMissingImage,
 						CreatedAt:        time.Now(),
 						UpdatedAt:        time.Now(),
 					}, nil
@@ -493,7 +493,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 						CategoryId:       uuid.New(),
 						ImageKey:         "imageKey",
 						ImageContentType: "image/png",
-						Status:           ProductStatusAwaitingImage,
+						Status:           ProductStatusMissingImage,
 						CreatedAt:        time.Now(),
 						UpdatedAt:        time.Now(),
 					}, nil
@@ -603,7 +603,7 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 						CategoryId:       uuid.New(),
 						ImageKey:         "imageKey",
 						ImageContentType: "image/png",
-						Status:           ProductStatusAwaitingImage,
+						Status:           ProductStatusMissingImage,
 						CreatedAt:        time.Now(),
 						UpdatedAt:        time.Now(),
 					}, nil

@@ -11,11 +11,14 @@ import (
 type ProductStatus string
 
 const (
-	// ProductStatusReady product is ready and can be displayed.
+	// ProductStatusReady represents product with uploaded image.
 	ProductStatusReady ProductStatus = "ready"
 
-	// ProductStatusAwaitingImage is not ready and waiting for image.
-	ProductStatusAwaitingImage ProductStatus = "awaiting_image"
+	// ProductStatusAwaitingImageUpdate represents a product marked for image update with still valid old image.
+	ProductStatusAwaitingImageUpdate ProductStatus = "awaiting_image_update"
+
+	// ProductStatusMissingImage represents product with missing image.
+	ProductStatusMissingImage ProductStatus = "missing_image"
 )
 
 // Product represents product in the menu.

@@ -190,7 +190,7 @@ func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, o
 	rows, err := p.db.QueryContext(
 		ctx,
 		`DELETE FROM products 
-    	WHERE status = 'awaiting_image' AND created_at < $1 
+    	WHERE status != 'ready' AND created_at < $1 
     	RETURNING image_key`, t,
 	)
 	if err != nil {

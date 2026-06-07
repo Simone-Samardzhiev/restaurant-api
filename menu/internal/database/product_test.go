@@ -285,7 +285,7 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey2",
 			ImageContentType: domain.ImageContentTypePNG,
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		},
@@ -309,7 +309,7 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 		}
 	}
 	products = slices.DeleteFunc(products, func(product domain.Product) bool {
-		return product.Status == domain.ProductStatusAwaitingImage
+		return product.Status == domain.ProductStatusMissingImage
 	})
 
 	fetchedProducts, err := productRepository.GetAllReady(context.Background())
@@ -623,7 +623,7 @@ func TestPostgresProductRepositoryUpdateStatus(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: domain.ImageContentTypePNG,
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -690,7 +690,7 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey1",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		},
@@ -714,7 +714,7 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey3",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now().AddDate(-1, 0, 0),
 			UpdatedAt:        time.Now(),
 		},
@@ -726,7 +726,7 @@ func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey4",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now().AddDate(-1, 0, 0),
 			UpdatedAt:        time.Now(),
 		},

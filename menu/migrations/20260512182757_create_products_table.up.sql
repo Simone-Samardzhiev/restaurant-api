@@ -1,4 +1,4 @@
-CREATE TYPE product_status AS ENUM ('ready','awaiting_image');
+CREATE TYPE product_status AS ENUM ('ready', 'awaiting_image');
 
 CREATE TABLE products
 (

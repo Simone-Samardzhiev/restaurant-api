@@ -48,7 +48,7 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 		CategoryId:       request.CategoryId,
 		ImageKey:         productId.String() + "." + ext,
 		ImageContentType: request.ImageContentType,
-		Status:           ProductStatusAwaitingImage,
+		Status:           ProductStatusMissingImage,
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}

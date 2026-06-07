@@ -499,7 +499,7 @@ func TestGetUploadInfo(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: domain.ImageContentTypeJPEG,
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -687,7 +687,7 @@ func TestConfirmImageUpload(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 		}
 		if err := productRepository.Save(context.Background(), product); err != nil {
 			t.Fatalf("Error saving product: %v", err)
@@ -741,7 +741,7 @@ func TestConfirmImageUpload(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 		}
 		if err := productRepository.Save(context.Background(), product); err != nil {
 			t.Fatalf("Error saving product: %v", err)
@@ -807,7 +807,7 @@ func TestProductHandlerGetProduct(t *testing.T) {
 							CategoryId:       uuid.New(),
 							ImageKey:         "imageKey",
 							ImageContentType: "image/png",
-							Status:           domain.ProductStatusAwaitingImage,
+							Status:           domain.ProductStatusMissingImage,
 						}, nil
 					},
 				},
@@ -902,7 +902,7 @@ func TestGetAllReadyProducts(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey1",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		},
@@ -926,7 +926,7 @@ func TestGetAllReadyProducts(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey3",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now().AddDate(-1, 0, 0),
 			UpdatedAt:        time.Now(),
 		},
@@ -938,7 +938,7 @@ func TestGetAllReadyProducts(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey4",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now().AddDate(-1, 0, 0),
 			UpdatedAt:        time.Now(),
 		},
@@ -951,7 +951,7 @@ func TestGetAllReadyProducts(t *testing.T) {
 	}
 
 	products = slices.DeleteFunc(products, func(product domain.Product) bool {
-		return product.Status == domain.ProductStatusAwaitingImage
+		return product.Status == domain.ProductStatusMissingImage
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/products", nil)
@@ -1153,7 +1153,7 @@ func TestUpdateProduct(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey1",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -1269,7 +1269,7 @@ func TestUpdateProduct(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey1",
 			ImageContentType: "image/png",
-			Status:           domain.ProductStatusAwaitingImage,
+			Status:           domain.ProductStatusMissingImage,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}

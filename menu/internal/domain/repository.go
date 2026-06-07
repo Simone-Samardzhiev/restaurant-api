@@ -44,7 +44,7 @@ type ProductRepository interface {
 	// UpdateStatus updates the status of a product by id.
 	UpdateStatus(ctx context.Context, id uuid.UUID, status ProductStatus) error
 
-	// DeleteExpiredByStatus deletes all products whose status is [ProductStatusAwaitingImage] and a
+	// DeleteExpiredByStatus deletes all products whose status is [ProductStatusMissingImage] and a
 	// set duration has passed since it was created.
 	//
 	// Returns the image keys for all delete products, so the images can be deleted
