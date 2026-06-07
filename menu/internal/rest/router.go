@@ -55,7 +55,7 @@ func NewRouter(c *RouterConfig) *Router {
 			products.GET("/:id/upload-info", c.ProductHandler.GetUploadInfo)
 			products.POST("/:id/image", c.ProductHandler.ConfirmImageUpload)
 			products.GET("/:id", c.ProductHandler.GetProduct)
-			products.GET("", c.ProductHandler.GetAllReadyProducts)
+			products.GET("", c.ProductHandler.GetAllProductsWithImage)
 			products.GET("/image/:key", c.ProductHandler.GetImage)
 			products.PATCH("/:id", c.ProductHandler.UpdateProduct)
 		}

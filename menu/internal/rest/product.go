@@ -187,8 +187,8 @@ func (p *ProductHandler) GetProduct(ctx *echo.Context) error {
 	})
 }
 
-func (p *ProductHandler) GetAllReadyProducts(ctx *echo.Context) error {
-	products, err := p.service.GetAllReadyProducts(ctx.Request().Context())
+func (p *ProductHandler) GetAllProductsWithImage(ctx *echo.Context) error {
+	products, err := p.service.GetAllWithImage(ctx.Request().Context())
 	if err != nil {
 		return NewError(err)
 	}

@@ -69,7 +69,7 @@ func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*dom
 	return f.onGetProduct(ctx, id)
 }
 
-func (f *fakeProductService) GetAllReadyProducts(ctx context.Context) ([]domain.Product, error) {
+func (f *fakeProductService) GetAllWithImage(ctx context.Context) ([]domain.Product, error) {
 	if f.onGetAllReadyProducts == nil {
 		panic("onGetAllReadyProducts not implemented")
 	}
@@ -865,7 +865,7 @@ func TestProductHandlerGetProduct(t *testing.T) {
 	}
 }
 
-func TestGetAllReadyProducts(t *testing.T) {
+func TestGetAllProductsWithImageReadyProducts(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -877,7 +877,7 @@ func TestGetAllReadyProducts(t *testing.T) {
 
 	e := echo.New()
 	e.HTTPErrorHandler = ErrorHandler
-	e.GET("/products", productHandler.GetAllReadyProducts)
+	e.GET("/products", productHandler.GetAllProductsWithImage)
 
 	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
 		t.Fatalf("Error truncating table: %v", err)

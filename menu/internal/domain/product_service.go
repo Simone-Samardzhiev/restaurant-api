@@ -154,8 +154,8 @@ func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*
 	return product, nil
 }
 
-func (d *DefaultProductService) GetAllReadyProducts(ctx context.Context) ([]Product, error) {
-	return d.repository.GetAllReady(ctx)
+func (d *DefaultProductService) GetAllWithImage(ctx context.Context) ([]Product, error) {
+	return d.repository.GetAllWithImage(ctx)
 }
 
 func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {

@@ -75,8 +75,8 @@ func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*dom
 	return &product, nil
 }
 
-func (p *PostgresProductRepository) GetAllReady(ctx context.Context) ([]domain.Product, error) {
-	rows, err := p.db.QueryContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE status = 'ready'`)
+func (p *PostgresProductRepository) GetAllWithImage(ctx context.Context) ([]domain.Product, error) {
+	rows, err := p.db.QueryContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE status != 'missing_image'`)
 	if err != nil {
 		return nil, domain.NewError("error fetching all ready products", domain.ErrorCodeInternal, err)
 	}

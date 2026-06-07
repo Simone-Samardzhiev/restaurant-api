@@ -243,7 +243,7 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 	})
 }
 
-func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
+func TestPostgresProductRepositoryGetAllWithImage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -297,7 +297,7 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 			CategoryId:       category.Id,
 			ImageKey:         "imageKey3",
 			ImageContentType: domain.ImageContentTypePNG,
-			Status:           domain.ProductStatusReady,
+			Status:           domain.ProductStatusAwaitingImageUpdate,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		},
@@ -312,7 +312,7 @@ func TestPostgresProductRepositoryGetAllReady(t *testing.T) {
 		return product.Status == domain.ProductStatusMissingImage
 	})
 
-	fetchedProducts, err := productRepository.GetAllReady(context.Background())
+	fetchedProducts, err := productRepository.GetAllWithImage(context.Background())
 	if err != nil {
 		t.Fatalf("Error fetching products: %v", err)
 	}

@@ -36,8 +36,8 @@ type ProductService interface {
 	// GetProduct fetches a product by id.
 	GetProduct(ctx context.Context, id uuid.UUID) (*Product, error)
 
-	// GetAllReadyProducts fetches all ready products.
-	GetAllReadyProducts(ctx context.Context) ([]Product, error)
+	// GetAllWithImage fetches all products with image.
+	GetAllWithImage(ctx context.Context) ([]Product, error)
 
 	// UpdateProduct updates the data of a product.
 	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error

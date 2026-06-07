@@ -32,8 +32,8 @@ type ProductRepository interface {
 	// Get fetches a product by id.
 	Get(ctx context.Context, id uuid.UUID) (*Product, error)
 
-	// GetAllReady fetches all products with status [domain.ProductStatusReady].
-	GetAllReady(ctx context.Context) ([]Product, error)
+	// GetAllWithImage fetches all products with status different from [ProductStatusMissingImage].
+	GetAllWithImage(ctx context.Context) ([]Product, error)
 
 	// Update updates the data of a product.
 	Update(ctx context.Context, request *UpdateProductRequest) error

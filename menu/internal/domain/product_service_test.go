@@ -52,7 +52,7 @@ func (f *fakeProductRepository) Get(ctx context.Context, id uuid.UUID) (*Product
 	return f.onGet(ctx, id)
 }
 
-func (f *fakeProductRepository) GetAllReady(ctx context.Context) ([]Product, error) {
+func (f *fakeProductRepository) GetAllWithImage(ctx context.Context) ([]Product, error) {
 	if f.onGetAllReady == nil {
 		panic("onGetAllReady not implemented")
 	}
