@@ -36,7 +36,7 @@ func TestS3ImageStorageCreateUploadUrl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating request: %v", err)
 	}
-	req.Header.Set("Content-Type", domain.ImageContentTypePNG)
+	req.Header.Set("Content-Type", string(domain.ImageContentTypePNG))
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

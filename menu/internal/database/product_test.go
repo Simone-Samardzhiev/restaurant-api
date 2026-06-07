@@ -185,16 +185,18 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 		}
 
 		product := &domain.Product{
-			Id:               uuid.New(),
-			Name:             "Test",
-			Description:      "Some test description for product",
-			Price:            decimal.NewFromInt(100),
-			CategoryId:       category.Id,
-			ImageKey:         "imageKey",
-			ImageContentType: domain.ImageContentTypePNG,
-			Status:           domain.ProductStatusReady,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
+			Id:                      uuid.New(),
+			Name:                    "Test",
+			Description:             "Some test description for product",
+			Price:                   decimal.NewFromInt(100),
+			CategoryId:              category.Id,
+			ImageKey:                "imageKey",
+			ImageContentType:        domain.ImageContentTypePNG,
+			Status:                  domain.ProductStatusAwaitingImageUpdate,
+			PendingImageKey:         new("pendingImageKey"),
+			PendingImageContentType: new(domain.ImageContentTypePNG),
+			CreatedAt:               time.Now(),
+			UpdatedAt:               time.Now(),
 		}
 		if err := productRepository.Save(context.Background(), product); err != nil {
 			t.Fatalf("Error saving product: %v", err)
@@ -225,6 +227,16 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 		}
 		if fetchedProduct.Status != product.Status {
 			t.Errorf("Want status: %s, got: %s", product.Status, fetchedProduct.Status)
+		}
+		if (fetchedProduct.PendingImageKey == nil) != (product.PendingImageKey == nil) {
+			t.Errorf("Want pending image key nilness: %v, got: %v", product.PendingImageKey == nil, fetchedProduct.PendingImageKey == nil)
+		} else if product.PendingImageKey != nil && *product.PendingImageKey != *fetchedProduct.PendingImageKey {
+			t.Errorf("Want pending image key: %s, got: %s", *product.PendingImageKey, *fetchedProduct.PendingImageKey)
+		}
+		if (fetchedProduct.PendingImageContentType == nil) != (product.PendingImageContentType == nil) {
+			t.Errorf("Want pending image content type nilness: %v, got: %v", product.PendingImageContentType == nil, fetchedProduct.PendingImageContentType == nil)
+		} else if product.PendingImageContentType != nil && *product.PendingImageContentType != *fetchedProduct.PendingImageContentType {
+			t.Errorf("Want pending image content type: %s, got: %s", *product.PendingImageContentType, *fetchedProduct.PendingImageContentType)
 		}
 	})
 

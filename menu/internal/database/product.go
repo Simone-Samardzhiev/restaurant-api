@@ -30,8 +30,8 @@ func NewPostgresProductRepository(db *sql.DB) *PostgresProductRepository {
 func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Product) error {
 	_, err := p.db.ExecContext(
 		ctx,
-		`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		`INSERT INTO products(id, name, description, price, category_id, image_key, image_content_type, status, pending_image_key, pending_image_content_type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
 		product.Id,
 		product.Name,
 		product.Description,
@@ -40,6 +40,8 @@ func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Pr
 		product.ImageKey,
 		product.ImageContentType,
 		product.Status,
+		product.PendingImageKey,
+		product.PendingImageContentType,
 		product.CreatedAt,
 		product.UpdatedAt,
 	)
@@ -61,10 +63,12 @@ func (p *PostgresProductRepository) Save(ctx context.Context, product *domain.Pr
 }
 
 func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
-	row := p.db.QueryRowContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE id = $1`, id)
+	row := p.db.QueryRowContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, pending_image_key, pending_image_content_type, created_at, updated_at FROM products WHERE id = $1`, id)
 	var product domain.Product
-	err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &product.CreatedAt, &product.UpdatedAt)
+	var pendingImageKey sql.NullString
+	var pendingImageContentType sql.NullString
 
+	err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &pendingImageKey, &pendingImageContentType, &product.CreatedAt, &product.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
@@ -72,11 +76,18 @@ func (p *PostgresProductRepository) Get(ctx context.Context, id uuid.UUID) (*dom
 		return nil, domain.NewError("error fetching product", domain.ErrorCodeInternal, err)
 	}
 
+	if pendingImageKey.Valid {
+		product.PendingImageKey = &pendingImageKey.String
+	}
+	if pendingImageContentType.Valid {
+		product.PendingImageContentType = new(domain.ImageContentType(pendingImageContentType.String))
+	}
+
 	return &product, nil
 }
 
 func (p *PostgresProductRepository) GetAllWithImage(ctx context.Context) ([]domain.Product, error) {
-	rows, err := p.db.QueryContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, created_at, updated_at FROM products WHERE status != 'missing_image'`)
+	rows, err := p.db.QueryContext(ctx, `SELECT id, name, description, price, category_id, image_key, image_content_type, status, pending_image_key, pending_image_content_type, created_at, updated_at FROM products WHERE status != 'missing_image'`)
 	if err != nil {
 		return nil, domain.NewError("error fetching all ready products", domain.ErrorCodeInternal, err)
 	}
@@ -85,9 +96,19 @@ func (p *PostgresProductRepository) GetAllWithImage(ctx context.Context) ([]doma
 	var products []domain.Product
 	for rows.Next() {
 		var product domain.Product
-		if err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &product.CreatedAt, &product.UpdatedAt); err != nil {
+		var pendingImageKey sql.NullString
+		var pendingImageContentType sql.NullString
+
+		if err := rows.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &pendingImageKey, &pendingImageContentType, &product.CreatedAt, &product.UpdatedAt); err != nil {
 			return nil, domain.NewError("error scanning product", domain.ErrorCodeInternal, err)
 		}
+		if pendingImageKey.Valid {
+			product.PendingImageKey = &pendingImageKey.String
+		}
+		if pendingImageContentType.Valid {
+			product.PendingImageContentType = new(domain.ImageContentType(pendingImageContentType.String))
+		}
+
 		products = append(products, product)
 	}
 

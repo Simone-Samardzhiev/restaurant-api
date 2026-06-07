@@ -33,6 +33,9 @@ type Product struct {
 	ImageContentType ImageContentType
 	Status           ProductStatus
 
+	PendingImageKey         *string
+	PendingImageContentType *ImageContentType
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

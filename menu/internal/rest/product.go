@@ -37,7 +37,7 @@ const (
 )
 
 func isValidContentType(imageContentType string) bool {
-	switch imageContentType {
+	switch domain.ImageContentType(imageContentType) {
 	case domain.ImageContentTypeJPEG, domain.ImageContentTypePNG, domain.ImageContentTypeWebP:
 		return true
 	default:

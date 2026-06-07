@@ -5,9 +5,9 @@ import "io"
 type ImageContentType string
 
 const (
-	ImageContentTypeJPEG = "image/jpeg"
-	ImageContentTypePNG  = "image/png"
-	ImageContentTypeWebP = "image/webp"
+	ImageContentTypeJPEG ImageContentType = "image/jpeg"
+	ImageContentTypePNG  ImageContentType = "image/png"
+	ImageContentTypeWebP ImageContentType = "image/webp"
 )
 
 type Image struct {
