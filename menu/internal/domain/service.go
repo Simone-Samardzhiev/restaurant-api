@@ -25,10 +25,10 @@ type CategoryService interface {
 // ProductService describes how product business logic is accessed.
 type ProductService interface {
 	// Add creates a new product draft.
-	Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error)
+	Add(ctx context.Context, request *AddProductRequest) (*ProductUploadInfo, error)
 
-	// GetDraft returns a draft for a product by id.
-	GetDraft(ctx context.Context, id uuid.UUID) (*ProductDraft, error)
+	// GetUploadInfo returns the upload info for a product by id.
+	GetUploadInfo(ctx context.Context, id uuid.UUID) (*ProductUploadInfo, error)
 
 	// ConfirmImageUpload confirms an image is uploaded for a product.
 	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error

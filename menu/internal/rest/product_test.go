@@ -30,8 +30,8 @@ import (
 )
 
 type fakeProductService struct {
-	onAdd                 func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error)
-	onGetDraft            func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error)
+	onAdd                 func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductUploadInfo, error)
+	onGetUploadInfo       func(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error)
 	onConfirmImageUpload  func(ctx context.Context, productID uuid.UUID) error
 	onGetProduct          func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
 	onGetAllReadyProducts func(ctx context.Context) ([]domain.Product, error)
@@ -41,18 +41,18 @@ type fakeProductService struct {
 
 var _ domain.ProductService = (*fakeProductService)(nil)
 
-func (f *fakeProductService) Add(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error) {
+func (f *fakeProductService) Add(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductUploadInfo, error) {
 	if f.onAdd == nil {
 		panic("onAdd not implemented")
 	}
 	return f.onAdd(ctx, request)
 }
 
-func (f *fakeProductService) GetDraft(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error) {
-	if f.onGetDraft == nil {
-		panic("onGetDraft not implemented")
+func (f *fakeProductService) GetUploadInfo(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error) {
+	if f.onGetUploadInfo == nil {
+		panic("onGetUploadInfo not implemented")
 	}
-	return f.onGetDraft(ctx, id)
+	return f.onGetUploadInfo(ctx, id)
 }
 
 func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error {
@@ -183,8 +183,8 @@ func TestProductHandlerAdd(t *testing.T) {
 			name: "success",
 			handler: &ProductHandler{
 				service: &fakeProductService{
-					onAdd: func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductDraft, error) {
-						return &domain.ProductDraft{
+					onAdd: func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductUploadInfo, error) {
+						return &domain.ProductUploadInfo{
 							Id:             uuid.New(),
 							ImageUploadUrl: "http://upload.url",
 						}, nil
@@ -241,7 +241,7 @@ func TestProductHandlerAdd(t *testing.T) {
 			}
 
 			if tt.wantHttpStatus == http.StatusCreated {
-				var res domain.ProductDraft
+				var res domain.ProductUploadInfo
 				if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 					t.Fatalf("Error decoding response body: %v", err)
 				}
@@ -307,7 +307,7 @@ func TestAddProduct(t *testing.T) {
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("Want http status code %d, got %d", http.StatusCreated, rec.Code)
 		}
-		var res domain.ProductDraft
+		var res domain.ProductUploadInfo
 		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
 			t.Fatalf("Error decoding response body: %v", err)
 		}
@@ -396,7 +396,7 @@ func TestAddProduct(t *testing.T) {
 	})
 }
 
-func TestProductHandlerGetDraft(t *testing.T) {
+func TestProductHandlerGetUploadInfo(t *testing.T) {
 	tests := []struct {
 		name           string
 		id             string
@@ -409,8 +409,8 @@ func TestProductHandlerGetDraft(t *testing.T) {
 			id:   uuid.NewString(),
 			handler: &ProductHandler{
 				service: &fakeProductService{
-					onGetDraft: func(ctx context.Context, id uuid.UUID) (*domain.ProductDraft, error) {
-						return &domain.ProductDraft{
+					onGetUploadInfo: func(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error) {
+						return &domain.ProductUploadInfo{
 							Id:             id,
 							ImageUploadUrl: "http://upload/image",
 						}, nil
@@ -435,7 +435,7 @@ func TestProductHandlerGetDraft(t *testing.T) {
 			t.Parallel()
 			e := echo.New()
 			e.HTTPErrorHandler = ErrorHandler
-			e.GET("/draft/:id", tt.handler.GetDraft)
+			e.GET("/draft/:id", tt.handler.GetUploadInfo)
 
 			req := httptest.NewRequest(http.MethodGet, "/draft/"+tt.id, nil)
 			rec := httptest.NewRecorder()
@@ -459,7 +459,7 @@ func TestProductHandlerGetDraft(t *testing.T) {
 	}
 }
 
-func TestGetDraft(t *testing.T) {
+func TestGetUploadInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -474,7 +474,7 @@ func TestGetDraft(t *testing.T) {
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
-	e.GET("/draft/:id", handler.GetDraft)
+	e.GET("/draft/:id", handler.GetUploadInfo)
 
 	t.Run("success", func(t *testing.T) {
 		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {

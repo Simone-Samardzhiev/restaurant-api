@@ -43,8 +43,8 @@ type AddProductRequest struct {
 	ImageContentType ImageContentType
 }
 
-// ProductDraft represent a product that has been saved, but image is needed to finalize it.
-type ProductDraft struct {
+// ProductUploadInfo represent the upload info a specific product.
+type ProductUploadInfo struct {
 	Id             uuid.UUID
 	ImageUploadUrl string
 }

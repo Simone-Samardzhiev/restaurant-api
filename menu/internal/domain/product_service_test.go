@@ -162,7 +162,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 		wantOnCreateUploadUrlCount int
 
 		request   *AddProductRequest
-		wantDraft *ProductDraft
+		wantDraft *ProductUploadInfo
 		wantError *Error
 	}{
 		{
@@ -184,7 +184,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 				CategoryId:       uuid.New(),
 				ImageContentType: ImageContentTypePNG,
 			},
-			wantDraft: &ProductDraft{
+			wantDraft: &ProductUploadInfo{
 				ImageUploadUrl: "imageKey",
 			},
 		},
@@ -272,7 +272,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 	}
 }
 
-func TestDefaultProductServiceGetDraft(t *testing.T) {
+func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 	tests := []struct {
 		name string
 		id   uuid.UUID
@@ -283,7 +283,7 @@ func TestDefaultProductServiceGetDraft(t *testing.T) {
 		storage                    *fakeImageStorage
 		wantOnCreateUploadUrlCount int
 
-		wantDraft *ProductDraft
+		wantDraft *ProductUploadInfo
 		wantError *Error
 	}{
 		{
@@ -315,7 +315,7 @@ func TestDefaultProductServiceGetDraft(t *testing.T) {
 			},
 			wantOnCreateUploadUrlCount: 1,
 
-			wantDraft: &ProductDraft{
+			wantDraft: &ProductUploadInfo{
 				ImageUploadUrl: "https://images/upload",
 			},
 		},
@@ -339,7 +339,7 @@ func TestDefaultProductServiceGetDraft(t *testing.T) {
 			t.Parallel()
 
 			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
-			draft, err := service.GetDraft(context.Background(), tt.id)
+			draft, err := service.GetUploadInfo(context.Background(), tt.id)
 			if tt.wantOnGetCount != tt.repository.onGetCount {
 				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount)
 			}

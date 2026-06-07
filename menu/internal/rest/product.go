@@ -122,13 +122,13 @@ func (p *ProductHandler) AddProduct(ctx *echo.Context) error {
 	})
 }
 
-func (p *ProductHandler) GetDraft(ctx *echo.Context) error {
+func (p *ProductHandler) GetUploadInfo(ctx *echo.Context) error {
 	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
 		return NewInvalidUUIDError(err)
 	}
 
-	draft, err := p.service.GetDraft(ctx.Request().Context(), id)
+	draft, err := p.service.GetUploadInfo(ctx.Request().Context(), id)
 	if err != nil {
 		return NewError(err)
 	}

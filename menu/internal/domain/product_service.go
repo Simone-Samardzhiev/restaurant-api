@@ -28,7 +28,7 @@ func NewDefaultProductService(repository ProductRepository, storage ImageStorage
 
 var _ ProductService = (*DefaultProductService)(nil)
 
-func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequest) (*ProductDraft, error) {
+func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequest) (*ProductUploadInfo, error) {
 	_, ext, ok := strings.Cut(string(request.ImageContentType), "/")
 	if !ok {
 		return nil, NewError("invalid image content type format: "+string(request.ImageContentType), ErrorCodeInternal, nil)
@@ -62,13 +62,13 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 		return nil, err
 	}
 
-	return &ProductDraft{
+	return &ProductUploadInfo{
 		Id:             productId,
 		ImageUploadUrl: uploadUrl,
 	}, nil
 }
 
-func (d *DefaultProductService) GetDraft(ctx context.Context, id uuid.UUID) (*ProductDraft, error) {
+func (d *DefaultProductService) GetUploadInfo(ctx context.Context, id uuid.UUID) (*ProductUploadInfo, error) {
 	product, err := d.repository.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (d *DefaultProductService) GetDraft(ctx context.Context, id uuid.UUID) (*Pr
 		return nil, err
 	}
 
-	return &ProductDraft{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
+	return &ProductUploadInfo{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
 }
 
 // cleanUpProduct deletes the product from the repository and the image from the storage.
