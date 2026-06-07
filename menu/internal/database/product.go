@@ -206,6 +206,31 @@ func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UU
 	return nil
 }
 
+func (p *PostgresProductRepository) MarkForImageUpdate(ctx context.Context, id uuid.UUID, imageKey string, contentType domain.ImageContentType) error {
+	result, err := p.db.ExecContext(
+		ctx,
+		`UPDATE products 
+		SET pending_image_key = $1, pending_image_content_type = $2, status = 'awaiting_image_update'
+		WHERE id = $3`,
+		imageKey,
+		contentType,
+		id,
+	)
+	if err != nil {
+		return domain.NewError("error marking product for image update", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
 func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {
 	t := time.Now().Add(-olderThan)
 	rows, err := p.db.QueryContext(

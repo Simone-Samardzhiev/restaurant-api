@@ -30,6 +30,9 @@ type fakeProductRepository struct {
 	onUpdateStatus      func(ctx context.Context, id uuid.UUID, status ProductStatus) error
 	onUpdateStatusCount int
 
+	onMarkForImageUpdate      func(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error
+	onMarkForImageUpdateCount int
+
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
 	onDeleteExpiredByStatusCount int
 }
@@ -82,6 +85,14 @@ func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 	}
 	f.onUpdateStatusCount++
 	return f.onUpdateStatus(ctx, id, status)
+}
+
+func (f *fakeProductRepository) MarkForImageUpdate(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error {
+	if f.onMarkForImageUpdate == nil {
+		panic("onMarkForImageUpdate not implemented")
+	}
+	f.onMarkForImageUpdateCount++
+	return f.onMarkForImageUpdate(ctx, id, imageKey, contentType)
 }
 
 func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {

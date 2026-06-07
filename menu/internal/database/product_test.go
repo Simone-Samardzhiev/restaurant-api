@@ -672,6 +672,85 @@ func TestPostgresProductRepositoryUpdateStatus(t *testing.T) {
 	})
 }
 
+func TestPostgresProductRepositoryMarkForImageUpdate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE `); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name 1",
+			Description:      "Test name description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey1",
+			ImageContentType: "image/png",
+			Status:           domain.ProductStatusMissingImage,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		imageKey := "newImageKey"
+		imageContentType := domain.ImageContentTypePNG
+		if err := productRepository.MarkForImageUpdate(context.Background(), product.Id, imageKey, imageContentType); err != nil {
+			t.Fatalf("Error marking product for image upload: %v", err)
+		}
+
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error getting product: %v", err)
+		}
+
+		if fetchedProduct.PendingImageKey == nil {
+			t.Errorf("Pending image key should not be nil")
+		} else if *fetchedProduct.PendingImageKey != imageKey {
+			t.Errorf("Want pending image key %s, got %s", imageKey, *fetchedProduct.PendingImageKey)
+		}
+
+		if fetchedProduct.PendingImageContentType == nil {
+			t.Errorf("Pending image content type should not be nil")
+		} else if *fetchedProduct.PendingImageContentType != imageContentType {
+			t.Errorf("Want pending image content type %s, got %s", imageContentType, *fetchedProduct.PendingImageContentType)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		err := productRepository.MarkForImageUpdate(context.Background(), uuid.New(), "imageKey", domain.ImageContentTypeJPEG)
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeProductNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, domainErr.Code)
+			}
+		} else {
+			t.Fatalf("Want error type: domain.Error, got: %T", err)
+		}
+	})
+}
+
 func TestPostgresProductRepositoryDeleteExpiredByStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
