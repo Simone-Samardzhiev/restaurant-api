@@ -39,9 +39,12 @@ type ProductService interface {
 	// GetAllWithImage fetches all products with image.
 	GetAllWithImage(ctx context.Context) ([]Product, error)
 
+	// GetImage fetches an image by key.
+	GetImage(ctx context.Context, key string) (*Image, error)
+
 	// UpdateProduct updates the data of a product.
 	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error
 
-	// GetImage fetches an image by key.
-	GetImage(ctx context.Context, key string) (*Image, error)
+	// MarkProductForImageUpdate marks a product for image update.
+	MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error
 }

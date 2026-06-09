@@ -13,6 +13,7 @@ const (
 	ErrorCodeProductNameConflict
 	ErrorCodeProductNotFound
 	ErrorCodeProductAlreadyHasImage
+	ErrorCodeProductMissingInitialImage
 
 	ErrorCodeImageNotFound
 	ErrorCodeInvalidImage
@@ -25,9 +26,10 @@ var mapErrorCodes = map[ErrorCode]string{
 	ErrorCodeCategoryNotFound:     "CATEGORY_NOT_FOUND",
 	ErrorCodeCategoryHasProducts:  "CATEGORY_HAS_PRODUCTS",
 
-	ErrorCodeProductNameConflict:    "PRODUCT_NAME_CONFLICT",
-	ErrorCodeProductNotFound:        "PRODUCT_NOT_FOUND",
-	ErrorCodeProductAlreadyHasImage: "PRODUCT_ALREADY_HAS_IMAGE",
+	ErrorCodeProductNameConflict:        "PRODUCT_NAME_CONFLICT",
+	ErrorCodeProductNotFound:            "PRODUCT_NOT_FOUND",
+	ErrorCodeProductAlreadyHasImage:     "PRODUCT_ALREADY_HAS_IMAGE",
+	ErrorCodeProductMissingInitialImage: "PRODUCT_MISSING_INITIAL_IMAGE",
 
 	ErrorCodeImageNotFound: "IMAGE_NOT_FOUND",
 	ErrorCodeInvalidImage:  "INVALID_IMAGE",

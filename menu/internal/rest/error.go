@@ -25,9 +25,10 @@ var mapErrorCodesToHTTPStatus = map[domain.ErrorCode]int{
 	domain.ErrorCodeCategoryNotFound:     http.StatusNotFound,
 	domain.ErrorCodeCategoryHasProducts:  http.StatusConflict,
 
-	domain.ErrorCodeProductNameConflict:    http.StatusConflict,
-	domain.ErrorCodeProductNotFound:        http.StatusNotFound,
-	domain.ErrorCodeProductAlreadyHasImage: http.StatusConflict,
+	domain.ErrorCodeProductNameConflict:        http.StatusConflict,
+	domain.ErrorCodeProductNotFound:            http.StatusNotFound,
+	domain.ErrorCodeProductAlreadyHasImage:     http.StatusConflict,
+	domain.ErrorCodeProductMissingInitialImage: http.StatusConflict,
 
 	domain.ErrorCodeImageNotFound: http.StatusNotFound,
 	domain.ErrorCodeInvalidImage:  http.StatusUnprocessableEntity,
@@ -41,9 +42,10 @@ var mapErrorCodesToMessage = map[domain.ErrorCode]string{
 	domain.ErrorCodeCategoryNotFound:     "Category not found.",
 	domain.ErrorCodeCategoryHasProducts:  "Some product are linked to this category. Please delete the product before trying to delete the category.",
 
-	domain.ErrorCodeProductNameConflict:    "Product name already exists.",
-	domain.ErrorCodeProductNotFound:        "Product not found.",
-	domain.ErrorCodeProductAlreadyHasImage: "Cannot get upload info about a product with already uploaded image. Please mark the product for update to change the image.",
+	domain.ErrorCodeProductNameConflict:        "Product name already exists.",
+	domain.ErrorCodeProductNotFound:            "Product not found.",
+	domain.ErrorCodeProductAlreadyHasImage:     "Cannot get upload info about a product with already uploaded image. Please mark the product for update to change the image.",
+	domain.ErrorCodeProductMissingInitialImage: "Initial product image is missing. ",
 
 	domain.ErrorCodeImageNotFound: "Image not found.",
 	domain.ErrorCodeInvalidImage:  "Invalid image.",

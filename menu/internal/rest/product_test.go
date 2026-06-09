@@ -30,13 +30,14 @@ import (
 )
 
 type fakeProductService struct {
-	onAdd                 func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductUploadInfo, error)
-	onGetUploadInfo       func(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error)
-	onConfirmImageUpload  func(ctx context.Context, productID uuid.UUID) error
-	onGetProduct          func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
-	onGetAllReadyProducts func(ctx context.Context) ([]domain.Product, error)
-	onUpdateProduct       func(ctx context.Context, request *domain.UpdateProductRequest) error
-	onGetImage            func(ctx context.Context, key string) (*domain.Image, error)
+	onAdd                       func(ctx context.Context, request *domain.AddProductRequest) (*domain.ProductUploadInfo, error)
+	onGetUploadInfo             func(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error)
+	onConfirmImageUpload        func(ctx context.Context, productID uuid.UUID) error
+	onGetProduct                func(ctx context.Context, id uuid.UUID) (*domain.Product, error)
+	onGetAllWithImage           func(ctx context.Context) ([]domain.Product, error)
+	onGetImage                  func(ctx context.Context, key string) (*domain.Image, error)
+	onUpdateProduct             func(ctx context.Context, request *domain.UpdateProductRequest) error
+	onMarkProductForImageUpdate func(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -70,10 +71,17 @@ func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*dom
 }
 
 func (f *fakeProductService) GetAllWithImage(ctx context.Context) ([]domain.Product, error) {
-	if f.onGetAllReadyProducts == nil {
+	if f.onGetAllWithImage == nil {
 		panic("onGetAllReadyProducts not implemented")
 	}
-	return f.onGetAllReadyProducts(ctx)
+	return f.onGetAllWithImage(ctx)
+}
+
+func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.Image, error) {
+	if f.onGetImage == nil {
+		panic("onGetImage not implemented")
+	}
+	return f.onGetImage(ctx, key)
 }
 
 func (f *fakeProductService) UpdateProduct(ctx context.Context, request *domain.UpdateProductRequest) error {
@@ -83,11 +91,11 @@ func (f *fakeProductService) UpdateProduct(ctx context.Context, request *domain.
 	return f.onUpdateProduct(ctx, request)
 }
 
-func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.Image, error) {
-	if f.onGetImage == nil {
-		panic("onGetImage not implemented")
+func (f *fakeProductService) MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error {
+	if f.onMarkProductForImageUpdate == nil {
+		panic("onMarkProductForImageUpdate not implemented")
 	}
-	return f.onGetImage(ctx, key)
+	return f.onMarkProductForImageUpdate(ctx, id, contentType)
 }
 
 func TestAddProductRequestValidate(t *testing.T) {

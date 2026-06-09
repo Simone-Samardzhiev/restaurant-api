@@ -620,6 +620,7 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 					}, nil
 				},
 			},
+			wantError: NewError("product not ready", ErrorCodeProductNotFound, nil),
 		},
 	}
 
@@ -637,6 +638,132 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 				} else {
 					t.Fatalf("Want error type *Error, got: %T", err)
 				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("Want no error, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
+	tests := []struct {
+		name        string
+		id          uuid.UUID
+		contentType ImageContentType
+
+		repository             *fakeProductRepository
+		wantGetCount           int
+		wantMarkForUpdateCount int
+
+		wantError *Error
+	}{
+		{
+			name:        "success",
+			id:          uuid.New(),
+			contentType: ImageContentTypeJPEG,
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               id,
+						Name:             "Test name",
+						Description:      "Some test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: ImageContentTypeJPEG,
+						Status:           ProductStatusReady,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+				onMarkForImageUpdate: func(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error {
+					return nil
+				},
+			},
+			wantGetCount:           1,
+			wantMarkForUpdateCount: 1,
+		},
+		{
+			name:        "invalid content type format",
+			id:          uuid.New(),
+			contentType: "invalid",
+			repository:  &fakeProductRepository{},
+			wantError:   NewError("invalid content type format", ErrorCodeInternal, nil),
+		},
+		{
+			name:        "already marked for update",
+			id:          uuid.New(),
+			contentType: ImageContentTypeJPEG,
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:                      id,
+						Name:                    "Test name",
+						Description:             "Some test description",
+						Price:                   decimal.NewFromInt(10),
+						CategoryId:              uuid.New(),
+						ImageKey:                "imageKey",
+						ImageContentType:        ImageContentTypeJPEG,
+						Status:                  ProductStatusAwaitingImageUpdate,
+						PendingImageKey:         new("newImageKey"),
+						PendingImageContentType: new(ImageContentTypeJPEG),
+						CreatedAt:               time.Now(),
+						UpdatedAt:               time.Now(),
+					}, nil
+				},
+			},
+			wantGetCount: 1,
+		},
+		{
+			name:        "missing initial image",
+			id:          uuid.New(),
+			contentType: ImageContentTypeJPEG,
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               id,
+						Name:             "Test name",
+						Description:      "Some test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: ImageContentTypeJPEG,
+						Status:           ProductStatusMissingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+			wantGetCount: 1,
+			wantError:    NewError("missing initial image", ErrorCodeProductMissingInitialImage, nil),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, logger.NewSilentLogger())
+			err := service.MarkProductForImageUpdate(context.Background(), tt.id, tt.contentType)
+
+			if tt.wantGetCount != tt.repository.onGetCount {
+				t.Errorf("Want get count %d, got %d", tt.wantGetCount, tt.repository.onGetCount)
+			}
+			if tt.wantMarkForUpdateCount != tt.repository.onMarkForImageUpdateCount {
+				t.Errorf("Want mark for update count %d, got %d", tt.wantGetCount, tt.repository.onMarkForImageUpdateCount)
+			}
+
+			if tt.wantError != nil {
+				if domainErr, ok := errors.AsType[*Error](err); ok {
+					if domainErr.Code != tt.wantError.Code {
+						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
+					}
+				} else {
+					t.Fatalf("Want error type *Error, got: %T", err)
+				}
+				return
 			}
 
 			if err != nil {

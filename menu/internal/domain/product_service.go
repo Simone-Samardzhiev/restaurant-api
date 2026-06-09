@@ -146,12 +146,16 @@ func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*
 		return nil, err
 	}
 
-	// product is not ready, return not found
-	if product.Status != ProductStatusReady {
+	// product image is missing, return not found error
+	if product.Status == ProductStatusMissingImage {
 		return nil, NewError("product is not ready to be displayed", ErrorCodeProductNotFound, nil)
 	}
 
 	return product, nil
+}
+
+func (d *DefaultProductService) GetImage(ctx context.Context, key string) (*Image, error) {
+	return d.storage.Get(ctx, key)
 }
 
 func (d *DefaultProductService) GetAllWithImage(ctx context.Context) ([]Product, error) {
@@ -162,6 +166,33 @@ func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *Upda
 	return d.repository.Update(ctx, request)
 }
 
-func (d *DefaultProductService) GetImage(ctx context.Context, key string) (*Image, error) {
-	return d.storage.Get(ctx, key)
+func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error {
+	_, ext, ok := strings.Cut(string(contentType), "/")
+	if !ok {
+		return NewError("invalid image content type format: "+string(contentType), ErrorCodeInternal, nil)
+	}
+
+	id, err := uuid.NewV7()
+	if err != nil {
+		return NewError("error create uuid for image", ErrorCodeInternal, err)
+	}
+	key := id.String() + "." + ext
+
+	product, err := d.repository.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// product is already marked for image update, return nil
+	if product.Status == ProductStatusAwaitingImageUpdate {
+		return nil
+	}
+	if product.Status == ProductStatusMissingImage {
+		return NewError("cannot the image of a product with missing initial image", ErrorCodeProductMissingInitialImage, nil)
+	}
+
+	if err = d.repository.MarkForImageUpdate(ctx, id, key, product.ImageContentType); err != nil {
+		return err
+	}
+	return nil
 }
