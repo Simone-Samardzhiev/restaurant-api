@@ -638,6 +638,10 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 					t.Fatalf("Want error type *Error, got: %T", err)
 				}
 			}
+
+			if err != nil {
+				t.Fatalf("Want no error, got: %v", err)
+			}
 		})
 	}
 }
