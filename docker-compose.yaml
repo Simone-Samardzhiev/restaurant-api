@@ -51,7 +51,14 @@ services:
       - menu-db-storage:/var/lib/postgresql/data/
 
   menu-api:
-    build: "./menu"
+    build:
+      context: "./menu"
+      dockerfile: dev.dockerfile
+    ports:
+      - "2345:2345"
+    security_opt:
+      - seccomp:unconfined
+
     restart: on-failure
     environment:
       DATABASE_URL: postgres://postgres:password@menu-db:5432/menu?sslmode=disable
