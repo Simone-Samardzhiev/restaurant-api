@@ -13,6 +13,7 @@
             health_interval 5m
             health_timeout 5s
             health_status 200
+            health_fails 3
         }
     }
 
