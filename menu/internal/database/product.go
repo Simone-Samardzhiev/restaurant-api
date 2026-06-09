@@ -173,22 +173,6 @@ func (p *PostgresProductRepository) Update(ctx context.Context, request *domain.
 	return domain.NewError("error updating product", domain.ErrorCodeInternal, err)
 }
 
-func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	result, err := p.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
-	if err != nil {
-		return domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
-	}
-	if rows == 0 {
-		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
-	}
-	return nil
-}
-
 func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.ProductStatus) error {
 	result, err := p.db.ExecContext(ctx, "UPDATE products SET status = $1 WHERE id = $2", status, id)
 	if err != nil {
@@ -225,6 +209,47 @@ func (p *PostgresProductRepository) MarkForImageUpdate(ctx context.Context, id u
 		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
 	}
 
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
+func (p *PostgresProductRepository) ConfirmImageUpdate(ctx context.Context, id uuid.UUID) error {
+	result, err := p.db.ExecContext(
+		ctx,
+		`UPDATE products 
+		SET status = 'ready', 
+		    image_key = pending_image_key,
+		    image_content_type = pending_image_content_type 
+        WHERE id = $1`,
+		id,
+	)
+
+	if err != nil {
+		return domain.NewError("error confirming image update for the product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
+	if rows == 0 {
+		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+	}
+	return nil
+}
+
+func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := p.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
+	if err != nil {
+		return domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return domain.NewError("error getting rows affected", domain.ErrorCodeInternal, err)
+	}
 	if rows == 0 {
 		return domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
 	}

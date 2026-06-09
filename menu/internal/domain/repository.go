@@ -38,15 +38,19 @@ type ProductRepository interface {
 	// Update updates the data of a product.
 	Update(ctx context.Context, request *UpdateProductRequest) error
 
-	// Delete deletes a product by id.
-	Delete(ctx context.Context, id uuid.UUID) error
-
 	// UpdateStatus updates the status of a product by id.
 	UpdateStatus(ctx context.Context, id uuid.UUID, status ProductStatus) error
 
 	// MarkForImageUpdate updates the status of the product to [ProductStatusAwaitingImageUpdate] and adds
 	// the new image key and content type.
 	MarkForImageUpdate(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error
+
+	// ConfirmImageUpdate confirms the image for a product is updated, by replacing the image key and the
+	// content type with pending image key and content type.
+	ConfirmImageUpdate(ctx context.Context, id uuid.UUID) error
+
+	// Delete deletes a product by id.
+	Delete(ctx context.Context, id uuid.UUID) error
 
 	// DeleteExpiredByStatus deletes all products whose status is [ProductStatusMissingImage] and a
 	// set duration has passed since it was created.

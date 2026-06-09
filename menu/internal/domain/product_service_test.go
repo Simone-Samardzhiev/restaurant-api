@@ -18,20 +18,23 @@ type fakeProductRepository struct {
 	onGet      func(ctx context.Context, id uuid.UUID) (*Product, error)
 	onGetCount int
 
-	onGetAllReady      func(ctx context.Context) ([]Product, error)
-	onGetAllReadyCount int
+	onGetAllWithImage      func(ctx context.Context) ([]Product, error)
+	onGetAllWithImageCount int
 
 	onUpdate      func(ctx context.Context, request *UpdateProductRequest) error
 	onUpdateCount int
-
-	onDelete      func(ctx context.Context, id uuid.UUID) error
-	onDeleteCount int
 
 	onUpdateStatus      func(ctx context.Context, id uuid.UUID, status ProductStatus) error
 	onUpdateStatusCount int
 
 	onMarkForImageUpdate      func(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error
 	onMarkForImageUpdateCount int
+
+	onConfirmImageUpdate      func(ctx context.Context, id uuid.UUID) error
+	onConfirmImageUpdateCount int
+
+	onDelete      func(ctx context.Context, id uuid.UUID) error
+	onDeleteCount int
 
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
 	onDeleteExpiredByStatusCount int
@@ -56,11 +59,11 @@ func (f *fakeProductRepository) Get(ctx context.Context, id uuid.UUID) (*Product
 }
 
 func (f *fakeProductRepository) GetAllWithImage(ctx context.Context) ([]Product, error) {
-	if f.onGetAllReady == nil {
+	if f.onGetAllWithImage == nil {
 		panic("onGetAllReady not implemented")
 	}
-	f.onGetAllReadyCount++
-	return f.onGetAllReady(ctx)
+	f.onGetAllWithImageCount++
+	return f.onGetAllWithImage(ctx)
 }
 
 func (f *fakeProductRepository) Update(ctx context.Context, request *UpdateProductRequest) error {
@@ -69,14 +72,6 @@ func (f *fakeProductRepository) Update(ctx context.Context, request *UpdateProdu
 	}
 	f.onUpdateCount++
 	return f.onUpdate(ctx, request)
-}
-
-func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	if f.onDelete == nil {
-		panic("onDelete not implemented")
-	}
-	f.onDeleteCount++
-	return f.onDelete(ctx, id)
 }
 
 func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status ProductStatus) error {
@@ -93,6 +88,22 @@ func (f *fakeProductRepository) MarkForImageUpdate(ctx context.Context, id uuid.
 	}
 	f.onMarkForImageUpdateCount++
 	return f.onMarkForImageUpdate(ctx, id, imageKey, contentType)
+}
+
+func (f *fakeProductRepository) ConfirmImageUpdate(ctx context.Context, id uuid.UUID) error {
+	if f.onConfirmImageUpdate == nil {
+		panic("onConfirmImageUpdate not implemented")
+	}
+	f.onConfirmImageUpdateCount++
+	return f.onConfirmImageUpdate(ctx, id)
+}
+
+func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	if f.onDelete == nil {
+		panic("onDelete not implemented")
+	}
+	f.onDeleteCount++
+	return f.onDelete(ctx, id)
 }
 
 func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {
