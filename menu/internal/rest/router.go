@@ -53,7 +53,8 @@ func NewRouter(c *RouterConfig) *Router {
 			products := api.Group("/products")
 			products.POST("", c.ProductHandler.AddProduct)
 			products.GET("/:id/upload-info", c.ProductHandler.GetUploadInfo)
-			products.POST("/:id/image", c.ProductHandler.ConfirmImageUpload)
+			products.POST("/:id/confirm/image", c.ProductHandler.ConfirmImageUpload)
+
 			products.GET("/:id", c.ProductHandler.GetProduct)
 			products.GET("", c.ProductHandler.GetAllProductsWithImage)
 			products.GET("/image/:key", c.ProductHandler.GetImage)
