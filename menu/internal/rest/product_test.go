@@ -771,22 +771,32 @@ func TestConfirmImageUpload(t *testing.T) {
 		}
 
 		// validate product is deleted
-		var exists bool
-		row := testDb.QueryRow("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", product.Id)
-		if err := row.Scan(&exists); err != nil {
-			t.Fatalf("Error fetching product: %v", err)
-		}
-		if exists {
-			t.Fatalf("Product should be deleted if the image content type is invalid")
-		}
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 
-		// validate the image is deleted
-		_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
-			Bucket: aws.String(testS3BucketName),
-			Key:    aws.String(product.ImageKey),
-		})
-		if _, ok := errors.AsType[*types.NotFound](err); !ok {
-			t.Fatalf("Want *types.NotFound error, got: %T", err)
+		for {
+			select {
+			case <-ctx.Done():
+				t.Fatalf("Timeout for checking if product and image are deleted")
+			default:
+				t.Log("Checking if product exists")
+
+				var exists bool
+				row := testDb.QueryRow("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", product.Id)
+				if err := row.Scan(&exists); err != nil {
+					t.Fatalf("Error fetching product: %v", err)
+				}
+
+				_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
+					Bucket: aws.String(testS3BucketName),
+					Key:    aws.String(product.ImageKey),
+				})
+				_, ok := errors.AsType[*types.NotFound](err)
+				if ok && !exists {
+					return
+				}
+			}
+			time.Sleep(1 * time.Second)
 		}
 	})
 }

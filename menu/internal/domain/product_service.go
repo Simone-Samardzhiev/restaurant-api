@@ -92,6 +92,7 @@ func (d *DefaultProductService) cleanUpProduct(ctx context.Context, product *Pro
 		d.logger.LogAttrs(
 			ctx, slog.LevelWarn,
 			"Error deleting product record for cleanup",
+			slog.String("id", product.Id.String()),
 			slog.String("error", deleteErr.Error()),
 		)
 	}
@@ -100,9 +101,69 @@ func (d *DefaultProductService) cleanUpProduct(ctx context.Context, product *Pro
 		d.logger.LogAttrs(
 			ctx, slog.LevelWarn,
 			"Error deleting product image for cleanup",
+			slog.String("key", product.ImageKey),
 			slog.String("error", deleteErr.Error()),
 		)
 	}
+}
+
+func (d *DefaultProductService) confirmNewImage(ctx context.Context, product *Product) error {
+	if err := d.storage.Validate(ctx, product.ImageKey, product.ImageContentType); err != nil {
+		if domainErr, ok := errors.AsType[*Error](err); ok {
+			if domainErr.Code == ErrorCodeInvalidImage {
+				go d.cleanUpProduct(ctx, product)
+			}
+		}
+		return err
+	}
+
+	if err := d.repository.UpdateStatus(ctx, product.Id, ProductStatusReady); err != nil {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if deleteErr := d.storage.Delete(bgCtx, product.ImageKey); deleteErr != nil {
+				d.logger.LogAttrs(ctx, slog.LevelWarn,
+					"Image could not be deleted after failing to update product status",
+					slog.String("key", product.ImageKey),
+					slog.String("error", deleteErr.Error()),
+				)
+			}
+		}()
+
+		return err
+	}
+
+	return nil
+}
+
+func (d *DefaultProductService) confirmImageUpdate(ctx context.Context, product *Product) error {
+	if err := d.storage.Validate(ctx, *product.PendingImageKey, *product.PendingImageContentType); err != nil {
+		if domainErr, ok := errors.AsType[*Error](err); ok {
+			if domainErr.Code == ErrorCodeInvalidImage {
+				go d.cleanUpProduct(ctx, product)
+			}
+		}
+		return err
+	}
+
+	if err := d.repository.ConfirmImageUpdate(ctx, product.Id); err != nil {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if deleteErr := d.storage.Delete(bgCtx, product.ImageKey); deleteErr != nil {
+				d.logger.LogAttrs(ctx, slog.LevelWarn,
+					"Image could not be deleted after failing to confirm image update",
+					slog.String("key", product.ImageKey),
+					slog.String("error", deleteErr.Error()),
+				)
+			}
+		}()
+		return err
+	}
+
+	return nil
 }
 
 func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error {
@@ -111,30 +172,11 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 		return err
 	}
 
-	// If the product image has already been confirmed return nil.
-	if product.Status == ProductStatusReady {
-		return nil
-	}
-
-	if err = d.storage.Validate(ctx, product.ImageKey, product.ImageContentType); err != nil {
-		domainErr, ok := errors.AsType[*Error](err)
-		if ok {
-			if domainErr.Code == ErrorCodeInvalidImage {
-				d.cleanUpProduct(ctx, product)
-			}
-		}
-		return err
-	}
-
-	if err = d.repository.UpdateStatus(ctx, product.Id, ProductStatusReady); err != nil {
-		if deleteErr := d.storage.Delete(ctx, product.ImageKey); deleteErr != nil {
-			d.logger.LogAttrs(
-				ctx, slog.LevelWarn,
-				"Image could not be deleted after failing to update product status",
-				slog.String("error", deleteErr.Error()),
-			)
-		}
-		return err
+	switch product.Status {
+	case ProductStatusMissingImage:
+		return d.confirmNewImage(ctx, product)
+	case ProductStatusAwaitingImageUpdate:
+		return d.confirmImageUpdate(ctx, product)
 	}
 
 	return nil

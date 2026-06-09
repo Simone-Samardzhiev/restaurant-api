@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"menu/internal/logger"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,31 +14,32 @@ import (
 
 type fakeProductRepository struct {
 	onSave      func(ctx context.Context, product *Product) error
-	onSaveCount int
+	onSaveCount atomic.Int32
 
 	onGet      func(ctx context.Context, id uuid.UUID) (*Product, error)
-	onGetCount int
+	onGetCount atomic.Int32
 
 	onGetAllWithImage      func(ctx context.Context) ([]Product, error)
-	onGetAllWithImageCount int
+	onGetAllWithImageCount atomic.Int32
 
 	onUpdate      func(ctx context.Context, request *UpdateProductRequest) error
-	onUpdateCount int
+	onUpdateCount atomic.Int32
 
 	onUpdateStatus      func(ctx context.Context, id uuid.UUID, status ProductStatus) error
-	onUpdateStatusCount int
+	onUpdateStatusCount atomic.Int32
 
 	onMarkForImageUpdate      func(ctx context.Context, id uuid.UUID, imageKey string, contentType ImageContentType) error
-	onMarkForImageUpdateCount int
+	onMarkForImageUpdateCount atomic.Int32
 
 	onConfirmImageUpdate      func(ctx context.Context, id uuid.UUID) error
-	onConfirmImageUpdateCount int
+	onConfirmImageUpdateCount atomic.Int32
 
 	onDelete      func(ctx context.Context, id uuid.UUID) error
-	onDeleteCount int
+	onDeleteCount atomic.Int32
+	deletedSignal chan struct{}
 
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
-	onDeleteExpiredByStatusCount int
+	onDeleteExpiredByStatusCount atomic.Int32
 }
 
 var _ ProductRepository = (*fakeProductRepository)(nil)
@@ -46,7 +48,7 @@ func (f *fakeProductRepository) Save(ctx context.Context, product *Product) erro
 	if f.onSave == nil {
 		panic("onSave not implemented")
 	}
-	f.onSaveCount++
+	f.onSaveCount.Add(1)
 	return f.onSave(ctx, product)
 }
 
@@ -54,7 +56,7 @@ func (f *fakeProductRepository) Get(ctx context.Context, id uuid.UUID) (*Product
 	if f.onGet == nil {
 		panic("onGet not implemented")
 	}
-	f.onGetCount++
+	f.onGetCount.Add(1)
 	return f.onGet(ctx, id)
 }
 
@@ -62,7 +64,7 @@ func (f *fakeProductRepository) GetAllWithImage(ctx context.Context) ([]Product,
 	if f.onGetAllWithImage == nil {
 		panic("onGetAllReady not implemented")
 	}
-	f.onGetAllWithImageCount++
+	f.onGetAllWithImageCount.Add(1)
 	return f.onGetAllWithImage(ctx)
 }
 
@@ -70,7 +72,7 @@ func (f *fakeProductRepository) Update(ctx context.Context, request *UpdateProdu
 	if f.onUpdate == nil {
 		panic("onUpdate not implemented")
 	}
-	f.onUpdateCount++
+	f.onUpdateCount.Add(1)
 	return f.onUpdate(ctx, request)
 }
 
@@ -78,7 +80,7 @@ func (f *fakeProductRepository) UpdateStatus(ctx context.Context, id uuid.UUID, 
 	if f.onUpdateStatus == nil {
 		panic("onUpdateStatus not implemented")
 	}
-	f.onUpdateStatusCount++
+	f.onUpdateStatusCount.Add(1)
 	return f.onUpdateStatus(ctx, id, status)
 }
 
@@ -86,7 +88,7 @@ func (f *fakeProductRepository) MarkForImageUpdate(ctx context.Context, id uuid.
 	if f.onMarkForImageUpdate == nil {
 		panic("onMarkForImageUpdate not implemented")
 	}
-	f.onMarkForImageUpdateCount++
+	f.onMarkForImageUpdateCount.Add(1)
 	return f.onMarkForImageUpdate(ctx, id, imageKey, contentType)
 }
 
@@ -94,7 +96,7 @@ func (f *fakeProductRepository) ConfirmImageUpdate(ctx context.Context, id uuid.
 	if f.onConfirmImageUpdate == nil {
 		panic("onConfirmImageUpdate not implemented")
 	}
-	f.onConfirmImageUpdateCount++
+	f.onConfirmImageUpdateCount.Add(1)
 	return f.onConfirmImageUpdate(ctx, id)
 }
 
@@ -102,7 +104,10 @@ func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error 
 	if f.onDelete == nil {
 		panic("onDelete not implemented")
 	}
-	f.onDeleteCount++
+	f.onDeleteCount.Add(1)
+	if f.deletedSignal != nil {
+		f.deletedSignal <- struct{}{}
+	}
 	return f.onDelete(ctx, id)
 }
 
@@ -110,25 +115,26 @@ func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, older
 	if f.onDeleteExpiredByStatus == nil {
 		panic("onDeleteExpiredByStatus not implemented")
 	}
-	f.onDeleteExpiredByStatusCount++
+	f.onDeleteExpiredByStatusCount.Add(1)
 	return f.onDeleteExpiredByStatus(ctx, olderThan)
 }
 
 type fakeImageStorage struct {
 	onCreateUploadUrl      func(ctx context.Context, imageKey string, contentType ImageContentType) (string, error)
-	onCreateUploadUrlCount int
+	onCreateUploadUrlCount atomic.Int32
 
 	onDelete      func(ctx context.Context, imageKey string) error
-	onDeleteCount int
+	onDeleteCount atomic.Int32
+	deletedSignal chan struct{}
 
 	onDeleteBatch      func(ctx context.Context, imageKeys []string) error
-	onDeleteBatchCount int
+	onDeleteBatchCount atomic.Int32
 
 	onValidate      func(ctx context.Context, imageKey string, contentType ImageContentType) error
-	onValidateCount int
+	onValidateCount atomic.Int32
 
 	onGet      func(ctx context.Context, imageKey string) (*Image, error)
-	onGetCount int
+	onGetCount atomic.Int32
 }
 
 var _ ImageStorage = (*fakeImageStorage)(nil)
@@ -137,7 +143,7 @@ func (f *fakeImageStorage) CreateUploadUrl(ctx context.Context, imageKey string,
 	if f.onCreateUploadUrl == nil {
 		panic("onCreateUploadUrl not implemented")
 	}
-	f.onCreateUploadUrlCount++
+	f.onCreateUploadUrlCount.Add(1)
 	return f.onCreateUploadUrl(ctx, imageKey, contentType)
 }
 
@@ -145,7 +151,10 @@ func (f *fakeImageStorage) Delete(ctx context.Context, imageKey string) error {
 	if f.onDelete == nil {
 		panic("onDelete not implemented")
 	}
-	f.onDeleteCount++
+	f.onDeleteCount.Add(1)
+	if f.deletedSignal != nil {
+		f.deletedSignal <- struct{}{}
+	}
 	return f.onDelete(ctx, imageKey)
 }
 
@@ -153,7 +162,7 @@ func (f *fakeImageStorage) DeleteMultiple(ctx context.Context, imageKeys []strin
 	if f.onDeleteBatch == nil {
 		panic("onDeleteBatch not implemented")
 	}
-	f.onDeleteBatchCount++
+	f.onDeleteBatchCount.Add(1)
 	return f.onDeleteBatch(ctx, imageKeys)
 }
 
@@ -161,7 +170,7 @@ func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, conten
 	if f.onValidate == nil {
 		panic("onValidate not implemented")
 	}
-	f.onValidateCount++
+	f.onValidateCount.Add(1)
 	return f.onValidate(ctx, imageKey, contentType)
 }
 
@@ -169,7 +178,7 @@ func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (*Image, er
 	if f.onGet == nil {
 		panic("onGet not implemented")
 	}
-	f.onGetCount++
+	f.onGetCount.Add(1)
 	return f.onGet(ctx, imageKey)
 }
 
@@ -178,10 +187,10 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 		name string
 
 		repository      *fakeProductRepository
-		wantOnSaveCount int
+		wantOnSaveCount int32
 
 		storage                    *fakeImageStorage
-		wantOnCreateUploadUrlCount int
+		wantOnCreateUploadUrlCount int32
 
 		request   *AddProductRequest
 		wantDraft *ProductUploadInfo
@@ -266,11 +275,11 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
 			draft, err := service.Add(context.Background(), tt.request)
 
-			if tt.repository.onSaveCount != tt.wantOnSaveCount {
-				t.Errorf("Want onSave count: %d, got: %d", tt.wantOnSaveCount, tt.repository.onSaveCount)
+			if tt.repository.onSaveCount.Load() != tt.wantOnSaveCount {
+				t.Errorf("Want onSave count: %d, got: %d", tt.wantOnSaveCount, tt.repository.onSaveCount.Load())
 			}
-			if tt.storage.onCreateUploadUrlCount != tt.wantOnCreateUploadUrlCount {
-				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount)
+			if tt.storage.onCreateUploadUrlCount.Load() != tt.wantOnCreateUploadUrlCount {
+				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount.Load())
 			}
 
 			if tt.wantError != nil {
@@ -300,10 +309,10 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 		id   uuid.UUID
 
 		repository     *fakeProductRepository
-		wantOnGetCount int
+		wantOnGetCount int32
 
 		storage                    *fakeImageStorage
-		wantOnCreateUploadUrlCount int
+		wantOnCreateUploadUrlCount int32
 
 		wantDraft *ProductUploadInfo
 		wantError *Error
@@ -362,11 +371,11 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 
 			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
 			draft, err := service.GetUploadInfo(context.Background(), tt.id)
-			if tt.wantOnGetCount != tt.repository.onGetCount {
-				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount)
+			if tt.wantOnGetCount != tt.repository.onGetCount.Load() {
+				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount.Load())
 			}
-			if tt.wantOnCreateUploadUrlCount != tt.storage.onCreateUploadUrlCount {
-				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount)
+			if tt.wantOnCreateUploadUrlCount != tt.storage.onCreateUploadUrlCount.Load() {
+				t.Errorf("Want onCreateUploadUrl count: %d, got: %d", tt.wantOnCreateUploadUrlCount, tt.storage.onCreateUploadUrlCount.Load())
 			}
 
 			if tt.wantError != nil {
@@ -396,18 +405,19 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 		id   uuid.UUID
 
 		repository               *fakeProductRepository
-		wantOnGetCount           int
-		wantOnUpdateStatusCount  int
-		wantOnDeleteProductCount int
+		wantOnGetCount           int32
+		wantOnUpdateStatusCount  int32
+		wantOnConfirmImageUpdate int32
+		wantOnDeleteProductCount int32
 
 		storage                *fakeImageStorage
-		wantOnValidateCount    int
-		wantOnDeleteImageCount int
+		wantOnValidateCount    int32
+		wantOnDeleteImageCount int32
 
 		wantError *Error
 	}{
 		{
-			name: "success",
+			name: "success new image",
 			id:   uuid.New(),
 
 			repository: &fakeProductRepository{
@@ -431,6 +441,41 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			},
 			wantOnGetCount:          1,
 			wantOnUpdateStatusCount: 1,
+
+			storage: &fakeImageStorage{
+				onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
+					return nil
+				},
+			},
+			wantOnValidateCount: 1,
+		},
+		{
+			name: "success update",
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onGet: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:                      uuid.New(),
+						Name:                    "Test name",
+						Description:             "Test description",
+						Price:                   decimal.NewFromInt(10),
+						CategoryId:              uuid.New(),
+						ImageKey:                "imageKey",
+						ImageContentType:        "image/png",
+						PendingImageKey:         new("newImageKey"),
+						PendingImageContentType: new(ImageContentTypePNG),
+						Status:                  ProductStatusAwaitingImageUpdate,
+						CreatedAt:               time.Now(),
+						UpdatedAt:               time.Now(),
+					}, nil
+				},
+				onConfirmImageUpdate: func(ctx context.Context, id uuid.UUID) error {
+					return nil
+				},
+			},
+			wantOnGetCount:           1,
+			wantOnConfirmImageUpdate: 1,
 
 			storage: &fakeImageStorage{
 				onValidate: func(ctx context.Context, imageKey string, contentType ImageContentType) error {
@@ -484,6 +529,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, id uuid.UUID) error {
 					return nil
 				},
+				deletedSignal: make(chan struct{}),
 			},
 			wantOnGetCount:           1,
 			wantOnDeleteProductCount: 1,
@@ -495,6 +541,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, imageKey string) error {
 					return nil
 				},
+				deletedSignal: make(chan struct{}),
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
@@ -526,6 +573,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, id uuid.UUID) error {
 					return nil
 				},
+				deletedSignal: make(chan struct{}),
 			},
 			wantOnGetCount:          1,
 			wantOnUpdateStatusCount: 1,
@@ -537,6 +585,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, imageKey string) error {
 					return nil
 				},
+				deletedSignal: make(chan struct{}),
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
@@ -550,21 +599,30 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			t.Parallel()
 			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
 			err := service.ConfirmImageUpload(context.Background(), tt.id)
+			if tt.wantOnDeleteProductCount > 0 {
+				<-tt.repository.deletedSignal
+			}
+			if tt.wantOnDeleteImageCount > 0 {
+				<-tt.storage.deletedSignal
+			}
 
-			if tt.wantOnGetCount != tt.repository.onGetCount {
-				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount)
+			if tt.wantOnGetCount != tt.repository.onGetCount.Load() {
+				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount.Load())
 			}
-			if tt.wantOnUpdateStatusCount != tt.repository.onUpdateStatusCount {
-				t.Errorf("Want onUpdateStatus count: %d, got: %d", tt.wantOnUpdateStatusCount, tt.repository.onUpdateStatusCount)
+			if tt.wantOnUpdateStatusCount != tt.repository.onUpdateStatusCount.Load() {
+				t.Errorf("Want onUpdateStatus count: %d, got: %d", tt.wantOnUpdateStatusCount, tt.repository.onUpdateStatusCount.Load())
 			}
-			if tt.wantOnDeleteProductCount != tt.repository.onDeleteCount {
-				t.Errorf("Want onDeleteProduct count: %d, got: %d", tt.wantOnDeleteProductCount, tt.repository.onDeleteCount)
+			if tt.wantOnConfirmImageUpdate != tt.repository.onConfirmImageUpdateCount.Load() {
+				t.Errorf("Want wantOnConfirmImageUpdate: %d, got: %d", tt.wantOnConfirmImageUpdate, tt.repository.onConfirmImageUpdateCount.Load())
 			}
-			if tt.wantOnValidateCount != tt.storage.onValidateCount {
-				t.Errorf("Want onValidate count: %d, got: %d", tt.wantOnValidateCount, tt.storage.onValidateCount)
+			if tt.wantOnDeleteProductCount != tt.repository.onDeleteCount.Load() {
+				t.Errorf("Want onDeleteProduct count: %d, got: %d", tt.wantOnDeleteProductCount, tt.repository.onDeleteCount.Load())
 			}
-			if tt.wantOnDeleteImageCount != tt.storage.onDeleteCount {
-				t.Errorf("Want onDeleteImage count: %d, got: %d", tt.wantOnDeleteImageCount, tt.storage.onDeleteCount)
+			if tt.wantOnValidateCount != tt.storage.onValidateCount.Load() {
+				t.Errorf("Want onValidate count: %d, got: %d", tt.wantOnValidateCount, tt.storage.onValidateCount.Load())
+			}
+			if tt.wantOnDeleteImageCount != tt.storage.onDeleteCount.Load() {
+				t.Errorf("Want onDeleteImage count: %d, got: %d", tt.wantOnDeleteImageCount, tt.storage.onDeleteCount.Load())
 			}
 
 			if tt.wantError != nil {
@@ -666,8 +724,8 @@ func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
 		contentType ImageContentType
 
 		repository             *fakeProductRepository
-		wantGetCount           int
-		wantMarkForUpdateCount int
+		wantGetCount           int32
+		wantMarkForUpdateCount int32
 
 		wantError *Error
 	}{
@@ -759,11 +817,11 @@ func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
 			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, logger.NewSilentLogger())
 			err := service.MarkProductForImageUpdate(context.Background(), tt.id, tt.contentType)
 
-			if tt.wantGetCount != tt.repository.onGetCount {
-				t.Errorf("Want get count %d, got %d", tt.wantGetCount, tt.repository.onGetCount)
+			if tt.wantGetCount != tt.repository.onGetCount.Load() {
+				t.Errorf("Want get count %d, got %d", tt.wantGetCount, tt.repository.onGetCount.Load())
 			}
-			if tt.wantMarkForUpdateCount != tt.repository.onMarkForImageUpdateCount {
-				t.Errorf("Want mark for update count %d, got %d", tt.wantGetCount, tt.repository.onMarkForImageUpdateCount)
+			if tt.wantMarkForUpdateCount != tt.repository.onMarkForImageUpdateCount.Load() {
+				t.Errorf("Want mark for update count %d, got %d", tt.wantGetCount, tt.repository.onMarkForImageUpdateCount.Load())
 			}
 
 			if tt.wantError != nil {
