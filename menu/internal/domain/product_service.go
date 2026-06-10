@@ -73,16 +73,23 @@ func (d *DefaultProductService) GetUploadInfo(ctx context.Context, id uuid.UUID)
 	if err != nil {
 		return nil, err
 	}
-	if product.Status == ProductStatusReady {
-		return nil, NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil)
+	switch product.Status {
+
+	case ProductStatusAwaitingImageUpdate:
+		uploadUrl, err := d.storage.CreateUploadUrl(ctx, *product.PendingImageKey, *product.PendingImageContentType)
+		if err != nil {
+			return nil, err
+		}
+		return &ProductUploadInfo{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
+	case ProductStatusMissingImage:
+		uploadUrl, err := d.storage.CreateUploadUrl(ctx, product.ImageKey, product.ImageContentType)
+		if err != nil {
+			return nil, err
+		}
+		return &ProductUploadInfo{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
 	}
 
-	uploadUrl, err := d.storage.CreateUploadUrl(ctx, product.ImageKey, product.ImageContentType)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ProductUploadInfo{Id: product.Id, ImageUploadUrl: uploadUrl}, nil
+	return nil, NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil)
 }
 
 // cleanUpProduct deletes the product from the repository and the image from the storage.
