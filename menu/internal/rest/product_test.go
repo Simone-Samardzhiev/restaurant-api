@@ -1002,6 +1002,54 @@ func TestGetAllProductsWithImageReadyProducts(t *testing.T) {
 	}
 }
 
+func TestGetImage(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	productRepository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+	manager := transfermanager.New(testS3Client)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler("https://images", service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.GET("/product/image/:key", handler.GetImage)
+
+	const key = "imageKey"
+	fakeImage := generateTestImage(t)
+
+	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
+		Bucket:      aws.String(testS3BucketName),
+		Key:         aws.String(key),
+		ContentType: aws.String("image/png"),
+		Body:        bytes.NewReader(fakeImage),
+	}); err != nil {
+		t.Fatalf("Error uploading image: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/product/image/"+key, nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	data, err := io.ReadAll(rec.Body)
+	if err != nil {
+		t.Fatalf("Error reading response body: %v", err)
+	}
+	if !bytes.Equal(fakeImage, data) {
+		t.Fatalf("Want image data %s, got %s", fakeImage, data)
+	}
+	if rec.Header().Get("Content-Type") != "image/png" {
+		t.Fatalf("Want image/png got %s", rec.Header().Get("Content-Type"))
+	}
+}
+
 func TestUpdateProductRequestValidate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1333,50 +1381,198 @@ func TestUpdateProduct(t *testing.T) {
 	})
 }
 
-func TestGetImage(t *testing.T) {
+func TestMarkProductForImageUpdateRequestValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		request   *MarkProductForImageUpdateRequest
+		wantField string
+	}{
+		{
+			name: "valid",
+			request: &MarkProductForImageUpdateRequest{
+				ImageContentType: "image/png",
+			},
+		},
+		{
+			name: "invalid",
+			request: &MarkProductForImageUpdateRequest{
+				ImageContentType: "application/json",
+			},
+			wantField: "imageContentType",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := tt.request.Validate()
+			if tt.wantField == "" {
+				if got != nil {
+					t.Errorf("Validate() = %v, want nil", got)
+				}
+				return
+			}
+
+			_, ok := got[tt.wantField]
+			if !ok {
+				t.Errorf("Missing field %v", tt.wantField)
+			}
+		})
+	}
+}
+
+func TestProductHandlerMarkProductForImageUpdate(t *testing.T) {
+	tests := []struct {
+		name           string
+		handler        *ProductHandler
+		id             string
+		request        string
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			handler: &ProductHandler{
+				service: &fakeProductService{
+					onMarkProductForImageUpdate: func(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error {
+						return nil
+					}},
+			},
+			id:             uuid.NewString(),
+			request:        `{"imageContentType":"image/png"}`,
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid id",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			id:             "invalid",
+			request:        `{"imageContentType":"image/png"}`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+		{
+			name:           "invalid request",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			id:             uuid.NewString(),
+			request:        `{"imageContentType":"image/png`,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidJSON,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			e := echo.New()
+			e.HTTPErrorHandler = ErrorHandler
+			e.PATCH("/products/:id", test.handler.MarkProductForImageUpdate)
+
+			req := httptest.NewRequest(http.MethodPatch, "/products/"+test.id, strings.NewReader(test.request))
+			req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+
+			if rec.Code != test.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", test.wantHttpStatus, rec.Code)
+			}
+
+			if rec.Code == http.StatusNoContent {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response: %v", err)
+			}
+			if res.Code != test.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", test.wantErrorCode, res.Code)
+			}
+		})
+	}
+}
+
+func TestMarkProductForImageUpdate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
 
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
-	manager := transfermanager.New(testS3Client)
 
 	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
 	})
-	e.GET("/product/image/:key", handler.GetImage)
+	e.PATCH("/products/:id", handler.MarkProductForImageUpdate)
 
-	const key = "imageKey"
-	fakeImage := generateTestImage(t)
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
 
-	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
-		Bucket:      aws.String(testS3BucketName),
-		Key:         aws.String(key),
-		ContentType: aws.String("image/png"),
-		Body:        bytes.NewReader(fakeImage),
-	}); err != nil {
-		t.Fatalf("Error uploading image: %v", err)
-	}
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
 
-	req := httptest.NewRequest(http.MethodGet, "/product/image/"+key, nil)
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name",
+			Description:      "Some test description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Want http status code %d, got %d", http.StatusOK, rec.Code)
-	}
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+product.Id.String(), strings.NewReader(`{"imageContentType":"image/jpeg"}`))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNoContent, rec.Code)
+		}
 
-	data, err := io.ReadAll(rec.Body)
-	if err != nil {
-		t.Fatalf("Error reading response body: %v", err)
-	}
-	if !bytes.Equal(fakeImage, data) {
-		t.Fatalf("Want image data %s, got %s", fakeImage, data)
-	}
-	if rec.Header().Get("Content-Type") != "image/png" {
-		t.Fatalf("Want image/png got %s", rec.Header().Get("Content-Type"))
-	}
+		fetchedProduct, err := productRepository.Get(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error fetching product: %v", err)
+		}
+		if fetchedProduct.PendingImageKey == nil {
+			t.Errorf("Product does not have a pending image key")
+		}
+		if *fetchedProduct.PendingImageContentType != domain.ImageContentTypeJPEG {
+			t.Errorf("Want pending image content type %s, got %s", domain.ImageContentTypeJPEG, *fetchedProduct.PendingImageContentType)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.NewString(), strings.NewReader(`{"imageContentType":"image/jpeg"}`))
+		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response: %v", err)
+		}
+		if res.Code != domain.ErrorCodeProductNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, res.Code)
+		}
+	})
 }

@@ -210,6 +210,20 @@ func (p *ProductHandler) GetAllProductsWithImage(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, res)
 }
 
+func (p *ProductHandler) GetImage(ctx *echo.Context) error {
+	key := ctx.Param("key")
+
+	image, err := p.service.GetImage(ctx.Request().Context(), key)
+	if err != nil {
+		return NewError(err)
+	}
+
+	defer image.Close()
+
+	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=604800, s-maxage=604800")
+	return ctx.Stream(http.StatusOK, string(image.ContentType), image.Data)
+}
+
 // UpdateProductRequest represents the JSON request for updating the data of a product.
 type UpdateProductRequest struct {
 	Name        *string          `json:"name,omitempty"`
@@ -288,16 +302,43 @@ func (p *ProductHandler) UpdateProduct(ctx *echo.Context) error {
 	return ctx.NoContent(http.StatusNoContent)
 }
 
-func (p *ProductHandler) GetImage(ctx *echo.Context) error {
-	key := ctx.Param("key")
+// MarkProductForImageUpdateRequest represents the JSON request for marking a product for image update.
+type MarkProductForImageUpdateRequest struct {
+	ImageContentType string `json:"imageContentType"`
+}
 
-	image, err := p.service.GetImage(ctx.Request().Context(), key)
+func (m *MarkProductForImageUpdateRequest) Validate() map[string][]string {
+	if !isValidContentType(m.ImageContentType) {
+		return map[string][]string{
+			"imageContentType": {"Invalid image content type."},
+		}
+	}
+
+	return nil
+}
+
+func (p *ProductHandler) MarkProductForImageUpdate(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
 	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+
+	var req MarkProductForImageUpdateRequest
+	if err = ctx.Bind(&req); err != nil {
+		return NewInvalidJSONError(err)
+	}
+
+	if fields := req.Validate(); fields != nil {
+		return NewValidationError(fields)
+	}
+
+	if err = p.service.MarkProductForImageUpdate(
+		ctx.Request().Context(),
+		id,
+		domain.ImageContentType(req.ImageContentType),
+	); err != nil {
 		return NewError(err)
 	}
 
-	defer image.Close()
-
-	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=604800, s-maxage=604800")
-	return ctx.Stream(http.StatusOK, string(image.ContentType), image.Data)
+	return ctx.NoContent(http.StatusNoContent)
 }
