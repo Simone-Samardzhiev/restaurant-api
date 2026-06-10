@@ -36,7 +36,6 @@ type fakeProductRepository struct {
 
 	onDelete      func(ctx context.Context, id uuid.UUID) error
 	onDeleteCount atomic.Int32
-	deletedSignal chan struct{}
 
 	onDeleteReturning      func(ctx context.Context, id uuid.UUID) (*Product, error)
 	onDeleteReturningCount atomic.Int32
@@ -108,9 +107,6 @@ func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error 
 		panic("onDelete not implemented")
 	}
 	f.onDeleteCount.Add(1)
-	if f.deletedSignal != nil {
-		f.deletedSignal <- struct{}{}
-	}
 	return f.onDelete(ctx, id)
 }
 
@@ -136,10 +132,9 @@ type fakeImageStorage struct {
 
 	onDelete      func(ctx context.Context, imageKey string) error
 	onDeleteCount atomic.Int32
-	deletedSignal chan struct{}
 
-	onDeleteBatch      func(ctx context.Context, imageKeys []string) error
-	onDeleteBatchCount atomic.Int32
+	onDeleteMultiple      func(ctx context.Context, imageKeys []string) error
+	onDeleteMultipleCount atomic.Int32
 
 	onValidate      func(ctx context.Context, imageKey string, contentType ImageContentType) error
 	onValidateCount atomic.Int32
@@ -163,18 +158,15 @@ func (f *fakeImageStorage) Delete(ctx context.Context, imageKey string) error {
 		panic("onDelete not implemented")
 	}
 	f.onDeleteCount.Add(1)
-	if f.deletedSignal != nil {
-		f.deletedSignal <- struct{}{}
-	}
 	return f.onDelete(ctx, imageKey)
 }
 
 func (f *fakeImageStorage) DeleteMultiple(ctx context.Context, imageKeys []string) error {
-	if f.onDeleteBatch == nil {
-		panic("onDeleteBatch not implemented")
+	if f.onDeleteMultiple == nil {
+		panic("onDeleteMultiple not implemented")
 	}
-	f.onDeleteBatchCount.Add(1)
-	return f.onDeleteBatch(ctx, imageKeys)
+	f.onDeleteMultipleCount.Add(1)
+	return f.onDeleteMultiple(ctx, imageKeys)
 }
 
 func (f *fakeImageStorage) Validate(ctx context.Context, imageKey string, contentType ImageContentType) error {
@@ -540,7 +532,6 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, id uuid.UUID) error {
 					return nil
 				},
-				deletedSignal: make(chan struct{}),
 			},
 			wantOnGetCount:           1,
 			wantOnDeleteProductCount: 1,
@@ -552,7 +543,6 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, imageKey string) error {
 					return nil
 				},
-				deletedSignal: make(chan struct{}),
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
@@ -584,7 +574,6 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, id uuid.UUID) error {
 					return nil
 				},
-				deletedSignal: make(chan struct{}),
 			},
 			wantOnGetCount:          1,
 			wantOnUpdateStatusCount: 1,
@@ -596,7 +585,6 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				onDelete: func(ctx context.Context, imageKey string) error {
 					return nil
 				},
-				deletedSignal: make(chan struct{}),
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
@@ -610,30 +598,43 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			t.Parallel()
 			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
 			err := service.ConfirmImageUpload(context.Background(), tt.id)
-			if tt.wantOnDeleteProductCount > 0 {
-				<-tt.repository.deletedSignal
-			}
-			if tt.wantOnDeleteImageCount > 0 {
-				<-tt.storage.deletedSignal
-			}
 
-			if tt.wantOnGetCount != tt.repository.onGetCount.Load() {
-				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount.Load())
-			}
-			if tt.wantOnUpdateStatusCount != tt.repository.onUpdateStatusCount.Load() {
-				t.Errorf("Want onUpdateStatus count: %d, got: %d", tt.wantOnUpdateStatusCount, tt.repository.onUpdateStatusCount.Load())
-			}
-			if tt.wantOnConfirmImageUpdate != tt.repository.onConfirmImageUpdateCount.Load() {
-				t.Errorf("Want wantOnConfirmImageUpdate: %d, got: %d", tt.wantOnConfirmImageUpdate, tt.repository.onConfirmImageUpdateCount.Load())
-			}
-			if tt.wantOnDeleteProductCount != tt.repository.onDeleteCount.Load() {
-				t.Errorf("Want onDeleteProduct count: %d, got: %d", tt.wantOnDeleteProductCount, tt.repository.onDeleteCount.Load())
-			}
-			if tt.wantOnValidateCount != tt.storage.onValidateCount.Load() {
-				t.Errorf("Want onValidate count: %d, got: %d", tt.wantOnValidateCount, tt.storage.onValidateCount.Load())
-			}
-			if tt.wantOnDeleteImageCount != tt.storage.onDeleteCount.Load() {
-				t.Errorf("Want onDeleteImage count: %d, got: %d", tt.wantOnDeleteImageCount, tt.storage.onDeleteCount.Load())
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			for {
+				t.Log("Checking method calls count")
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					t.Fatal("Timeout waiting for checking method calls")
+				}
+
+				passed := true
+				if tt.wantOnGetCount != tt.repository.onGetCount.Load() {
+					t.Logf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount.Load())
+					passed = false
+				}
+				if tt.wantOnUpdateStatusCount != tt.repository.onUpdateStatusCount.Load() {
+					t.Logf("Want onUpdateStatus count: %d, got: %d", tt.wantOnUpdateStatusCount, tt.repository.onUpdateStatusCount.Load())
+					passed = false
+				}
+				if tt.wantOnConfirmImageUpdate != tt.repository.onConfirmImageUpdateCount.Load() {
+					t.Logf("Want wantOnConfirmImageUpdate: %d, got: %d", tt.wantOnConfirmImageUpdate, tt.repository.onConfirmImageUpdateCount.Load())
+					passed = false
+				}
+				if tt.wantOnDeleteProductCount != tt.repository.onDeleteCount.Load() {
+					t.Logf("Want onDeleteProduct count: %d, got: %d", tt.wantOnDeleteProductCount, tt.repository.onDeleteCount.Load())
+					passed = false
+				}
+				if tt.wantOnValidateCount != tt.storage.onValidateCount.Load() {
+					t.Logf("Want onValidate count: %d, got: %d", tt.wantOnValidateCount, tt.storage.onValidateCount.Load())
+					passed = false
+				}
+				if tt.wantOnDeleteImageCount != tt.storage.onDeleteCount.Load() {
+					t.Logf("Want onDeleteImage count: %d, got: %d", tt.wantOnDeleteImageCount, tt.storage.onDeleteCount.Load())
+					passed = false
+				}
+				if passed {
+					break
+				}
 			}
 
 			if tt.wantError != nil {
@@ -846,6 +847,106 @@ func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
 				return
 			}
 
+			if err != nil {
+				t.Fatalf("Want no error, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestDefaultProductServiceDelete(t *testing.T) {
+	tests := []struct {
+		name string
+		id   uuid.UUID
+
+		repository               *fakeProductRepository
+		wantDeleteReturningCount int32
+
+		storage               *fakeImageStorage
+		wantDeleteImagesCount int32
+
+		wantError *Error
+	}{
+		{
+			name: "success",
+			id:   uuid.New(),
+
+			repository: &fakeProductRepository{
+				onDeleteReturning: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return &Product{
+						Id:               id,
+						Name:             "Test name",
+						Description:      "Some test description",
+						Price:            decimal.NewFromInt(10),
+						CategoryId:       uuid.New(),
+						ImageKey:         "imageKey",
+						ImageContentType: ImageContentTypeJPEG,
+						Status:           ProductStatusMissingImage,
+						CreatedAt:        time.Now(),
+						UpdatedAt:        time.Now(),
+					}, nil
+				},
+			},
+			wantDeleteReturningCount: 1,
+
+			storage: &fakeImageStorage{
+				onDeleteMultiple: func(ctx context.Context, imageKeys []string) error {
+					return nil
+				},
+			},
+			wantDeleteImagesCount: 1,
+		},
+		{
+			name: "error",
+			id:   uuid.New(),
+			repository: &fakeProductRepository{
+				onDeleteReturning: func(ctx context.Context, id uuid.UUID) (*Product, error) {
+					return nil, NewError("product not found", ErrorCodeProductNotFound, nil)
+				},
+			},
+			wantDeleteReturningCount: 1,
+
+			storage:   &fakeImageStorage{},
+			wantError: NewError("product not found", ErrorCodeProductNotFound, nil),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			err := service.Delete(context.Background(), tt.id)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			for {
+				t.Log("Checking method calls count")
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					t.Fatal("Timeout waiting for checking method calls")
+				}
+
+				passed := true
+				if tt.wantDeleteReturningCount != tt.repository.onDeleteReturningCount.Load() {
+					t.Logf("Want delete returning count %d, got %d", tt.wantDeleteReturningCount, tt.repository.onDeleteReturningCount.Load())
+					passed = false
+				}
+				if tt.wantDeleteImagesCount != tt.storage.onDeleteMultipleCount.Load() {
+					t.Logf("Want delete image count %d, got %d", tt.wantDeleteImagesCount, tt.storage.onDeleteMultipleCount.Load())
+					passed = false
+				}
+				if passed {
+					break
+				}
+			}
+
+			if tt.wantError != nil {
+				if domainErr, ok := errors.AsType[*Error](err); ok {
+					if domainErr.Code != tt.wantError.Code {
+						t.Errorf("Want error code: %s, got: %s", tt.wantError.Code, domainErr.Code)
+					}
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("Want no error, got: %v", err)
 			}

@@ -245,3 +245,30 @@ func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, i
 	}
 	return nil
 }
+
+func (d *DefaultProductService) Delete(ctx context.Context, id uuid.UUID) error {
+	product, err := d.repository.DeleteReturning(ctx, id)
+	if err == nil {
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			keys := make([]string, 0, 2)
+			keys = append(keys, product.ImageKey)
+			if product.Status == ProductStatusAwaitingImageUpdate {
+				keys = append(keys, *product.PendingImageKey)
+			}
+
+			if deleteErr := d.storage.DeleteMultiple(bgCtx, keys); deleteErr != nil {
+				slog.LogAttrs(
+					bgCtx,
+					slog.LevelWarn,
+					"Images could not be deleted after deleting product",
+					slog.String("keys", strings.Join(keys, ",")),
+				)
+			}
+		}()
+	}
+
+	return err
+}

@@ -47,4 +47,7 @@ type ProductService interface {
 
 	// MarkProductForImageUpdate marks a product for image update.
 	MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error
+
+	// Delete deletes a product by id.
+	Delete(ctx context.Context, id uuid.UUID) error
 }
