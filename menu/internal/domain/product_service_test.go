@@ -38,6 +38,9 @@ type fakeProductRepository struct {
 	onDeleteCount atomic.Int32
 	deletedSignal chan struct{}
 
+	onDeleteReturning      func(ctx context.Context, id uuid.UUID) (*Product, error)
+	onDeleteReturningCount atomic.Int32
+
 	onDeleteExpiredByStatus      func(ctx context.Context, olderThan time.Duration) ([]string, error)
 	onDeleteExpiredByStatusCount atomic.Int32
 }
@@ -109,6 +112,14 @@ func (f *fakeProductRepository) Delete(ctx context.Context, id uuid.UUID) error 
 		f.deletedSignal <- struct{}{}
 	}
 	return f.onDelete(ctx, id)
+}
+
+func (f *fakeProductRepository) DeleteReturning(ctx context.Context, id uuid.UUID) (*Product, error) {
+	if f.onDeleteReturning == nil {
+		panic("onDeleteReturning is nil")
+	}
+	f.onDeleteReturningCount.Add(1)
+	return f.onDeleteReturning(ctx, id)
 }
 
 func (f *fakeProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {

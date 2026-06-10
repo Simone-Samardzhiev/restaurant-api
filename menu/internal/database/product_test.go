@@ -13,6 +13,43 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// compareProduct compares if two product are identical.
+func compareProduct(t *testing.T, want, got *domain.Product) {
+	t.Helper()
+
+	if got.Name != want.Name {
+		t.Errorf("Want name: %s, got: %s", want.Name, got.Name)
+	}
+	if got.Description != want.Description {
+		t.Errorf("Want description: %s, got: %s", want.Description, got.Description)
+	}
+	if !got.Price.Equal(got.Price) {
+		t.Errorf("Want price: %s, got: %s", want.Price, got.Price)
+	}
+	if got.CategoryId != want.CategoryId {
+		t.Errorf("Want category id: %s, got: %s", want.CategoryId, got.CategoryId)
+	}
+	if got.ImageKey != want.ImageKey {
+		t.Errorf("Want image key: %s, got: %s", want.ImageKey, got.ImageKey)
+	}
+	if got.ImageContentType != want.ImageContentType {
+		t.Errorf("Want image content type: %s, got: %s", want.ImageContentType, got.ImageContentType)
+	}
+	if got.Status != want.Status {
+		t.Errorf("Want status: %s, got: %s", want.Status, got.Status)
+	}
+	if (got.PendingImageKey == nil) != (want.PendingImageKey == nil) {
+		t.Errorf("Want pending image key nilness: %v, got: %v", want.PendingImageKey == nil, got.PendingImageKey == nil)
+	} else if want.PendingImageKey != nil && *want.PendingImageKey != *got.PendingImageKey {
+		t.Errorf("Want pending image key: %s, got: %s", *want.PendingImageKey, *got.PendingImageKey)
+	}
+	if (got.PendingImageContentType == nil) != (want.PendingImageContentType == nil) {
+		t.Errorf("Want pending image content type nilness: %v, got: %v", want.PendingImageContentType == nil, got.PendingImageContentType == nil)
+	} else if want.PendingImageContentType != nil && *want.PendingImageContentType != *got.PendingImageContentType {
+		t.Errorf("Want pending image content type: %s, got: %s", *want.PendingImageContentType, *got.PendingImageContentType)
+	}
+}
+
 func TestPostgresProductRepositorySave(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -56,27 +93,7 @@ func TestPostgresProductRepositorySave(t *testing.T) {
 			t.Fatalf("Error fetching product: %v", err)
 		}
 
-		if fetchedProduct.Name != product.Name {
-			t.Errorf("Want name: %s, got: %s", product.Name, fetchedProduct.Name)
-		}
-		if fetchedProduct.Description != product.Description {
-			t.Errorf("Want description: %s, got: %s", product.Description, fetchedProduct.Description)
-		}
-		if !fetchedProduct.Price.Equal(fetchedProduct.Price) {
-			t.Errorf("Want price: %s, got: %s", product.Price, fetchedProduct.Price)
-		}
-		if fetchedProduct.CategoryId != product.CategoryId {
-			t.Errorf("Want category id: %s, got: %s", product.CategoryId, fetchedProduct.CategoryId)
-		}
-		if fetchedProduct.ImageKey != product.ImageKey {
-			t.Errorf("Want image key: %s, got: %s", product.ImageKey, fetchedProduct.ImageKey)
-		}
-		if fetchedProduct.ImageContentType != domain.ImageContentTypePNG {
-			t.Errorf("Want image content type: %s, got: %s", product.ImageContentType, fetchedProduct.ImageContentType)
-		}
-		if fetchedProduct.Status != product.Status {
-			t.Errorf("Want status: %s, got: %s", product.Status, fetchedProduct.Status)
-		}
+		compareProduct(t, product, fetchedProduct)
 	})
 
 	t.Run("conflict", func(t *testing.T) {
@@ -207,37 +224,7 @@ func TestPostgresProductRepositoryGet(t *testing.T) {
 			t.Fatalf("Error fetching product: %v", err)
 		}
 
-		if fetchedProduct.Name != product.Name {
-			t.Errorf("Want name: %s, got: %s", product.Name, fetchedProduct.Name)
-		}
-		if fetchedProduct.Description != product.Description {
-			t.Errorf("Want description: %s, got: %s", product.Description, fetchedProduct.Description)
-		}
-		if !fetchedProduct.Price.Equal(fetchedProduct.Price) {
-			t.Errorf("Want price: %s, got: %s", product.Price, fetchedProduct.Price)
-		}
-		if fetchedProduct.CategoryId != product.CategoryId {
-			t.Errorf("Want category id: %s, got: %s", product.CategoryId, fetchedProduct.CategoryId)
-		}
-		if fetchedProduct.ImageKey != product.ImageKey {
-			t.Errorf("Want image key: %s, got: %s", product.ImageKey, fetchedProduct.ImageKey)
-		}
-		if fetchedProduct.ImageContentType != product.ImageContentType {
-			t.Errorf("Want image content type: %s, got: %s", product.ImageContentType, fetchedProduct.ImageContentType)
-		}
-		if fetchedProduct.Status != product.Status {
-			t.Errorf("Want status: %s, got: %s", product.Status, fetchedProduct.Status)
-		}
-		if (fetchedProduct.PendingImageKey == nil) != (product.PendingImageKey == nil) {
-			t.Errorf("Want pending image key nilness: %v, got: %v", product.PendingImageKey == nil, fetchedProduct.PendingImageKey == nil)
-		} else if product.PendingImageKey != nil && *product.PendingImageKey != *fetchedProduct.PendingImageKey {
-			t.Errorf("Want pending image key: %s, got: %s", *product.PendingImageKey, *fetchedProduct.PendingImageKey)
-		}
-		if (fetchedProduct.PendingImageContentType == nil) != (product.PendingImageContentType == nil) {
-			t.Errorf("Want pending image content type nilness: %v, got: %v", product.PendingImageContentType == nil, fetchedProduct.PendingImageContentType == nil)
-		} else if product.PendingImageContentType != nil && *product.PendingImageContentType != *fetchedProduct.PendingImageContentType {
-			t.Errorf("Want pending image content type: %s, got: %s", *product.PendingImageContentType, *fetchedProduct.PendingImageContentType)
-		}
+		compareProduct(t, product, fetchedProduct)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -835,6 +822,65 @@ func TestPostgresProductRepositoryDelete(t *testing.T) {
 			return
 		}
 		t.Fatalf("Want error type: domain.Error, got: %T", err)
+	})
+}
+
+func TestPostgresProductRepositoryDeleteReturning(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+	categoryRepository := NewPostgresCategoryRepository(testDb)
+	productRepository := NewPostgresProductRepository(testDb)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "Test name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test",
+			Description:      "Some test description for product",
+			Price:            decimal.NewFromInt(100),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		fetchedProduct, err := productRepository.DeleteReturning(context.Background(), product.Id)
+		if err != nil {
+			t.Fatalf("Error deleting product: %v", err)
+		}
+		compareProduct(t, product, fetchedProduct)
+	})
+	t.Run("not found", func(t *testing.T) {
+		err := productRepository.Delete(context.Background(), uuid.New())
+		if err == nil {
+			t.Fatalf("Want not found error, got nil")
+		}
+		if domainErr, ok := errors.AsType[*domain.Error](err); ok {
+			if domainErr.Code != domain.ErrorCodeProductNotFound {
+				t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, domainErr.Code)
+			}
+		} else {
+			t.Fatalf("Want error type: domain.Error, got: %T", err)
+		}
 	})
 }
 

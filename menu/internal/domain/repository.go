@@ -52,6 +52,9 @@ type ProductRepository interface {
 	// Delete deletes a product by id.
 	Delete(ctx context.Context, id uuid.UUID) error
 
+	// DeleteReturning deletes a product by id and returns the data.
+	DeleteReturning(ctx context.Context, id uuid.UUID) (*Product, error)
+
 	// DeleteExpiredByStatus deletes all products whose status is [ProductStatusMissingImage] and a
 	// set duration has passed since it was created.
 	//

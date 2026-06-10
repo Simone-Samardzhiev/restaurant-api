@@ -256,6 +256,37 @@ func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) er
 	return nil
 }
 
+func (p *PostgresProductRepository) DeleteReturning(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+	row := p.db.QueryRowContext(
+		ctx,
+		`DELETE FROM products 
+       	WHERE id = $1
+       	RETURNING id, name, description, price, category_id, image_key, image_content_type, status, pending_image_key, pending_image_content_type, created_at, updated_at`,
+		id,
+	)
+
+	var product domain.Product
+	var pendingImageKey sql.NullString
+	var pendingImageContentType sql.NullString
+
+	err := row.Scan(&product.Id, &product.Name, &product.Description, &product.Price, &product.CategoryId, &product.ImageKey, &product.ImageContentType, &product.Status, &pendingImageKey, &pendingImageContentType, &product.CreatedAt, &product.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.NewError("product not found", domain.ErrorCodeProductNotFound, nil)
+		}
+		return nil, domain.NewError("error deleting product", domain.ErrorCodeInternal, err)
+	}
+
+	if pendingImageKey.Valid {
+		product.PendingImageKey = &pendingImageKey.String
+	}
+	if pendingImageContentType.Valid {
+		product.PendingImageContentType = new(domain.ImageContentType(pendingImageContentType.String))
+	}
+
+	return &product, nil
+}
+
 func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, olderThan time.Duration) ([]string, error) {
 	t := time.Now().Add(-olderThan)
 	rows, err := p.db.QueryContext(
