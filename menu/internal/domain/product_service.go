@@ -214,11 +214,11 @@ func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, i
 		return NewError("invalid image content type format: "+string(contentType), ErrorCodeInternal, nil)
 	}
 
-	id, err := uuid.NewV7()
+	imageId, err := uuid.NewV7()
 	if err != nil {
 		return NewError("error create uuid for image", ErrorCodeInternal, err)
 	}
-	key := id.String() + "." + ext
+	key := imageId.String() + "." + ext
 
 	product, err := d.repository.Get(ctx, id)
 	if err != nil {
@@ -233,7 +233,7 @@ func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, i
 		return NewError("cannot the image of a product with missing initial image", ErrorCodeProductMissingInitialImage, nil)
 	}
 
-	if err = d.repository.MarkForImageUpdate(ctx, id, key, product.ImageContentType); err != nil {
+	if err = d.repository.MarkForImageUpdate(ctx, id, key, contentType); err != nil {
 		return err
 	}
 	return nil
