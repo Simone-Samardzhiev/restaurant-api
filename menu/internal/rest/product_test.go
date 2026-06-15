@@ -449,8 +449,9 @@ func TestProductHandlerGetUploadInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.GET("/draft/:id", tt.handler.GetUploadInfo)
 
 			req := httptest.NewRequest(http.MethodGet, "/draft/"+tt.id, nil)
@@ -625,8 +626,9 @@ func TestProductHandlerConfirmImageUpload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.POST("/products/confirm-image-upload/:id", tt.handler.ConfirmImageUpload)
 
 			req := httptest.NewRequest(http.MethodPost, "/products/confirm-image-upload/"+tt.id, nil)
@@ -856,8 +858,9 @@ func TestProductHandlerGetProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.GET("/products/:id", tt.handler.GetProduct)
 
 			req := httptest.NewRequest(http.MethodGet, "/products/"+tt.id, nil)
@@ -901,8 +904,9 @@ func TestGetAllProductsWithImageReadyProducts(t *testing.T) {
 	productService := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
 	productHandler := NewProductHandler("https://images/download", productService)
 
-	e := echo.New()
-	e.HTTPErrorHandler = ErrorHandler
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
 	e.GET("/products", productHandler.GetAllProductsWithImage)
 
 	if _, err := testDb.Exec(`TRUNCATE TABLE categories, products`); err != nil {
@@ -1161,8 +1165,9 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.PATCH("/products/:id", tt.handler.UpdateProduct)
 
 			req := httptest.NewRequest(http.MethodPatch, "/products/"+tt.id, strings.NewReader(tt.request))
@@ -1472,8 +1477,9 @@ func TestProductHandlerMarkProductForImageUpdate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			e := echo.New()
-			e.HTTPErrorHandler = ErrorHandler
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.PATCH("/products/:id", test.handler.MarkProductForImageUpdate)
 
 			req := httptest.NewRequest(http.MethodPatch, "/products/"+test.id, strings.NewReader(test.request))
@@ -1618,7 +1624,9 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			e := echo.New()
+			e := echo.NewWithConfig(echo.Config{
+				HTTPErrorHandler: ErrorHandler,
+			})
 			e.DELETE("/products/:id", tt.handler.DeleteProduct)
 			e.HTTPErrorHandler = ErrorHandler
 
