@@ -342,3 +342,14 @@ func (p *ProductHandler) MarkProductForImageUpdate(ctx *echo.Context) error {
 
 	return ctx.NoContent(http.StatusNoContent)
 }
+
+func (p *ProductHandler) DeleteProduct(ctx *echo.Context) error {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		return NewInvalidUUIDError(err)
+	}
+	if err = p.service.Delete(ctx.Request().Context(), id); err != nil {
+		return NewError(err)
+	}
+	return ctx.NoContent(http.StatusNoContent)
+}

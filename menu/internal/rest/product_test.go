@@ -38,6 +38,7 @@ type fakeProductService struct {
 	onGetImage                  func(ctx context.Context, key string) (*domain.Image, error)
 	onUpdateProduct             func(ctx context.Context, request *domain.UpdateProductRequest) error
 	onMarkProductForImageUpdate func(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error
+	onDelete                    func(ctx context.Context, id uuid.UUID) error
 }
 
 var _ domain.ProductService = (*fakeProductService)(nil)
@@ -96,6 +97,13 @@ func (f *fakeProductService) MarkProductForImageUpdate(ctx context.Context, id u
 		panic("onMarkProductForImageUpdate not implemented")
 	}
 	return f.onMarkProductForImageUpdate(ctx, id, contentType)
+}
+
+func (f *fakeProductService) Delete(ctx context.Context, id uuid.UUID) error {
+	if f.onDelete == nil {
+		panic("onDeleteProduct not implemented")
+	}
+	return f.onDelete(ctx, id)
 }
 
 func TestAddProductRequestValidate(t *testing.T) {
@@ -1561,6 +1569,167 @@ func TestMarkProductForImageUpdate(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.NewString(), strings.NewReader(`{"imageContentType":"image/jpeg"}`))
 		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNotFound, rec.Code)
+		}
+
+		var res ErrorResponse
+		if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+			t.Fatalf("Error decoding response: %v", err)
+		}
+		if res.Code != domain.ErrorCodeProductNotFound.String() {
+			t.Fatalf("Want error code %s, got %s", domain.ErrorCodeProductNotFound, res.Code)
+		}
+	})
+}
+
+func TestProductHandlerDeleteProduct(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             string
+		handler        *ProductHandler
+		wantHttpStatus int
+		wantErrorCode  string
+	}{
+		{
+			name: "success",
+			id:   uuid.NewString(),
+			handler: &ProductHandler{
+				service: &fakeProductService{
+					onDelete: func(ctx context.Context, id uuid.UUID) error {
+						return nil
+					},
+				},
+			},
+			wantHttpStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid id",
+			id:             "invalid",
+			handler:        &ProductHandler{service: &fakeProductService{}},
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeInvalidUUID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			e := echo.New()
+			e.DELETE("/products/:id", tt.handler.DeleteProduct)
+			e.HTTPErrorHandler = ErrorHandler
+
+			req := httptest.NewRequest(http.MethodDelete, "/products/"+tt.id, nil)
+			rec := httptest.NewRecorder()
+			e.ServeHTTP(rec, req)
+			if rec.Code != tt.wantHttpStatus {
+				t.Fatalf("Want http status code %d, got %d", tt.wantHttpStatus, rec.Code)
+			}
+			if rec.Code == http.StatusNoContent {
+				return
+			}
+
+			var res ErrorResponse
+			if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+				t.Fatalf("Error decoding response: %v", err)
+			}
+			if res.Code != tt.wantErrorCode {
+				t.Fatalf("Want error code %s, got %s", tt.wantErrorCode, res.Code)
+			}
+		})
+	}
+}
+
+func TestDeleteProduct(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	categoryRepository := database.NewPostgresCategoryRepository(testDb)
+	productRepository := database.NewPostgresProductRepository(testDb)
+	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
+
+	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	handler := NewProductHandler("https://images", service)
+	e := echo.NewWithConfig(echo.Config{
+		HTTPErrorHandler: ErrorHandler,
+	})
+	e.DELETE("/products/:id", handler.DeleteProduct)
+
+	t.Run("success", func(t *testing.T) {
+		if _, err := testDb.Exec(`TRUNCATE TABLE categories, products CASCADE`); err != nil {
+			t.Fatalf("Error truncating table: %v", err)
+		}
+
+		category := &domain.Category{
+			Id:        uuid.New(),
+			Name:      "New name",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		if err := categoryRepository.Save(context.Background(), category); err != nil {
+			t.Fatalf("Error saving category: %v", err)
+		}
+
+		product := &domain.Product{
+			Id:               uuid.New(),
+			Name:             "Test name",
+			Description:      "Some test description",
+			Price:            decimal.NewFromInt(10),
+			CategoryId:       category.Id,
+			ImageKey:         "imageKey",
+			ImageContentType: domain.ImageContentTypePNG,
+			Status:           domain.ProductStatusReady,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		}
+		if err := productRepository.Save(context.Background(), product); err != nil {
+			t.Fatalf("Error saving product: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodDelete, "/products/"+product.Id.String(), nil)
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("Want http status code %d, got %d", http.StatusNoContent, rec.Code)
+		}
+
+		// validate product is deleted
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		for {
+			select {
+			case <-ctx.Done():
+				t.Fatalf("Timeout for checking if product and image are deleted")
+			default:
+				t.Log("Checking if product exists")
+
+				var exists bool
+				row := testDb.QueryRow("SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)", product.Id)
+				if err := row.Scan(&exists); err != nil {
+					t.Fatalf("Error fetching product: %v", err)
+				}
+
+				_, err := testS3Client.HeadObject(context.Background(), &s3.HeadObjectInput{
+					Bucket: aws.String(testS3BucketName),
+					Key:    aws.String(product.ImageKey),
+				})
+				_, ok := errors.AsType[*types.NotFound](err)
+				if ok && !exists {
+					return
+				}
+			}
+			time.Sleep(1 * time.Second)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodDelete, "/products/"+uuid.NewString(), nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 		if rec.Code != http.StatusNotFound {

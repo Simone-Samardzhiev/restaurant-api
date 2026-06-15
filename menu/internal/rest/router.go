@@ -61,6 +61,8 @@ func NewRouter(c *RouterConfig) *Router {
 
 			products.PATCH("/:id", c.ProductHandler.UpdateProduct)
 			products.PATCH("/:id/mark/image-update", c.ProductHandler.MarkProductForImageUpdate)
+
+			products.DELETE("/:id", c.ProductHandler.DeleteProduct)
 		}
 	}
 
