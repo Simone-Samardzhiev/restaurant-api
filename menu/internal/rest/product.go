@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"menu/internal/domain"
 	"net/http"
 	"strconv"
@@ -282,7 +283,12 @@ func (p *ProductHandler) UpdateProduct(ctx *echo.Context) error {
 		return NewInvalidJSONError(err)
 	}
 	if req.IsEmpty() {
-		return ctx.NoContent(http.StatusNoContent)
+		return &Error{
+			HttpStatus: http.StatusBadRequest,
+			Code:       ErrorCodeEmptyRequest,
+			Message:    "Request cannot be empty.",
+			Err:        errors.New("cannot proceed an empty request"),
+		}
 	}
 
 	if fields := req.Validate(); fields != nil {

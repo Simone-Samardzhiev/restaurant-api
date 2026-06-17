@@ -1142,7 +1142,8 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 			handler:        &ProductHandler{service: &fakeProductService{}},
 			id:             uuid.NewString(),
 			request:        `{}`,
-			wantHttpStatus: http.StatusNoContent,
+			wantHttpStatus: http.StatusBadRequest,
+			wantErrorCode:  ErrorCodeEmptyRequest,
 		},
 		{
 			name:           "invalid id",

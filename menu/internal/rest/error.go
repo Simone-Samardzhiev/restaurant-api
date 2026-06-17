@@ -77,6 +77,7 @@ const (
 	ErrorCodeInvalidUUID     = "INVALID_UUID"
 	ErrorCodeInvalidEntity   = "INVALID_ENTITY"
 	ErrorCodeTooManyRequests = "TOO_MANY_REQUESTS"
+	ErrorCodeEmptyRequest    = "EMPTY_REQUEST"
 )
 
 // NewInvalidJSONError creates new [Error] from JSON unmarshaling error.
