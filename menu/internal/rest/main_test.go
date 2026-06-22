@@ -6,11 +6,15 @@ import (
 	"flag"
 	"log"
 	"menu/internal/database"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/option"
 )
 
 // testDb holds connection to the test database.
@@ -23,6 +27,21 @@ var testS3Client *s3.Client
 
 // testS3BucketName is the test bucket in which file can be modified.
 var testS3BucketName string
+
+// testCloudflareClient connects to local mck of cloudflare api for testing
+// Connected only if the short flag is not provided.
+var testCloudflareClient *cloudflare.Client
+
+func newTestServer() *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/zones/{id}/purge_cache", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success": true}`))
+		w.WriteHeader(http.StatusOK)
+	})
+
+	return httptest.NewServer(mux)
+}
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -63,5 +82,14 @@ func TestMain(m *testing.M) {
 		log.Fatal("TEST_AWS_S3_BUCKET_NAME environment variable not set")
 	}
 
-	os.Exit(m.Run())
+	testServer := newTestServer()
+	testCloudflareClient = cloudflare.NewClient(
+		option.WithBaseURL(testServer.URL),
+		option.WithHTTPClient(testServer.Client()),
+		option.WithAPIKey("dummy"),
+	)
+
+	code := m.Run()
+	testServer.Close()
+	os.Exit(code)
 }

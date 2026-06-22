@@ -42,6 +42,13 @@ type (
 		Name            string
 	}
 
+	// Cache represents Cloudflare config.
+	Cache struct {
+		BaseURl string
+		ZoneId  string
+		ApiKey  string
+	}
+
 	// Environment represents app environment.
 	Environment string
 
@@ -58,6 +65,7 @@ type (
 		Valkey
 		RateLimit
 		Bucket
+		Cache
 		App
 	}
 )
@@ -183,6 +191,28 @@ func NewBucket() (Bucket, error) {
 	return bucket, nil
 }
 
+func NewCache() (Cache, error) {
+	var cache Cache
+	if url, ok := os.LookupEnv("CACHE_URL"); ok {
+		cache.BaseURl = url
+	} else {
+		return Cache{}, errors.New("config: CACHE_URL is required but not set")
+	}
+
+	if zoneId, ok := os.LookupEnv("CACHE_ZONE_ID"); ok {
+		cache.ZoneId = zoneId
+	} else {
+		return Cache{}, errors.New("config: CACHE_ZONE_ID is required but not set")
+	}
+
+	if apiKey, ok := os.LookupEnv("CACHE_API_KEY"); ok {
+		cache.ApiKey = apiKey
+	} else {
+		return Cache{}, errors.New("config: CACHE_API_KEY is required but not set")
+	}
+	return cache, nil
+}
+
 func NewApp() (App, error) {
 	var app App
 	if port, ok := os.LookupEnv("ADDR"); ok {
@@ -232,6 +262,11 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	cache, err := NewCache()
+	if err != nil {
+		return nil, err
+	}
+
 	app, err := NewApp()
 	if err != nil {
 		return nil, err
@@ -242,6 +277,7 @@ func NewConfig() (*Config, error) {
 		valkey,
 		rateLimit,
 		bucket,
+		cache,
 		app,
 	}, nil
 }

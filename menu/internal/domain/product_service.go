@@ -14,19 +14,26 @@ import (
 type DefaultProductService struct {
 	repository ProductRepository
 	storage    ImageStorage
+	purger     CachePurger
 	logger     *slog.Logger
 }
 
 // NewDefaultProductService creates and allocates [DefaultProductService].
-func NewDefaultProductService(repository ProductRepository, storage ImageStorage, logger *slog.Logger) *DefaultProductService {
-	return &DefaultProductService{
-		repository: repository,
-		storage:    storage,
-		logger:     logger,
-	}
+func NewDefaultProductService(repository ProductRepository, storage ImageStorage, purger CachePurger, logger *slog.Logger) *DefaultProductService {
+	return &DefaultProductService{repository: repository, storage: storage, purger: purger, logger: logger}
 }
 
 var _ ProductService = (*DefaultProductService)(nil)
+
+func (d *DefaultProductService) purgeCache(ctx context.Context) {
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second*5)
+		defer cancel()
+		if err := d.purger.Products(bgCtx); err != nil {
+			d.logger.LogAttrs(ctx, slog.LevelWarn, "Error purging products cache", slog.String("error", err.Error()))
+		}
+	}()
+}
 
 func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequest) (*ProductUploadInfo, error) {
 	_, ext, ok := strings.Cut(string(request.ImageContentType), "/")
@@ -53,7 +60,7 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 		UpdatedAt:        now,
 	}
 
-	if err := d.repository.Save(ctx, &product); err != nil {
+	if err = d.repository.Save(ctx, &product); err != nil {
 		return nil, err
 	}
 
@@ -141,6 +148,7 @@ func (d *DefaultProductService) confirmNewImage(ctx context.Context, product *Pr
 		return err
 	}
 
+	d.purgeCache(ctx)
 	return nil
 }
 
@@ -170,6 +178,7 @@ func (d *DefaultProductService) confirmImageUpdate(ctx context.Context, product 
 		return err
 	}
 
+	d.purgeCache(ctx)
 	return nil
 }
 
@@ -212,7 +221,11 @@ func (d *DefaultProductService) GetAllWithImage(ctx context.Context) ([]Product,
 }
 
 func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
-	return d.repository.Update(ctx, request)
+	if err := d.repository.Update(ctx, request); err != nil {
+		return err
+	}
+	d.purgeCache(ctx)
+	return nil
 }
 
 func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error {
@@ -268,6 +281,7 @@ func (d *DefaultProductService) Delete(ctx context.Context, id uuid.UUID) error 
 				)
 			}
 		}()
+		d.purgeCache(ctx)
 	}
 
 	return err

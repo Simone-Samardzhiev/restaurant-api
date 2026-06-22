@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/png"
 	"io"
+	"menu/internal/cache"
 	"menu/internal/database"
 	"menu/internal/domain"
 	"menu/internal/logger"
@@ -283,7 +284,18 @@ func TestAddProduct(t *testing.T) {
 	categoryRepository := database.NewPostgresCategoryRepository(testDb)
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -486,7 +498,18 @@ func TestGetUploadInfo(t *testing.T) {
 
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -675,7 +698,18 @@ func TestConfirmImageUpload(t *testing.T) {
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 	manager := transfermanager.New(testS3Client)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -901,8 +935,19 @@ func TestGetAllProductsWithImageReadyProducts(t *testing.T) {
 	categoryRepository := database.NewPostgresCategoryRepository(testDb)
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 10*time.Second, testS3BucketName)
-	productService := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
-	productHandler := NewProductHandler("https://images/download", productService)
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
+	productHandler := NewProductHandler("https://images/download", service)
 
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -1023,7 +1068,18 @@ func TestGetImage(t *testing.T) {
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 	manager := transfermanager.New(testS3Client)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -1203,7 +1259,18 @@ func TestUpdateProduct(t *testing.T) {
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -1516,7 +1583,18 @@ func TestMarkProductForImageUpdate(t *testing.T) {
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -1661,7 +1739,18 @@ func TestDeleteProduct(t *testing.T) {
 	productRepository := database.NewPostgresProductRepository(testDb)
 	imageStorage := storage.NewS3ImageStorage(testS3Client, 15*time.Minute, testS3BucketName)
 
-	service := domain.NewDefaultProductService(productRepository, imageStorage, logger.NewSilentLogger())
+	service := domain.NewDefaultProductService(
+		productRepository,
+		imageStorage,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewProductHandler("https://images", service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,

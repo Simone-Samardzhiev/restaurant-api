@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,13 +11,25 @@ import (
 // DefaultCategoryService is the default implementation of [CategoryService].
 type DefaultCategoryService struct {
 	repository CategoryRepository
+	purger     CachePurger
+	logger     *slog.Logger
 }
 
 var _ CategoryService = (*DefaultCategoryService)(nil)
 
 // NewDefaultCategoryService creates and allocates new [DefaultCategoryService].
-func NewDefaultCategoryService(repository CategoryRepository) *DefaultCategoryService {
-	return &DefaultCategoryService{repository: repository}
+func NewDefaultCategoryService(repository CategoryRepository, purger CachePurger, logger *slog.Logger) *DefaultCategoryService {
+	return &DefaultCategoryService{repository: repository, purger: purger, logger: logger}
+}
+
+func (d *DefaultCategoryService) purgeCache(ctx context.Context) {
+	go func() {
+		gtCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second*5)
+		defer cancel()
+		if err := d.purger.Categories(gtCtx); err != nil {
+			d.logger.LogAttrs(ctx, slog.LevelWarn, "Error purging categories cache", slog.String("error", err.Error()))
+		}
+	}()
 }
 
 func (d *DefaultCategoryService) Add(ctx context.Context, name string) (*Category, error) {
@@ -36,6 +49,7 @@ func (d *DefaultCategoryService) Add(ctx context.Context, name string) (*Categor
 	if err := d.repository.Save(ctx, &category); err != nil {
 		return nil, err
 	}
+	d.purgeCache(ctx)
 	return &category, nil
 }
 
@@ -44,9 +58,17 @@ func (d *DefaultCategoryService) GetAll(ctx context.Context) ([]Category, error)
 }
 
 func (d *DefaultCategoryService) Update(ctx context.Context, id uuid.UUID, name string) error {
-	return d.repository.Update(ctx, id, name)
+	if err := d.repository.Update(ctx, id, name); err != nil {
+		return err
+	}
+	d.purgeCache(ctx)
+	return nil
 }
 
 func (d *DefaultCategoryService) Delete(ctx context.Context, id uuid.UUID) error {
-	return d.repository.Delete(ctx, id)
+	if err := d.repository.Delete(ctx, id); err != nil {
+		return err
+	}
+	d.purgeCache(ctx)
+	return nil
 }

@@ -50,6 +50,10 @@ services:
     volumes:
       - menu-db-storage:/var/lib/postgresql/data/
 
+  cache-mock:
+    build:
+      context: ./cache-mock
+
   menu-api:
     build:
       context: "./menu"
@@ -68,6 +72,11 @@ services:
       DATABASE_MAX_IDLE_TIME: 10m
       DATABASE_MAX_LIFETIME: 10m
 
+      VALKEY_URL: valkey://:password@valkey-cache:6379
+
+      RATE_LIMIT_COUNT: 15
+      RATE_LIMIT_WINDOW: 1s
+
       AWS_ENDPOINT_URL: http://menu-bucket.docker.orb.local:9090
       AWS_UPLOAD_URL_EXPIRY: 15m
       AWS_S3_BUCKET_NAME: images
@@ -75,10 +84,9 @@ services:
       AWS_ACCESS_KEY_ID: mock-key
       AWS_SECRET_ACCESS_KEY: mock-secret
 
-      VALKEY_URL: valkey://:password@valkey-cache:6379
-
-      RATE_LIMIT_COUNT: 15
-      RATE_LIMIT_WINDOW: 1s
+      CACHE_URL: http://cache-mock:8080
+      CACHE_ZONE_ID: dummy_id
+      CACHE_API_KEY: dummy_key
 
       ADDR: 0.0.0.0:8080
       ENVIRONMENT: development

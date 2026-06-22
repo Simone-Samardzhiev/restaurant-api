@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"menu/internal/cache"
 	"menu/internal/config"
 	"menu/internal/database"
 	"menu/internal/domain"
@@ -18,6 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/option"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/valkey-io/valkey-go"
 )
@@ -61,17 +64,29 @@ func main() {
 		log.Fatalf("Error connecting to valkey: %v", err)
 	}
 
+	cloudflareClient := cloudflare.NewClient(
+		option.WithAPIKey(appConfig.Cache.ApiKey),
+		option.WithBaseURL(appConfig.Cache.BaseURl),
+	)
+
 	appLogger := logger.New(&appConfig.App)
 	rateLimitStore := rate.NewValkeyStore(valkeyConn, appConfig.RateLimit)
 	heathCheckHandler := rest.NewHealthHandler(db, valkeyConn)
+	purger := cache.NewCloudflareCachePurger(
+		cloudflareClient,
+		appConfig.Cache.ZoneId,
+		"https://api-test.simoncho.dev/api/v1/menu/categories",
+		"https://api-test.simoncho.dev/api/v1/menu/products",
+		"https://api-test.simoncho.dev/api/v1/menu",
+	)
 
 	categoryRepository := database.NewPostgresCategoryRepository(db)
-	categoryService := domain.NewDefaultCategoryService(categoryRepository)
+	categoryService := domain.NewDefaultCategoryService(categoryRepository, purger, appLogger)
 	categoryHandler := rest.NewCategoryHandler(categoryService)
 
 	productRepository := database.NewPostgresProductRepository(db)
 	imageStorage := storage.NewS3ImageStorage(s3client, appConfig.UploadUrlExpiry, appConfig.Bucket.Name)
-	productService := domain.NewDefaultProductService(productRepository, imageStorage, appLogger)
+	productService := domain.NewDefaultProductService(productRepository, imageStorage, purger, appLogger)
 	productHandler := rest.NewProductHandler(appConfig.BaseImagesUrl, productService)
 
 	router := rest.NewRouter(&rest.RouterConfig{

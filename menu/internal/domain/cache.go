@@ -4,6 +4,9 @@ import "context"
 
 // CachePurger describes how cache is purged.
 type CachePurger interface {
-	// Menu purges the cache for the menu.
-	Menu(ctx context.Context) error
+	// Categories purges the cache for the categories.
+	Categories(ctx context.Context) error
+
+	// Products purges the cache for products.
+	Products(ctx context.Context) error
 }

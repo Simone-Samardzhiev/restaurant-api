@@ -185,6 +185,29 @@ func (f *fakeImageStorage) Get(ctx context.Context, imageKey string) (*Image, er
 	return f.onGet(ctx, imageKey)
 }
 
+type fakeCachePurger struct {
+	onCategories      func(ctx context.Context) error
+	onCategoriesCount atomic.Int32
+	onProducts        func(ctx context.Context) error
+	onProductsCount   atomic.Int32
+}
+
+var _ CachePurger = (*fakeCachePurger)(nil)
+
+func (f *fakeCachePurger) Categories(ctx context.Context) error {
+	if f.onCategories == nil {
+		panic("onCategories not implemented")
+	}
+	return f.onCategories(ctx)
+}
+
+func (f *fakeCachePurger) Products(ctx context.Context) error {
+	if f.onProducts == nil {
+		panic("onProducts not implemented")
+	}
+	return f.onProducts(ctx)
+}
+
 func TestDefaultProductServiceAdd(t *testing.T) {
 	tests := []struct {
 		name string
@@ -194,6 +217,8 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 
 		storage                    *fakeImageStorage
 		wantOnCreateUploadUrlCount int32
+
+		purger *fakeCachePurger
 
 		request   *AddProductRequest
 		wantDraft *ProductUploadInfo
@@ -211,6 +236,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 				},
 			},
 			wantOnCreateUploadUrlCount: 1,
+			purger:                     &fakeCachePurger{},
 			request: &AddProductRequest{
 				Name:             "Product name",
 				Description:      "Product description",
@@ -226,6 +252,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 			name:       "invalid content type format",
 			repository: &fakeProductRepository{},
 			storage:    &fakeImageStorage{},
+			purger:     &fakeCachePurger{},
 			request: &AddProductRequest{
 				ImageContentType: "invalid",
 			},
@@ -240,6 +267,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 			},
 			wantOnSaveCount: 1,
 			storage:         &fakeImageStorage{},
+			purger:          &fakeCachePurger{},
 			request: &AddProductRequest{
 				Name:             "Product name",
 				Description:      "Product description",
@@ -275,7 +303,7 @@ func TestDefaultProductServiceAdd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, tt.storage, tt.purger, logger.NewSilentLogger())
 			draft, err := service.Add(context.Background(), tt.request)
 
 			if tt.repository.onSaveCount.Load() != tt.wantOnSaveCount {
@@ -316,6 +344,7 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 
 		storage                    *fakeImageStorage
 		wantOnCreateUploadUrlCount int32
+		purger                     *fakeCachePurger
 
 		wantDraft *ProductUploadInfo
 		wantError *Error
@@ -348,6 +377,7 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 				},
 			},
 			wantOnCreateUploadUrlCount: 1,
+			purger:                     &fakeCachePurger{},
 
 			wantDraft: &ProductUploadInfo{
 				ImageUploadUrl: "https://images/upload",
@@ -363,6 +393,7 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 			},
 			wantOnGetCount: 1,
 			storage:        &fakeImageStorage{},
+			purger:         &fakeCachePurger{},
 
 			wantError: NewError("product is already completed", ErrorCodeProductAlreadyHasImage, nil),
 		},
@@ -372,7 +403,7 @@ func TestDefaultProductServiceGetUploadInfo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, tt.storage, tt.purger, logger.NewSilentLogger())
 			draft, err := service.GetUploadInfo(context.Background(), tt.id)
 			if tt.wantOnGetCount != tt.repository.onGetCount.Load() {
 				t.Errorf("Want onGet count: %d, got: %d", tt.wantOnGetCount, tt.repository.onGetCount.Load())
@@ -416,6 +447,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 		storage                *fakeImageStorage
 		wantOnValidateCount    int32
 		wantOnDeleteImageCount int32
+		purger                 *fakeCachePurger
 
 		wantError *Error
 	}{
@@ -451,6 +483,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				},
 			},
 			wantOnValidateCount: 1,
+			purger:              &fakeCachePurger{onProducts: func(ctx context.Context) error { return nil }},
 		},
 		{
 			name: "success update",
@@ -486,6 +519,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 				},
 			},
 			wantOnValidateCount: 1,
+			purger:              &fakeCachePurger{onProducts: func(ctx context.Context) error { return nil }},
 		},
 		{
 			name: "success already confirmed",
@@ -509,6 +543,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			},
 			wantOnGetCount: 1,
 			storage:        &fakeImageStorage{},
+			purger:         &fakeCachePurger{},
 		},
 		{
 			name: "invalid image",
@@ -546,6 +581,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
+			purger:                 &fakeCachePurger{},
 
 			wantError: NewError("invalid image type", ErrorCodeInvalidImage, nil),
 		},
@@ -588,6 +624,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 			},
 			wantOnValidateCount:    1,
 			wantOnDeleteImageCount: 1,
+			purger:                 &fakeCachePurger{},
 
 			wantError: NewError("product not found", ErrorCodeProductNotFound, nil),
 		},
@@ -596,7 +633,7 @@ func TestDefaultProductServiceConfirmImageUpload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, tt.storage, tt.purger, logger.NewSilentLogger())
 			err := service.ConfirmImageUpload(context.Background(), tt.id)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -708,7 +745,7 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, &fakeCachePurger{}, logger.NewSilentLogger())
 
 			_, err := service.GetProduct(context.Background(), tt.id)
 			if tt.wantError != nil {
@@ -826,7 +863,7 @@ func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, &fakeCachePurger{}, logger.NewSilentLogger())
 			err := service.MarkProductForImageUpdate(context.Background(), tt.id, tt.contentType)
 
 			if tt.wantGetCount != tt.repository.onGetCount.Load() {
@@ -864,6 +901,7 @@ func TestDefaultProductServiceDelete(t *testing.T) {
 
 		storage               *fakeImageStorage
 		wantDeleteImagesCount int32
+		purger                *fakeCachePurger
 
 		wantError *Error
 	}{
@@ -895,6 +933,7 @@ func TestDefaultProductServiceDelete(t *testing.T) {
 				},
 			},
 			wantDeleteImagesCount: 1,
+			purger:                &fakeCachePurger{onProducts: func(ctx context.Context) error { return nil }},
 		},
 		{
 			name: "error",
@@ -907,6 +946,7 @@ func TestDefaultProductServiceDelete(t *testing.T) {
 			wantDeleteReturningCount: 1,
 
 			storage:   &fakeImageStorage{},
+			purger:    &fakeCachePurger{},
 			wantError: NewError("product not found", ErrorCodeProductNotFound, nil),
 		},
 	}
@@ -914,7 +954,7 @@ func TestDefaultProductServiceDelete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			service := NewDefaultProductService(tt.repository, tt.storage, logger.NewSilentLogger())
+			service := NewDefaultProductService(tt.repository, tt.storage, tt.purger, logger.NewSilentLogger())
 			err := service.Delete(context.Background(), tt.id)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

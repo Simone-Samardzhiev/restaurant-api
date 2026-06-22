@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"menu/internal/cache"
 	"menu/internal/database"
 	"menu/internal/domain"
+	"menu/internal/logger"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -197,7 +199,17 @@ func TestAddCategory(t *testing.T) {
 	}
 
 	repository := database.NewPostgresCategoryRepository(testDb)
-	service := domain.NewDefaultCategoryService(repository)
+	service := domain.NewDefaultCategoryService(
+		repository,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewCategoryHandler(service)
 
 	e := echo.NewWithConfig(echo.Config{
@@ -315,7 +327,17 @@ func TestGetCategories(t *testing.T) {
 	}
 
 	repository := database.NewPostgresCategoryRepository(testDb)
-	service := domain.NewDefaultCategoryService(repository)
+	service := domain.NewDefaultCategoryService(
+		repository,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -501,7 +523,17 @@ func TestUpdateCategory(t *testing.T) {
 	}
 
 	repository := database.NewPostgresCategoryRepository(testDb)
-	service := domain.NewDefaultCategoryService(repository)
+	service := domain.NewDefaultCategoryService(
+		repository,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
@@ -677,7 +709,17 @@ func TestDeleteCategory(t *testing.T) {
 
 	categoryRepository := database.NewPostgresCategoryRepository(testDb)
 	productRepository := database.NewPostgresProductRepository(testDb)
-	service := domain.NewDefaultCategoryService(categoryRepository)
+	service := domain.NewDefaultCategoryService(
+		categoryRepository,
+		cache.NewCloudflareCachePurger(
+			testCloudflareClient,
+			"testZoneId",
+			"testCategoryUrl",
+			"testProductUrl",
+			"testMenuUrl",
+		),
+		logger.NewSilentLogger(),
+	)
 	handler := NewCategoryHandler(service)
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: ErrorHandler,
