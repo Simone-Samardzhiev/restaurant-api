@@ -65,7 +65,7 @@ func main() {
 	}
 
 	cloudflareClient := cloudflare.NewClient(
-		option.WithAPIKey(appConfig.Cache.ApiKey),
+		option.WithAPIToken(appConfig.Cache.ApiKey),
 		option.WithBaseURL(appConfig.Cache.BaseURl),
 	)
 
