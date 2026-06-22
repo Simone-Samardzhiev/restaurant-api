@@ -208,6 +208,7 @@ func (p *ProductHandler) GetAllProductsWithImage(ctx *echo.Context) error {
 		})
 	}
 
+	ctx.Response().Header().Set(echo.HeaderCacheControl, "public, max-age=3600, s-maxage=3600")
 	return ctx.JSON(http.StatusOK, res)
 }
 
