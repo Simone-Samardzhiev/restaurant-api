@@ -198,7 +198,7 @@ func (d *DefaultProductService) ConfirmImageUpload(ctx context.Context, productI
 	return nil
 }
 
-func (d *DefaultProductService) GetProduct(ctx context.Context, id uuid.UUID) (*Product, error) {
+func (d *DefaultProductService) Get(ctx context.Context, id uuid.UUID) (*Product, error) {
 	product, err := d.repository.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -220,7 +220,7 @@ func (d *DefaultProductService) GetAllWithImage(ctx context.Context) ([]Product,
 	return d.repository.GetAllWithImage(ctx)
 }
 
-func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *UpdateProductRequest) error {
+func (d *DefaultProductService) Update(ctx context.Context, request *UpdateProductRequest) error {
 	if err := d.repository.Update(ctx, request); err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (d *DefaultProductService) UpdateProduct(ctx context.Context, request *Upda
 	return nil
 }
 
-func (d *DefaultProductService) MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error {
+func (d *DefaultProductService) MarkForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error {
 	_, ext, ok := strings.Cut(string(contentType), "/")
 	if !ok {
 		return NewError("invalid image content type format: "+string(contentType), ErrorCodeInternal, nil)

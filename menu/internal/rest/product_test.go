@@ -65,7 +65,7 @@ func (f *fakeProductService) ConfirmImageUpload(ctx context.Context, productID u
 	return nil
 }
 
-func (f *fakeProductService) GetProduct(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
+func (f *fakeProductService) Get(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
 	if f.onGetProduct == nil {
 		panic("onGetProduct not implemented")
 	}
@@ -86,14 +86,14 @@ func (f *fakeProductService) GetImage(ctx context.Context, key string) (*domain.
 	return f.onGetImage(ctx, key)
 }
 
-func (f *fakeProductService) UpdateProduct(ctx context.Context, request *domain.UpdateProductRequest) error {
+func (f *fakeProductService) Update(ctx context.Context, request *domain.UpdateProductRequest) error {
 	if f.onUpdateProduct == nil {
 		panic("onUpdateProduct not implemented")
 	}
 	return f.onUpdateProduct(ctx, request)
 }
 
-func (f *fakeProductService) MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error {
+func (f *fakeProductService) MarkForImageUpdate(ctx context.Context, id uuid.UUID, contentType domain.ImageContentType) error {
 	if f.onMarkProductForImageUpdate == nil {
 		panic("onMarkProductForImageUpdate not implemented")
 	}

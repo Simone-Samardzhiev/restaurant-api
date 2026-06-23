@@ -747,7 +747,7 @@ func TestDefaultProductServiceGetProduct(t *testing.T) {
 			t.Parallel()
 			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, &fakeCachePurger{}, logger.NewSilentLogger())
 
-			_, err := service.GetProduct(context.Background(), tt.id)
+			_, err := service.Get(context.Background(), tt.id)
 			if tt.wantError != nil {
 				if domainErr, ok := errors.AsType[*Error](err); ok {
 					if domainErr.Code != tt.wantError.Code {
@@ -864,7 +864,7 @@ func TestDefaultProductServiceMarkProductForImageUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			service := NewDefaultProductService(tt.repository, &fakeImageStorage{}, &fakeCachePurger{}, logger.NewSilentLogger())
-			err := service.MarkProductForImageUpdate(context.Background(), tt.id, tt.contentType)
+			err := service.MarkForImageUpdate(context.Background(), tt.id, tt.contentType)
 
 			if tt.wantGetCount != tt.repository.onGetCount.Load() {
 				t.Errorf("Want get count %d, got %d", tt.wantGetCount, tt.repository.onGetCount.Load())

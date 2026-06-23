@@ -33,8 +33,8 @@ type ProductService interface {
 	// ConfirmImageUpload confirms an image is uploaded for a product.
 	ConfirmImageUpload(ctx context.Context, productID uuid.UUID) error
 
-	// GetProduct fetches a product by id.
-	GetProduct(ctx context.Context, id uuid.UUID) (*Product, error)
+	// Get fetches a product by id.
+	Get(ctx context.Context, id uuid.UUID) (*Product, error)
 
 	// GetAllWithImage fetches all products with image.
 	GetAllWithImage(ctx context.Context) ([]Product, error)
@@ -42,11 +42,11 @@ type ProductService interface {
 	// GetImage fetches an image by key.
 	GetImage(ctx context.Context, key string) (*Image, error)
 
-	// UpdateProduct updates the data of a product.
-	UpdateProduct(ctx context.Context, request *UpdateProductRequest) error
+	// Update updates the data of a product.
+	Update(ctx context.Context, request *UpdateProductRequest) error
 
-	// MarkProductForImageUpdate marks a product for image update.
-	MarkProductForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error
+	// MarkForImageUpdate marks a product for image update.
+	MarkForImageUpdate(ctx context.Context, id uuid.UUID, contentType ImageContentType) error
 
 	// Delete deletes a product by id.
 	Delete(ctx context.Context, id uuid.UUID) error

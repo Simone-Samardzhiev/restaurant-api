@@ -171,7 +171,7 @@ func (p *ProductHandler) GetProduct(ctx *echo.Context) error {
 		return NewInvalidUUIDError(err)
 	}
 
-	product, err := p.service.GetProduct(ctx.Request().Context(), id)
+	product, err := p.service.Get(ctx.Request().Context(), id)
 	if err != nil {
 		return NewError(err)
 	}
@@ -296,7 +296,7 @@ func (p *ProductHandler) UpdateProduct(ctx *echo.Context) error {
 		return NewValidationError(fields)
 	}
 
-	if err = p.service.UpdateProduct(ctx.Request().Context(), &domain.UpdateProductRequest{
+	if err = p.service.Update(ctx.Request().Context(), &domain.UpdateProductRequest{
 		Id:          id,
 		Name:        req.Name,
 		Description: req.Description,
@@ -339,7 +339,7 @@ func (p *ProductHandler) MarkProductForImageUpdate(ctx *echo.Context) error {
 		return NewValidationError(fields)
 	}
 
-	if err = p.service.MarkProductForImageUpdate(
+	if err = p.service.MarkForImageUpdate(
 		ctx.Request().Context(),
 		id,
 		domain.ImageContentType(req.ImageContentType),
