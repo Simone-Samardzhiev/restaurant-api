@@ -51,3 +51,9 @@ type ProductService interface {
 	// Delete deletes a product by id.
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// MenuService describes how menu business logic is accessed.
+type MenuService interface {
+	// Get fetches the menu.
+	Get(ctx context.Context) (Menu, error)
+}
