@@ -42,7 +42,7 @@ func NewRouter(c *RouterConfig) *Router {
 
 	api := e.Group("/api/v1")
 	api.Use(rateLimitMiddleware(c.Store))
-	api.GET("/menu", c.MenuHandler.GetMenu)
+	api.GET("", c.MenuHandler.GetMenu)
 	{
 		{
 			categories := api.Group("/categories")

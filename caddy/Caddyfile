@@ -3,7 +3,9 @@
 }
 
 :8080 {
-    handle  /api/v1/menu* {
+    handle /api/v1/menu* {
+        uri replace /api/v1/menu /api/v1
+
         reverse_proxy {$MENU_SERVICE_ADDR} {
             header_up X-Real-IP {remote_host}
             header_up X-Request-Id {uuid}
@@ -19,11 +21,11 @@
     handle {
         header Content-Type application/json
 
-        respond `{
+        respond ` {
             "code": "ENDPOINT_NOT_FOUND",
             "httpStatus": 404,
             "message": "Endpoint not found.",
-            "requestId": "{uuid}"
+            "requestId": " {uuid}"
         }`
     }
 }
