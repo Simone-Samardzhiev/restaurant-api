@@ -3,8 +3,7 @@
 }
 
 :8080 {
-    handle_path /api/v1/menu* {
-        rewrite /api/v1{uri}
+    handle  /api/v1/menu* {
         reverse_proxy {$MENU_SERVICE_ADDR} {
             header_up X-Real-IP {remote_host}
             header_up X-Request-Id {uuid}

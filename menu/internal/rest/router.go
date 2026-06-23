@@ -24,6 +24,7 @@ type RouterConfig struct {
 	HeathHandler    *HealthHandler
 	CategoryHandler *CategoryHandler
 	ProductHandler  *ProductHandler
+	MenuHandler     *MenuHandler
 }
 
 // NewRouter creates and allocates new [Router].
@@ -41,6 +42,7 @@ func NewRouter(c *RouterConfig) *Router {
 
 	api := e.Group("/api/v1")
 	api.Use(rateLimitMiddleware(c.Store))
+	api.GET("/menu", c.MenuHandler.GetMenu)
 	{
 		{
 			categories := api.Group("/categories")

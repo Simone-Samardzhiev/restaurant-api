@@ -89,6 +89,9 @@ func main() {
 	productService := domain.NewDefaultProductService(productRepository, imageStorage, purger, appLogger)
 	productHandler := rest.NewProductHandler(appConfig.BaseImagesUrl, productService)
 
+	menuService := domain.NewDefaultMenuService(categoryRepository, productRepository)
+	menuHandler := rest.NewMenuHandler(appConfig.BaseImagesUrl, menuService)
+
 	router := rest.NewRouter(&rest.RouterConfig{
 		App:    &appConfig.App,
 		Logger: appLogger,
@@ -97,6 +100,7 @@ func main() {
 		HeathHandler:    heathCheckHandler,
 		CategoryHandler: categoryHandler,
 		ProductHandler:  productHandler,
+		MenuHandler:     menuHandler,
 	})
 
 	go func() {
