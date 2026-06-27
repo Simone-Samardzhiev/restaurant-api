@@ -13,6 +13,17 @@ pub enum Role {
     Client,
 }
 
+impl AsRef<str> for Role {
+    fn as_ref(&self) -> &str {
+        match self {
+            Role::Admin => "admin",
+            Role::Cook => "cook",
+            Role::Waitress => "waitress",
+            Role::Client => "client",
+        }
+    }
+}
+
 /// Registered user model.
 pub struct User {
     pub id: Uuid,
