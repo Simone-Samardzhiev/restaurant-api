@@ -6,16 +6,16 @@ use argon2::{
 };
 
 /// Implementation of [PasswordHasher] using argon.
-pub struct ArgonPasswordHasher<'a> {
-    argon2: Argon2<'a>,
+pub struct ArgonPasswordHasher {
+    argon2: Argon2<'static>,
 }
-impl<'a> ArgonPasswordHasher<'a> {
-    pub fn new(argon2: Argon2<'a>) -> Self {
+impl ArgonPasswordHasher {
+    pub fn new(argon2: Argon2<'static>) -> Self {
         Self { argon2 }
     }
 }
 
-impl<'a> PasswordHasher for ArgonPasswordHasher<'a> {
+impl<'a> PasswordHasher for ArgonPasswordHasher {
     fn hash(&self, password: &str) -> Result<String, Error> {
         let salt = SaltString::generate(&mut OsRng);
 

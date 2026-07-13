@@ -34,7 +34,7 @@ impl UserRepository for PostgresUserRepository {
             Ok(_) => Ok(()),
             Err(sqlx::Error::Database(db_err)) => {
                 if Some("23505".into()) == db_err.code()
-                    && Some("users_email_key".into()) == db_err.constraint()
+                    && Some("users_email_key") == db_err.constraint()
                 {
                     Err(Error::EmailAlreadyExists)
                 } else {

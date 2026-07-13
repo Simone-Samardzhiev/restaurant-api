@@ -1,12 +1,14 @@
 use crate::domain::error::Error;
+use mockall::automock;
 
 pub mod error;
 pub mod repositories;
+mod services;
 pub mod user;
 
-
 /// PasswordHasher describes methods for hashing and varifying passwords.
-pub trait PasswordHasher {
+#[automock]
+pub trait PasswordHasher: Send + Sync + 'static {
     fn hash(&self, password: &str) -> Result<String, Error>;
 
     fn verify(&self, password: &str, hash: &str) -> Result<bool, Error>;

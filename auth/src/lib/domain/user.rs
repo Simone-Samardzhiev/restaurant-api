@@ -48,3 +48,20 @@ impl User {
         }
     }
 }
+
+/// Request for a user to register in the system.
+pub struct RegisterRequest {
+    pub name: String,
+    pub email: String,
+    pub password: String,
+}
+
+impl RegisterRequest {
+    pub fn new(name: String, email: String, password: String) -> Self {
+        Self {
+            name,
+            email,
+            password,
+        }
+    }
+}
