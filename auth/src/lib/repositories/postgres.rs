@@ -1,5 +1,25 @@
-use crate::domain::{error::Error, repositories::UserRepository, user::User};
-use anyhow::anyhow;
+use crate::{
+    config::DatabaseConfig,
+    domain::{error::Error, repositories::UserRepository, user::User},
+};
+use anyhow::{Context, anyhow};
+use sqlx::PgPool;
+
+pub async fn connect(c: &DatabaseConfig) -> Result<sqlx::postgres::PgPool, anyhow::Error> {
+    sqlx::postgres::PgPoolOptions::new()
+        .max_connections(c.max_connections)
+        .max_lifetime(Some(c.max_lifetime))
+        .connect(&c.url)
+        .await
+        .context("Failed to connect to postgres")
+}
+
+pub async fn apply_migrations(pool: PgPool) -> Result<(), anyhow::Error> {
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .context("Failed to migrate the database")
+}
 
 /// Postgres implementation of [UserRepository].
 pub struct PostgresUserRepository {
@@ -15,7 +35,7 @@ impl PostgresUserRepository {
 #[async_trait::async_trait]
 impl UserRepository for PostgresUserRepository {
     #[tracing::instrument(name = "postgres_user_repository.save", skip(self, user), fields(user_id=%user.id
-))]
+    ))]
     async fn save(&self, user: &User) -> Result<(), Error> {
         let result = sqlx::query(
             "INSERT INTO users (id, name, email, password, role, created_at, updated_at)

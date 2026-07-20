@@ -23,7 +23,9 @@ tracing = { version = "0.1.44" }
 sqlx = { version = "0.9.0", features = ["uuid", "time", "postgres", "runtime-tokio"] }
 
 argon2 = { version = "0.5.3", features = ["std"] }
-mockall = { version = "0.14.0" }
-serde = { version = "1.0.228", features = ["derive"] }
+mockall = { version = "0.15.0" }
+serde = { version = "1.0.228", features = ["derive", "std"] }
 async-trait = { version = "0.1.89" }
 validator = { version = "0.20.0", features = ["derive"] }
+dotenv = { version = "0.15.0" }
+envy = { version = "0.4.2" }
