@@ -3,12 +3,12 @@ use mockall::automock;
 
 pub mod error;
 pub mod repositories;
-mod services;
+pub mod services;
 pub mod user;
 
 /// PasswordHasher describes methods for hashing and varifying passwords.
 #[automock]
-pub trait PasswordHasher: Send + Sync + 'static {
+pub trait PasswordHasher: Send + Sync {
     fn hash(&self, password: &str) -> Result<String, Error>;
 
     fn verify(&self, password: &str, hash: &str) -> Result<bool, Error>;

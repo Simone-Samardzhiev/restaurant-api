@@ -12,6 +12,7 @@ impl PostgresUserRepository {
     }
 }
 
+#[async_trait::async_trait]
 impl UserRepository for PostgresUserRepository {
     #[tracing::instrument(name = "postgres_user_repository.save", skip(self, user), fields(user_id=%user.id
 ))]

@@ -3,6 +3,7 @@ use crate::domain::user::User;
 
 /// UserRepository describes how used data is accessed.
 #[mockall::automock]
-pub trait UserRepository: Send + Sync + 'static {
-    fn save(&self, user: &User) -> impl Future<Output = Result<(), Error>> + Send;
+#[async_trait::async_trait]
+pub trait UserRepository: Send + Sync {
+    async fn save(&self, user: &User) -> Result<(), Error>;
 }

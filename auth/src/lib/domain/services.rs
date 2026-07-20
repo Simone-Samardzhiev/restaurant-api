@@ -4,24 +4,26 @@ use crate::domain::{
     repositories::UserRepository,
     user::{RegisterRequest, Role, User},
 };
+use std::sync::Arc;
 
 // UserService describes how user business logic is accessed.
-pub trait UserService: Send + Sync + 'static {
-    //
-    fn register(&self, req: RegisterRequest) -> impl Future<Output = Result<(), Error>> + Send;
+#[async_trait::async_trait]
+pub trait UserService: Send + Sync {
+    async fn register(&self, req: RegisterRequest) -> Result<(), Error>;
 }
 
-pub struct DefaultUserService<U: UserRepository, P: PasswordHasher> {
-    repository: U,
-    hasher: P,
+pub struct DefaultUserService {
+    repository: Arc<dyn UserRepository>,
+    hasher: Arc<dyn PasswordHasher>,
 }
-impl<U: UserRepository, P: PasswordHasher> DefaultUserService<U, P> {
-    pub fn new(repository: U, hasher: P) -> Self {
+impl DefaultUserService {
+    pub fn new(repository: Arc<dyn UserRepository>, hasher: Arc<dyn PasswordHasher>) -> Self {
         Self { repository, hasher }
     }
 }
 
-impl<U: UserRepository, P: PasswordHasher> UserService for DefaultUserService<U, P> {
+#[async_trait::async_trait]
+impl UserService for DefaultUserService {
     async fn register(&self, req: RegisterRequest) -> Result<(), Error> {
         let hash = self.hasher.hash(&req.password)?;
         let user = User::new(req.name, req.email, hash, Role::Client);
@@ -50,7 +52,7 @@ mod tests {
         repo.expect_save()
             .with(function(|u: &User| u.password == "hash"))
             .times(1)
-            .returning(move |_| Box::pin(async { Ok(()) }));
+            .returning(move |_| Ok(()));
 
         let req = RegisterRequest::new(
             "example@email.com".into(),
@@ -58,7 +60,7 @@ mod tests {
             "password".into(),
         );
 
-        let service = DefaultUserService::new(repo, hasher);
+        let service = DefaultUserService::new(Arc::new(repo), Arc::new(hasher));
         assert!(service.register(req).await.is_ok());
     }
 }
