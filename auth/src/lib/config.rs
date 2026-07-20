@@ -32,3 +32,17 @@ impl DatabaseConfig {
         }
     }
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct AppConfig {
+    pub addr: String,
+}
+
+impl AppConfig {
+    pub fn new() -> Result<Self, anyhow::Error> {
+        match envy::from_env::<Self>() {
+            Ok(config) => Ok(config),
+            Err(e) => Err(anyhow::anyhow!("Error parsing app config: {}", e)),
+        }
+    }
+}
