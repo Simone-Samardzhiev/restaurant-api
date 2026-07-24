@@ -9,9 +9,17 @@ use std::sync::Arc;
 // UserService describes how user business logic is accessed.
 #[async_trait::async_trait]
 pub trait UserService: Send + Sync {
+    /// Registers a new user.
+    /// # Returns
+    /// [OK] if registration is successful.
+    ///
+    /// [Error::EmailAlreadyExists] if the email is already in use.
+    ///
+    /// [Error::Internal] if unknown error occurred.
     async fn register(&self, req: RegisterRequest) -> Result<(), Error>;
 }
 
+/// Default implementation of [UserService].
 pub struct DefaultUserService {
     repository: Arc<dyn UserRepository>,
     hasher: Arc<dyn PasswordHasher>,

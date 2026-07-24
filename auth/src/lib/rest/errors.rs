@@ -7,6 +7,7 @@ use axum::{
 use serde::Serialize;
 use std::collections::HashMap;
 
+/// Error returned from handler.
 #[derive(Debug, thiserror::Error)]
 pub enum APIError {
     #[error("Validation error: {0}")]
@@ -24,8 +25,9 @@ impl IntoResponse for APIError {
     }
 }
 
+/// Response from [Error].
 #[derive(Debug, Serialize)]
-struct ApiErrorResponse {
+struct AppErrorResponse {
     message: String,
     code: String,
     #[serde(serialize_with = "serialize_status_code")]
@@ -39,7 +41,7 @@ where
     serializer.serialize_u16(status.as_u16())
 }
 
-impl ApiErrorResponse {
+impl AppErrorResponse {
     fn new(message: String, code: String, status: StatusCode) -> Self {
         Self {
             message,
@@ -49,7 +51,7 @@ impl ApiErrorResponse {
     }
 }
 
-impl From<Error> for ApiErrorResponse {
+impl From<Error> for AppErrorResponse {
     fn from(err: Error) -> Self {
         match err {
             Error::EmailAlreadyExists => Self::new(
@@ -66,12 +68,13 @@ impl From<Error> for ApiErrorResponse {
     }
 }
 
-impl IntoResponse for ApiErrorResponse {
+impl IntoResponse for AppErrorResponse {
     fn into_response(self) -> Response {
         (self.status, Json(self)).into_response()
     }
 }
 
+/// Response from [validator::ValidationErrors].
 #[derive(Debug, Serialize)]
 struct ValidationErrorResponse {
     message: String,

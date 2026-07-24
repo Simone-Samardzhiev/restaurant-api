@@ -7,6 +7,7 @@ use axum::{
 use serde::Deserialize;
 use validator::{Validate, ValidationError};
 
+/// Trims leading and trailing whitespaces in place.
 fn trim(s: &mut String) {
     s.truncate(s.trim_end().len());
     let leading_whitespace = s.len() - s.trim_start().len();
@@ -15,6 +16,7 @@ fn trim(s: &mut String) {
     }
 }
 
+/// JSON request for registration.
 #[derive(Debug, Deserialize, Validate)]
 pub struct RegisterRequest {
     #[validate(email(message = "Invalid email address."))]

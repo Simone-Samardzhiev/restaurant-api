@@ -5,7 +5,8 @@ use crate::{
 use anyhow::{Context, anyhow};
 use sqlx::PgPool;
 
-pub async fn connect(c: &DatabaseConfig) -> Result<sqlx::postgres::PgPool, anyhow::Error> {
+// Connects to a postgres database returning a pool of connections.
+pub async fn connect(c: &DatabaseConfig) -> Result<PgPool, anyhow::Error> {
     sqlx::postgres::PgPoolOptions::new()
         .max_connections(c.max_connections)
         .max_lifetime(Some(c.max_lifetime))
@@ -14,6 +15,7 @@ pub async fn connect(c: &DatabaseConfig) -> Result<sqlx::postgres::PgPool, anyho
         .context("Failed to connect to postgres")
 }
 
+// Applies pending migrations to the database schema. 
 pub async fn apply_migrations(pool: PgPool) -> Result<(), anyhow::Error> {
     sqlx::migrate!()
         .run(&pool)
@@ -23,11 +25,11 @@ pub async fn apply_migrations(pool: PgPool) -> Result<(), anyhow::Error> {
 
 /// Postgres implementation of [UserRepository].
 pub struct PostgresUserRepository {
-    pool: sqlx::postgres::PgPool,
+    pool: PgPool,
 }
 
 impl PostgresUserRepository {
-    pub fn new(pool: sqlx::postgres::PgPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 }

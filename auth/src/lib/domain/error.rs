@@ -1,3 +1,4 @@
+// Enum describes possible domain errors.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Email is already in use.")]
@@ -11,6 +12,7 @@ pub enum Error {
 }
 
 impl Error {
+    /// Returns unique error code for the specific error case.
     pub fn code(&self) -> String {
         match self {
             Self::EmailAlreadyExists => "EMAIL_CONFLICT".into(),

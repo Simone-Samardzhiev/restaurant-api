@@ -2,6 +2,7 @@ use anyhow::Context;
 use serde::{Deserialize, Deserializer};
 use validator::Validate;
 
+/// Configuration for the database.
 #[derive(Debug, Deserialize, Validate)]
 pub struct DatabaseConfig {
     pub url: String,
@@ -33,6 +34,7 @@ impl DatabaseConfig {
     }
 }
 
+/// Configuration for the rest api.
 #[derive(Debug, Deserialize, Validate)]
 pub struct AppConfig {
     pub addr: String,
