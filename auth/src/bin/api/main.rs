@@ -21,7 +21,7 @@ async fn main() {
         Arc::new(password_hasher),
     );
 
-    auth::rest::Router::new(Arc::new(user_service), app_config.addr)
+    auth::rest::Server::new(Arc::new(user_service), app_config.addr)
         .listen()
         .await
         .unwrap();

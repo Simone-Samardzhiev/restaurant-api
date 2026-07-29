@@ -18,12 +18,12 @@ impl AppState {
     }
 }
 
-pub struct Router {
+pub struct Server {
     user_service: Arc<dyn UserService>,
     address: String,
 }
 
-impl Router {
+impl Server {
     pub fn new(user_service: Arc<dyn UserService>, address: String) -> Self {
         Self {
             user_service,
@@ -31,15 +31,19 @@ impl Router {
         }
     }
 
-    pub async fn listen(&self) -> Result<(), anyhow::Error> {
+    pub fn as_router(&self) -> axum::Router {
         let state = AppState::new(self.user_service.clone());
 
-        let router = axum::Router::new()
+        axum::Router::new()
             .nest(
                 "/api/v1",
                 axum::Router::new().route("/register", post(register)),
             )
-            .with_state(state);
+            .with_state(state)
+    }
+
+    pub async fn listen(&self) -> Result<(), anyhow::Error> {
+        let router = self.as_router();
 
         let listener = tokio::net::TcpListener::bind(&self.address)
             .await
