@@ -18,6 +18,15 @@
         }
     }
 
+    handle /api/v1/auth* {
+            uri replace /api/v1/auth /api/v1
+
+            reverse_proxy {$AUTH_SERVICE_ADDR} {
+                header_up X-Real-IP {remote_host}
+                header_up X-Request-Id {uuid}
+            }
+        }
+
     handle {
         header Content-Type application/json
 

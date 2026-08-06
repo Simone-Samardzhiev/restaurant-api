@@ -1,8 +1,41 @@
 volumes:
+  auth-db-storage:
   menu-db-storage:
   menu-bucket-storage:
 
 services:
+  auth-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d auth" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - auth-db-storage:/var/lib/postgresql/data/
+
+  auth-api:
+    build: "./auth"
+    restart: on-failure
+    environment:
+      DB_URL: postgres://postgres:password@auth-db:5432/auth?sslmode=disable
+      DB_MAX_CONNECTIONS: 10
+      DB_MAX_LIFETIME: 20
+      ADDR: 0.0.0.0:8080
+    develop:
+      watch:
+        - path: "./auth"
+          action: rebuild
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+
+
   valkey-cache:
     build: "./valkey"
     restart: on-failure
@@ -110,6 +143,7 @@ services:
     restart: on-failure
     environment:
       MENU_SERVICE_ADDR: menu-api:8080
+      AUTH_SERVICE_ADDR: auth-api:8080
     depends_on:
       - menu-api
     develop:
