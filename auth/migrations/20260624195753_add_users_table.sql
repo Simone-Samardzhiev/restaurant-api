@@ -8,5 +8,5 @@ CREATE TABLE users
     password   VARCHAR(256) NOT NULL,
     role       user_roles   NOT NULL,
     created_at TIMESTAMPTZ  NOT NULL,
-    updated_at TIMESTAMPTZ  NOT NULL CHECK ( updated_at > created_at )
+    updated_at TIMESTAMPTZ  NOT NULL CHECK ( updated_at >= created_at )
 )
