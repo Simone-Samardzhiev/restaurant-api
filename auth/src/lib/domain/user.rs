@@ -37,14 +37,16 @@ pub struct User {
 
 impl User {
     pub fn new(name: String, email: String, password: String, role: Role) -> Self {
+        let now = OffsetDateTime::now_utc();
+
         Self {
             id: Uuid::now_v7(),
             name,
             email,
             password,
             role,
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: OffsetDateTime::now_utc(),
+            created_at: now,
+            updated_at: now,
         }
     }
 }
