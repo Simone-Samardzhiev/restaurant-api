@@ -20,7 +20,7 @@ impl IntoResponse for APIError {
     fn into_response(self) -> Response {
         match self {
             APIError::Validation(e) => ValidationErrorResponse::from(e).into_response(),
-            APIError::AppError(e) => APIError::AppError(e).into_response(),
+            APIError::AppError(e) => AppErrorResponse::from(e).into_response(),
         }
     }
 }
