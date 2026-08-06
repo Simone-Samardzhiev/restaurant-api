@@ -3,6 +3,8 @@ use anyhow::Context;
 use axum::routing::post;
 use handlers::register;
 use std::sync::Arc;
+use tokio::signal;
+use tokio::signal::ctrl_c;
 
 mod errors;
 mod handlers;
@@ -21,6 +23,30 @@ impl AppState {
 pub struct Server {
     user_service: Arc<dyn UserService>,
     address: String,
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        ctrl_c().await.expect("Failed to install ctrl-c handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install SIGTERM signal handler")
+            .recv()
+            .await
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = terminate => {},
+        _ = ctrl_c => {},
+    }
+
+    println!("Shutting down http server...");
 }
 
 impl Server {
@@ -50,8 +76,9 @@ impl Server {
             .context("Error creating tcp listener")?;
 
         axum::serve(listener, router)
+            .with_graceful_shutdown(shutdown_signal())
             .await
-            .context("Error running server")?;
+            .context("Error starting server")?;
 
         Ok(())
     }
