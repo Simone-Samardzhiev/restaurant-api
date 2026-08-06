@@ -36,7 +36,7 @@ pub struct RegisterRequest {
         ),
         custom(
             function = "Self::validate_password_complexity",
-            message = "Password is not strong enought."
+            message = "Password is not strong enough."
         )
     )]
     password: String,
@@ -92,5 +92,5 @@ pub async fn register(
         ))
         .await?;
 
-    Ok(StatusCode::OK)
+    Ok(StatusCode::NO_CONTENT)
 }
