@@ -5,6 +5,7 @@ pub mod error;
 pub mod keys;
 pub mod repositories;
 pub mod services;
+pub mod token;
 pub mod user;
 
 /// PasswordHasher describes methods for hashing and varifying passwords.
