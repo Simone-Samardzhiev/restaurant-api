@@ -34,8 +34,6 @@ services:
       auth-db:
         condition: service_healthy
 
-
-
   valkey-cache:
     build: "./valkey"
     restart: on-failure

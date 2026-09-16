@@ -14,3 +14,9 @@ pub trait PasswordHasher: Send + Sync {
 
     fn verify(&self, password: &str, hash: &str) -> Result<bool, Error>;
 }
+
+/// KeyGenerator describes methods for generating token keys.
+#[automock]
+pub trait KeyGenerator {
+    fn generate(&self) -> Result<keys::KeyPair, Error>;
+}

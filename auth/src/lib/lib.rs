@@ -3,3 +3,4 @@ pub mod domain;
 pub mod hashers;
 pub mod repositories;
 pub mod rest;
+pub mod keys_generators;
