@@ -2,6 +2,7 @@ use crate::domain::error::Error;
 use mockall::automock;
 
 pub mod error;
+pub mod keys;
 pub mod repositories;
 pub mod services;
 pub mod user;
