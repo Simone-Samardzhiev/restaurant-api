@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"menu/internal/domain"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -26,7 +26,7 @@ func NewPostgresCategoryRepository(db *sql.DB) *PostgresCategoryRepository {
 func (p *PostgresCategoryRepository) Save(ctx context.Context, category *domain.Category) error {
 	_, err := p.db.ExecContext(
 		ctx,
-		`INSERT INTO categories (id, name, created_at, updated_at) 
+		`INSERT INTO categories (id, name, created_at, updated_at)
 		VALUES ($1, $2, $3, $4)`,
 		category.Id,
 		category.Name,

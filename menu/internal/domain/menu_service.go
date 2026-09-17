@@ -2,8 +2,7 @@ package domain
 
 import (
 	"context"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // DefaultMenuService is the default implementation of [MenuService].

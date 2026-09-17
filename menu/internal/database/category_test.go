@@ -1,16 +1,15 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"menu/internal/domain"
 	"slices"
 	"strings"
 	"testing"
 	"time"
+	"uuid"
 
-	"context"
-
-	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 

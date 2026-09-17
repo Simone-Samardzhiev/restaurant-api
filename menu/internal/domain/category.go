@@ -2,8 +2,7 @@ package domain
 
 import (
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // Category represents a category of products in the menu.

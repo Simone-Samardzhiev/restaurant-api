@@ -6,8 +6,7 @@ import (
 	"log/slog"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // DefaultProductService is the default implementation of [ProductService].
@@ -42,10 +41,7 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 	}
 
 	now := time.Now()
-	productId, err := uuid.NewV7()
-	if err != nil {
-		return nil, NewError("error create uuid for product", ErrorCodeInternal, err)
-	}
+	productId := uuid.NewV7()
 
 	product := Product{
 		Id:               productId,
@@ -60,7 +56,7 @@ func (d *DefaultProductService) Add(ctx context.Context, request *AddProductRequ
 		UpdatedAt:        now,
 	}
 
-	if err = d.repository.Save(ctx, &product); err != nil {
+	if err := d.repository.Save(ctx, &product); err != nil {
 		return nil, err
 	}
 
@@ -234,10 +230,7 @@ func (d *DefaultProductService) MarkForImageUpdate(ctx context.Context, id uuid.
 		return NewError("invalid image content type format: "+string(contentType), ErrorCodeInternal, nil)
 	}
 
-	imageId, err := uuid.NewV7()
-	if err != nil {
-		return NewError("error create uuid for image", ErrorCodeInternal, err)
-	}
+	imageId := uuid.NewV7()
 	key := imageId.String() + "." + ext
 
 	product, err := d.repository.Get(ctx, id)

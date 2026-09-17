@@ -4,8 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // DefaultCategoryService is the default implementation of [CategoryService].
@@ -34,11 +33,8 @@ func (d *DefaultCategoryService) purgeCache(ctx context.Context) {
 
 func (d *DefaultCategoryService) Add(ctx context.Context, name string) (*Category, error) {
 	now := time.Now()
-	categoryId, err := uuid.NewV7()
-	if err != nil {
-		return nil, NewError("error create uuid for category", ErrorCodeInternal, err)
-	}
-
+	categoryId := uuid.NewV7()
+	
 	category := Category{
 		Id:        categoryId,
 		Name:      name,

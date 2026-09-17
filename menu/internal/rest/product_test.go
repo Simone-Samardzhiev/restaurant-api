@@ -20,12 +20,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/shopspring/decimal"
 )
@@ -434,7 +434,7 @@ func TestProductHandlerGetUploadInfo(t *testing.T) {
 	}{
 		{
 			name: "success",
-			id:   uuid.NewString(),
+			id:   uuid.New().String(),
 			handler: &ProductHandler{
 				service: &fakeProductService{
 					onGetUploadInfo: func(ctx context.Context, id uuid.UUID) (*domain.ProductUploadInfo, error) {
@@ -632,7 +632,7 @@ func TestProductHandlerConfirmImageUpload(t *testing.T) {
 					},
 				},
 			},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			wantHttpStatus: http.StatusNoContent,
 		},
 		{
@@ -856,7 +856,7 @@ func TestProductHandlerGetProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			id:   uuid.NewString(),
+			id:   uuid.New().String(),
 			handler: &ProductHandler{
 				baseImageUrl: "http://images/download",
 				service: &fakeProductService{
@@ -1189,14 +1189,14 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 					return nil
 				}},
 			},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{"name":"New name"}`,
 			wantHttpStatus: http.StatusNoContent,
 		},
 		{
 			name:           "empty",
 			handler:        &ProductHandler{service: &fakeProductService{}},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{}`,
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  ErrorCodeEmptyRequest,
@@ -1212,7 +1212,7 @@ func TestProductHandlerUpdateProduct(t *testing.T) {
 		{
 			name:           "invalid json",
 			handler:        &ProductHandler{service: &fakeProductService{}},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{"name":"New name}`,
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  ErrorCodeInvalidJSON,
@@ -1424,7 +1424,7 @@ func TestUpdateProduct(t *testing.T) {
 			t.Fatalf("Error saving product: %v", err)
 		}
 
-		req := httptest.NewRequest(http.MethodPatch, "/products/"+product.Id.String(), strings.NewReader(fmt.Sprintf(`{"categoryId": "%s"}`, uuid.NewString())))
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+product.Id.String(), strings.NewReader(fmt.Sprintf(`{"categoryId": "%s"}`, uuid.New().String())))
 		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -1443,7 +1443,7 @@ func TestUpdateProduct(t *testing.T) {
 	})
 
 	t.Run("product not found", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.NewString(), strings.NewReader(`{"name":"New name"}`))
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.New().String(), strings.NewReader(`{"name":"New name"}`))
 		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -1520,7 +1520,7 @@ func TestProductHandlerMarkProductForImageUpdate(t *testing.T) {
 						return nil
 					}},
 			},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{"imageContentType":"image/png"}`,
 			wantHttpStatus: http.StatusNoContent,
 		},
@@ -1535,7 +1535,7 @@ func TestProductHandlerMarkProductForImageUpdate(t *testing.T) {
 		{
 			name:           "invalid request",
 			handler:        &ProductHandler{service: &fakeProductService{}},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{"imageContentType":"image/png`,
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  ErrorCodeInvalidJSON,
@@ -1652,7 +1652,7 @@ func TestMarkProductForImageUpdate(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.NewString(), strings.NewReader(`{"imageContentType":"image/jpeg"}`))
+		req := httptest.NewRequest(http.MethodPatch, "/products/"+uuid.New().String(), strings.NewReader(`{"imageContentType":"image/jpeg"}`))
 		req.Header.Set("Content-Type", echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
@@ -1680,7 +1680,7 @@ func TestProductHandlerDeleteProduct(t *testing.T) {
 	}{
 		{
 			name: "success",
-			id:   uuid.NewString(),
+			id:   uuid.New().String(),
 			handler: &ProductHandler{
 				service: &fakeProductService{
 					onDelete: func(ctx context.Context, id uuid.UUID) error {
@@ -1827,7 +1827,7 @@ func TestDeleteProduct(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodDelete, "/products/"+uuid.NewString(), nil)
+		req := httptest.NewRequest(http.MethodDelete, "/products/"+uuid.New().String(), nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)
 		if rec.Code != http.StatusNotFound {

@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/valkey-io/valkey-go"
 )
 
@@ -32,7 +32,7 @@ func TestValkeyStoreAllow(t *testing.T) {
 		Window: time.Second,
 	})
 
-	id := uuid.NewString()
+	id := uuid.New().String()
 
 	for i := 0; i < limit; i++ {
 		result, err := store.Allow(id)

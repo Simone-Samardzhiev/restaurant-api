@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -193,7 +193,7 @@ func (p *PostgresProductRepository) UpdateStatus(ctx context.Context, id uuid.UU
 func (p *PostgresProductRepository) MarkForImageUpdate(ctx context.Context, id uuid.UUID, imageKey string, contentType domain.ImageContentType) error {
 	result, err := p.db.ExecContext(
 		ctx,
-		`UPDATE products 
+		`UPDATE products
 		SET pending_image_key = $1, pending_image_content_type = $2, status = 'awaiting_image_update'
 		WHERE id = $3`,
 		imageKey,
@@ -218,10 +218,10 @@ func (p *PostgresProductRepository) MarkForImageUpdate(ctx context.Context, id u
 func (p *PostgresProductRepository) ConfirmImageUpdate(ctx context.Context, id uuid.UUID) error {
 	result, err := p.db.ExecContext(
 		ctx,
-		`UPDATE products 
-		SET status = 'ready', 
+		`UPDATE products
+		SET status = 'ready',
 		    image_key = pending_image_key,
-		    image_content_type = pending_image_content_type 
+		    image_content_type = pending_image_content_type
         WHERE id = $1`,
 		id,
 	)
@@ -259,7 +259,7 @@ func (p *PostgresProductRepository) Delete(ctx context.Context, id uuid.UUID) er
 func (p *PostgresProductRepository) DeleteReturning(ctx context.Context, id uuid.UUID) (*domain.Product, error) {
 	row := p.db.QueryRowContext(
 		ctx,
-		`DELETE FROM products 
+		`DELETE FROM products
        	WHERE id = $1
        	RETURNING id, name, description, price, category_id, image_key, image_content_type, status, pending_image_key, pending_image_content_type, created_at, updated_at`,
 		id,
@@ -291,8 +291,8 @@ func (p *PostgresProductRepository) DeleteExpiredByStatus(ctx context.Context, o
 	t := time.Now().Add(-olderThan)
 	rows, err := p.db.QueryContext(
 		ctx,
-		`DELETE FROM products 
-    	WHERE status != 'ready' AND created_at < $1 
+		`DELETE FROM products
+    	WHERE status != 'ready' AND created_at < $1
     	RETURNING image_key`, t,
 	)
 	if err != nil {

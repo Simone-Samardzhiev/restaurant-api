@@ -3,8 +3,7 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // CategoryRepository describes how category data is accessed.

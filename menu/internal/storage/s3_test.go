@@ -13,12 +13,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"uuid"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/google/uuid"
 )
 
 func TestS3ImageStorageCreateUploadUrl(t *testing.T) {
@@ -27,7 +27,7 @@ func TestS3ImageStorageCreateUploadUrl(t *testing.T) {
 	}
 	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
 
-	url, err := storage.CreateUploadUrl(context.Background(), uuid.NewString()+".png", domain.ImageContentTypePNG)
+	url, err := storage.CreateUploadUrl(context.Background(), uuid.New().String()+".png", domain.ImageContentTypePNG)
 	if err != nil {
 		t.Fatalf("Error creating uploading URL: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestS3ImageStorageDelete(t *testing.T) {
 	}
 	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
 
-	key := uuid.NewString()
+	key := uuid.New().String()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket: aws.String(testS3BucketName),
@@ -88,7 +88,7 @@ func TestS3ImageStorageDeleteMultiple(t *testing.T) {
 	}
 	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
 
-	key := uuid.NewString()
+	key := uuid.New().String()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket: aws.String(testS3BucketName),
@@ -132,7 +132,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 	}
 	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
 
-	imageKey := uuid.NewString()
+	imageKey := uuid.New().String()
 	manager := transfermanager.New(testS3Client)
 	if _, err := manager.UploadObject(context.Background(), &transfermanager.UploadObjectInput{
 		Bucket: aws.String(testS3BucketName),
@@ -164,7 +164,7 @@ func TestS3ImageStorageValidate(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		err := storage.Validate(context.Background(), uuid.NewString(), domain.ImageContentTypePNG)
+		err := storage.Validate(context.Background(), uuid.New().String(), domain.ImageContentTypePNG)
 		if err == nil {
 			t.Fatalf("Want error image not found, got nil")
 		}
@@ -184,7 +184,7 @@ func TestS3ImageStorageGet(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 	storage := NewS3ImageStorage(testS3Client, 15*time.Second, testS3BucketName)
-	imageKey := uuid.NewString()
+	imageKey := uuid.New().String()
 
 	fakeImage := []byte("fakeImage")
 	manager := transfermanager.New(testS3Client)
@@ -211,7 +211,7 @@ func TestS3ImageStorageGet(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		_, err := storage.Get(context.Background(), uuid.NewString())
+		_, err := storage.Get(context.Background(), uuid.New().String())
 		if err == nil {
 			t.Fatalf("Want error image not found, got nil")
 		}

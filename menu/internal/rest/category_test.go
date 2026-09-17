@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	"github.com/shopspring/decimal"
 )
@@ -454,14 +454,14 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 					},
 				},
 			},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{ "name":"test" }`,
 			wantHttpStatus: http.StatusNoContent,
 		},
 		{
 			name:           "invalid payload",
 			handler:        &CategoryHandler{service: &fakeCategoryService{}},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{ "name":"t" }`,
 			wantHttpStatus: http.StatusUnprocessableEntity,
 			wantErrorCode:  ErrorCodeInvalidEntity,
@@ -469,7 +469,7 @@ func TestCategoryHandlerUpdateCategory(t *testing.T) {
 		{
 			name:           "invalid JSON",
 			handler:        &CategoryHandler{service: &fakeCategoryService{}},
-			id:             uuid.NewString(),
+			id:             uuid.New().String(),
 			request:        `{ "na:"test" }`,
 			wantHttpStatus: http.StatusBadRequest,
 			wantErrorCode:  ErrorCodeInvalidJSON,
@@ -751,7 +751,7 @@ func TestDeleteCategory(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		id := uuid.NewString()
+		id := uuid.New().String()
 		req := httptest.NewRequest(http.MethodDelete, "/categories/"+id, nil)
 		rec := httptest.NewRecorder()
 		e.ServeHTTP(rec, req)

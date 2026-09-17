@@ -2,8 +2,7 @@ package domain
 
 import (
 	"context"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // CategoryService describes how category business logic is accessed.

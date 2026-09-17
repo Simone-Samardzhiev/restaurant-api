@@ -1,10 +1,9 @@
 package rate
 
 import (
+	"context"
 	"menu/internal/config"
 	"strconv"
-
-	"context"
 
 	"github.com/valkey-io/valkey-go"
 )
