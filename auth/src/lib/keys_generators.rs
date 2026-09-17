@@ -1,7 +1,7 @@
 use crate::domain::{
     KeyGenerator,
     error::Error,
-    keys::{Key, KeyPair},
+    keys::KeyPair,
 };
 use anyhow::Context;
 use rsa::{
@@ -29,19 +29,14 @@ impl KeyGenerator for RSAKeyGenerator {
         let public_key = private_key.to_public_key();
 
         Ok(KeyPair::new(
-            Key::new(
-                Uuid::now_v7(),
-                private_key
-                    .to_pkcs8_pem(LineEnding::LF)
-                    .context("Failed to map private ket to pem")?
-                    .to_string(),
-            ),
-            Key::new(
-                Uuid::now_v7(),
-                public_key
-                    .to_public_key_pem(LineEnding::LF)
-                    .context("Failed to map public key to pem")?,
-            ),
+            Uuid::now_v7(),
+            private_key
+                .to_pkcs8_pem(LineEnding::LF)
+                .context("Failed to map private ket to pem")?
+                .to_string(),
+            public_key
+                .to_public_key_pem(LineEnding::LF)
+                .context("Failed to map public key to pem")?,
         ))
     }
 }
