@@ -16,7 +16,7 @@ async fn main() {
 
     let user_repository =
         auth::repositories::postgres::PostgresUserRepository::new(pg_pool.clone());
-    let password_hasher = auth::hashers::argon::ArgonPasswordHasher::new(argon2::Argon2::default());
+    let password_hasher = auth::hashers::ArgonPasswordHasher::new(argon2::Argon2::default());
     let user_service = auth::domain::services::DefaultUserService::new(
         Arc::new(user_repository),
         Arc::new(password_hasher),
