@@ -1,7 +1,10 @@
+use super::error::Error;
+use std::str::FromStr;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 /// User permission level.
+#[derive(Debug, PartialEq)]
 pub enum Role {
     // Has full access to the system
     Admin,
@@ -20,6 +23,20 @@ impl AsRef<str> for Role {
             Role::Cook => "cook",
             Role::Waitress => "waitress",
             Role::Client => "client",
+        }
+    }
+}
+
+impl FromStr for Role {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "admin" => Ok(Role::Admin),
+            "cook" => Ok(Role::Cook),
+            "waitress" => Ok(Role::Waitress),
+            "client" => Ok(Role::Client),
+            _ => Err(Error::InvalidUserRole),
         }
     }
 }
@@ -65,5 +82,19 @@ impl RegisterRequest {
             email,
             password,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_role_from_str() {
+        assert_eq!(Role::from_str("admin").unwrap(), Role::Admin);
+        assert_eq!(Role::from_str("cook").unwrap(), Role::Cook);
+        assert_eq!(Role::from_str("waitress").unwrap(), Role::Waitress);
+        assert_eq!(Role::from_str("client").unwrap(), Role::Client);
+        assert!(Role::from_str("").is_err());
     }
 }

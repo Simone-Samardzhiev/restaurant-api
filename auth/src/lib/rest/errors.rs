@@ -55,12 +55,17 @@ impl From<Error> for AppErrorResponse {
     fn from(err: Error) -> Self {
         match err {
             Error::EmailAlreadyExists => Self::new(
-                "EMAIL_CONFLICT".into(),
+                err.code(),
                 "Email is already in use.".into(),
                 StatusCode::CONFLICT.into(),
             ),
+            Error::InvalidUserRole => Self::new(
+                err.code(),
+                "Invalid user role.".into(),
+                StatusCode::BAD_REQUEST.into(),
+            ),
             Error::Internal { .. } => Self::new(
-                "INTERNAL_ERROR".into(),
+                err.code(),
                 "Internal error".into(),
                 StatusCode::INTERNAL_SERVER_ERROR.into(),
             ),

@@ -4,6 +4,9 @@ pub enum Error {
     #[error("Email is already in use.")]
     EmailAlreadyExists,
 
+    #[error("Invalid user role.")]
+    InvalidUserRole,
+
     #[error("An internal error has occurred: {source}.")]
     Internal {
         #[from]
@@ -16,6 +19,7 @@ impl Error {
     pub fn code(&self) -> String {
         match self {
             Self::EmailAlreadyExists => "EMAIL_CONFLICT".into(),
+            Self::InvalidUserRole => "INVALID_USER_ROLE".into(),
             Self::Internal { source: _ } => "INTERNAL_ERROR".into(),
         }
     }
