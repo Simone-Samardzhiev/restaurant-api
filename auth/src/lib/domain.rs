@@ -18,6 +18,6 @@ pub trait PasswordHasher: Send + Sync {
 
 /// KeyGenerator describes methods for generating token keys.
 #[automock]
-pub trait KeyGenerator {
+pub trait KeyGenerator: Send + Sync {
     fn generate(&self) -> Result<keys::KeyPair, Error>;
 }
