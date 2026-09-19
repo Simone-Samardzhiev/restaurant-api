@@ -21,3 +21,11 @@ pub trait PasswordHasher: Send + Sync {
 pub trait KeyGenerator: Send + Sync {
     fn generate(&self) -> Result<keys::KeyPair, Error>;
 }
+
+#[async_trait::async_trait]
+#[automock]
+pub trait TokenCoder: Send + Sync {
+    async fn encode(&self, token: &token::AccessToken) -> Result<String, Error>;
+    async fn decode(&self, token: &str) -> Result<token::AccessToken, Error>;
+    async fn store_keys(&self, pair: keys::KeyPair) -> Result<(), Error>;
+}

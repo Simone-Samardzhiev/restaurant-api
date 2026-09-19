@@ -64,6 +64,11 @@ impl From<Error> for AppErrorResponse {
                 "Invalid user role.".into(),
                 StatusCode::BAD_REQUEST.into(),
             ),
+            Error::InvalidToken => Self::new(
+                err.code(),
+                "Invalid token.".into(),
+                StatusCode::BAD_REQUEST.into(),
+            ),
             Error::Internal { .. } => Self::new(
                 err.code(),
                 "Internal error".into(),

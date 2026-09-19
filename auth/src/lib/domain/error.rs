@@ -1,4 +1,4 @@
-// Enum describes possible domain errors.
+/// Enum describeinf possible domain errors.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Email is already in use.")]
@@ -6,6 +6,9 @@ pub enum Error {
 
     #[error("Invalid user role.")]
     InvalidUserRole,
+
+    #[error("Invalid token.")]
+    InvalidToken,
 
     #[error("An internal error has occurred: {source}.")]
     Internal {
@@ -20,6 +23,7 @@ impl Error {
         match self {
             Self::EmailAlreadyExists => "EMAIL_CONFLICT".into(),
             Self::InvalidUserRole => "INVALID_USER_ROLE".into(),
+            Self::InvalidToken => "INVALID_TOKEN".into(),
             Self::Internal { source: _ } => "INTERNAL_ERROR".into(),
         }
     }
