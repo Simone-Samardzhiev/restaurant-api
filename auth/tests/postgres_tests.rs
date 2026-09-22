@@ -11,7 +11,7 @@ use uuid::Uuid;
 async fn test_user_repository_save(pool: sqlx::PgPool) {
     let repository = PostgresUserRepository::new(pool);
 
-    let user = User::new(
+    let user = User::create(
         "Test name".into(),
         "Test email".into(),
         "Test password".into(),
@@ -26,7 +26,7 @@ async fn test_user_repository_save(pool: sqlx::PgPool) {
 async fn test_user_repository_save_duplicate(pool: sqlx::PgPool) {
     let repository = PostgresUserRepository::new(pool);
 
-    let mut user = User::new(
+    let mut user = User::create(
         "Test name".into(),
         "Test email".into(),
         "Test password".into(),
@@ -41,4 +41,32 @@ async fn test_user_repository_save_duplicate(pool: sqlx::PgPool) {
         Err(Error::EmailAlreadyExists) => (),
         Err(e) => panic!("Unexpected error: {}", e),
     }
+}
+
+#[sqlx::test]
+#[ignore]
+async fn test_user_repository_get_by_email(pool: sqlx::PgPool) {
+    let repository = PostgresUserRepository::new(pool);
+
+    let user = User::create(
+        "Test name".into(),
+        "Test email".into(),
+        "Test password".into(),
+        Role::Admin,
+    );
+
+    repository.save(&user).await.expect("Failed to save user");
+
+    let found_user = repository
+        .get_by_email("Test email".into())
+        .await
+        .expect("Failed to get user by email")
+        .expect("Saved user not found");
+    assert_eq!(found_user.id, user.id);
+
+    let not_found_user = repository
+        .get_by_email("Random email".into())
+        .await
+        .expect("Failed to get user by email");
+    assert!(not_found_user.is_none());
 }

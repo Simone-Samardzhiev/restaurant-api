@@ -34,7 +34,7 @@ impl DefaultUserService {
 impl UserService for DefaultUserService {
     async fn register(&self, req: RegisterRequest) -> Result<(), Error> {
         let hash = self.hasher.hash(&req.password)?;
-        let user = User::new(req.name, req.email, hash, Role::Client);
+        let user = User::create(req.name, req.email, hash, Role::Client);
         self.repository.save(&user).await
     }
 }

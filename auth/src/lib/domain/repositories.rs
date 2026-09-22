@@ -12,6 +12,16 @@ pub trait UserRepository: Send + Sync {
     ///
     /// [Error::Internal] if unknown error occurred.
     async fn save(&self, user: &User) -> Result<(), Error>;
+
+    /// Retrieves a user by email.
+    ///
+    /// # Returns
+    /// [Ok] if the user is found.
+    ///
+    /// [Ok(None)] if no user is found.
+    ///
+    /// [Error::Internal] if unknown error occurred.
+    async fn get_by_email(&self, email: &str) -> Result<Option<User>, Error>;
 }
 
 /// TokenRepository describes how refresh tokens are accessed.

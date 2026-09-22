@@ -1,9 +1,15 @@
 use crate::{
     config::DatabaseConfig,
-    domain::{error::Error, repositories::UserRepository, user::User},
+    domain::{
+        error::Error,
+        repositories::UserRepository,
+        user::{Role, User},
+    },
 };
 use anyhow::{Context, anyhow};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 // Connects to a postgres database returning a pool of connections.
 pub async fn connect(c: &DatabaseConfig) -> Result<PgPool, anyhow::Error> {
@@ -68,5 +74,34 @@ impl UserRepository for PostgresUserRepository {
 
             Err(e) => Err(Error::from(anyhow!("Error saving user: {}", e))),
         }
+    }
+
+    async fn get_by_email(&self, email: &str) -> Result<Option<User>, Error> {
+        let result = sqlx::query(
+            "SELECT id, name, email, password, role::TEXT, created_at, updated_at
+            FROM users
+            WHERE email = $1",
+        )
+        .bind(email)
+        .fetch_optional(&self.pool)
+        .await
+        .context("Error fetching user")?;
+
+        let row = match result {
+            Some(row) => row,
+            None => return Ok(None),
+        };
+
+        let id: Uuid = row.get(0);
+        let name: String = row.get(1);
+        let email: String = row.get(2);
+        let password: String = row.get(3);
+        let role: Role = row.get::<&str, _>(4).parse().context("")?;
+        let created_at: OffsetDateTime = row.get(5);
+        let updated_at: OffsetDateTime = row.get(6);
+
+        Ok(Some(User::new(
+            id, name, email, password, role, created_at, updated_at,
+        )))
     }
 }

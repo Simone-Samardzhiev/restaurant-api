@@ -1,8 +1,8 @@
 use super::error::Error;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 
 /// User permission level.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -79,7 +79,30 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(name: String, email: String, password: String, role: Role) -> Self {
+    pub fn new(
+        id: Uuid,
+        name: String,
+        email: String,
+        password: String,
+        role: Role,
+        created_at: OffsetDateTime,
+        updated_at: OffsetDateTime,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            email,
+            password,
+            role,
+            created_at,
+            updated_at,
+        }
+    }
+
+    /// Creates a new user with the given name, email, password, and role.
+    /// The id is generated using the V7 UUID variant.
+    /// The created_at and updated_at fields are set to the current UTC time.
+    pub fn create(name: String, email: String, password: String, role: Role) -> Self {
         let now = OffsetDateTime::now_utc();
 
         Self {

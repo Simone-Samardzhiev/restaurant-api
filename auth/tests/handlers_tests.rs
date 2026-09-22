@@ -37,7 +37,7 @@ async fn test_register(pool: sqlx::PgPool) {
 #[ignore]
 async fn test_register_conflict(pool: sqlx::PgPool) {
     let repo = auth::repositories::postgres::PostgresUserRepository::new(pool);
-    repo.save(&auth::domain::user::User::new(
+    repo.save(&auth::domain::user::User::create(
         "User1234".into(),
         "example@email.com".into(),
         "Password_123".into(),
