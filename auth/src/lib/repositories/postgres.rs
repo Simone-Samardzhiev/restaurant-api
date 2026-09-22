@@ -2,7 +2,8 @@ use crate::{
     config::DatabaseConfig,
     domain::{
         error::Error,
-        repositories::UserRepository,
+        keys::KeyPair,
+        repositories::{KeyRepository, UserRepository},
         user::{Role, User},
     },
 };
@@ -103,5 +104,60 @@ impl UserRepository for PostgresUserRepository {
         Ok(Some(User::new(
             id, name, email, password, role, created_at, updated_at,
         )))
+    }
+}
+
+/// Postgres implementation of [KeyRepository].
+pub struct PostgresKeyRepository {
+    pool: PgPool,
+}
+
+impl PostgresKeyRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait::async_trait]
+impl KeyRepository for PostgresKeyRepository {
+    async fn save(&self, pair: &KeyPair) -> Result<(), Error> {
+        sqlx::query(
+            "INSERT INTO keys (id, private_key, public_key, created_at)
+            VALUES ($1, $2, $3, $4)",
+        )
+        .bind(pair.id)
+        .bind(&pair.private_key)
+        .bind(&pair.public_key)
+        .bind(pair.created_at)
+        .execute(&self.pool)
+        .await
+        .context("Failed to save key pair")?;
+
+        Ok(())
+    }
+
+    async fn get(&self) -> Result<Vec<KeyPair>, Error> {
+        let rows = sqlx::query(
+            "SELECT id, private_key, public_key, created_at FROM keys",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to fetch key pairs")?;
+
+        let mut pairs = Vec::new();
+        for row in rows {
+            let id: Uuid = row.get(0);
+            let private_key: String = row.get(1);
+            let public_key: String = row.get(2);
+            let created_at: OffsetDateTime = row.get(3);
+            pairs.push(KeyPair {
+                id,
+                private_key,
+                public_key,
+                created_at,
+            });
+        }
+
+        Ok(pairs)
     }
 }

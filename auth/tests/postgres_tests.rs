@@ -1,9 +1,10 @@
 use auth::domain::{
     error::Error,
-    repositories::UserRepository,
+    keys::KeyPair,
+    repositories::{KeyRepository, UserRepository},
     user::{Role, User},
 };
-use auth::repositories::postgres::PostgresUserRepository;
+use auth::repositories::postgres::{PostgresKeyRepository, PostgresUserRepository};
 use uuid::Uuid;
 
 #[sqlx::test]
@@ -69,4 +70,35 @@ async fn test_user_repository_get_by_email(pool: sqlx::PgPool) {
         .await
         .expect("Failed to get user by email");
     assert!(not_found_user.is_none());
+}
+
+#[sqlx::test]
+#[ignore]
+async fn test_key_repository_save(pool: sqlx::PgPool) {
+    let repository = PostgresKeyRepository::new(pool);
+    let key_pair = KeyPair::new(Uuid::now_v7(), "private_key".into(), "public_key".into());
+
+    repository
+        .save(&key_pair)
+        .await
+        .expect("Failed to save key pair");
+}
+
+#[sqlx::test]
+#[ignore]
+async fn test_key_repository_get(pool: sqlx::PgPool) {
+    let repository = PostgresKeyRepository::new(pool);
+    let key_pair = KeyPair::new(Uuid::now_v7(), "private_key".into(), "public_key".into());
+
+    repository
+        .save(&key_pair)
+        .await
+        .expect("Failed to save key pair");
+
+    let fethed_key = &repository
+        .get()
+        .await
+        .expect("Failed to get key pair by id")[0];
+
+    assert_eq!(fethed_key.id, key_pair.id);
 }

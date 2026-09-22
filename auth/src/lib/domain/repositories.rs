@@ -1,4 +1,4 @@
-use crate::domain::{error::Error, token::RefreshToken, user::User};
+use crate::domain::{error::Error, keys::KeyPair, token::RefreshToken, user::User};
 
 /// UserRepository describes how used data is accessed.
 #[mockall::automock]
@@ -22,6 +22,27 @@ pub trait UserRepository: Send + Sync {
     ///
     /// [Error::Internal] if unknown error occurred.
     async fn get_by_email(&self, email: &str) -> Result<Option<User>, Error>;
+}
+
+#[mockall::automock]
+#[async_trait::async_trait]
+/// KeyRepository describes how key pairs data is accessed.
+pub trait KeyRepository: Send + Sync {
+    /// Saves a key pair.
+    ///
+    /// # Returns
+    /// [Ok] if the key pair is saved successfully.
+    ///
+    /// [Error::Internal] if unknown error occurred.
+    async fn save(&self, pair: &KeyPair) -> Result<(), Error>;
+
+    /// Retrieves all key pairs.
+    ///
+    /// # Returns
+    /// [Ok] if the key pairs are retrieved successfully.
+    ///
+    /// [Error::Internal] if unknown error occurred.
+    async fn get(&self) -> Result<Vec<KeyPair>, Error>;
 }
 
 /// TokenRepository describes how refresh tokens are accessed.
