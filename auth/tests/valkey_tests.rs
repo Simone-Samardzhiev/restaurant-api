@@ -9,7 +9,7 @@ async fn connect() -> ValkeyTokenRepository {
     let config = Config::from_url(&url).expect("Failed to get valkey config");
 
     let client = Builder::from_config(config)
-        .build()
+        .build_pool(1)
         .expect("Failed to build valkey client");
     client.init().await.expect("Error connecting to valkey");
 
