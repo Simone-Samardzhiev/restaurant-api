@@ -3,8 +3,11 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 use rand::Rng;
 use base64::Engine;
+use serde::{Serialize, Deserialize};
+
 
 /// Token for authorization.
+#[derive(Debug)]
 pub struct AccessToken {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -25,6 +28,7 @@ impl AccessToken {
 
 
 /// Token for refreshing session.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshToken {
     pub key: String,
     pub user_id: Uuid,

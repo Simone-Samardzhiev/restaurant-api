@@ -1,0 +1,21 @@
+version: 3
+
+dotenv:
+  - .env
+
+tasks:
+  run:
+    cmd: "{{.CLI_ARGS}}"
+  
+  start-valkey:
+    desc: "Starts a detached Valkey container in the background."
+    cmds:
+      - docker run -d --rm --name valkey-tmp -p 6379:6379 valkey/valkey:latest
+      - echo "Valkey is running in the background on port 6379."
+
+  stop-valkey:
+    desc: "Stops the running Valkey container."
+    cmds:
+      - docker stop valkey-tmp
+      - echo "Valkey container stopped and removed."
+
