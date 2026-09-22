@@ -5,10 +5,11 @@ use anyhow::Context;
 use jsonwebtoken::{
     Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, decode_header, encode,
 };
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use uuid::Uuid;
+
 
 /// Encoding key for JWT with id.
 #[derive(Debug, Clone)]
@@ -99,18 +100,9 @@ struct JWTEncodingClaims<'a> {
     sub: Uuid,
     exp: i64,
     iat: i64,
-    #[serde(serialize_with = "serialize_role")]
     role: Role,
     aud: &'a str,
     iss: &'a str,
-}
-
-/// Serializes a [Role] as a string.
-fn serialize_role<S>(role: &Role, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(role.as_ref())
 }
 
 impl<'a> JWTEncodingClaims<'a> {
@@ -133,19 +125,7 @@ struct JWTDecodingClaims {
     kid: Uuid,
     sub: Uuid,
     exp: i64,
-    #[serde(deserialize_with = "deserialize_role")]
     role: Role,
-}
-
-/// Deserializes a [Role] from a string.
-fn deserialize_role<'de, D>(deserializer: D) -> Result<Role, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    s.as_str()
-        .parse()
-        .map_err(|e| serde::de::Error::custom(format!("Unknown role: {}", e)))
 }
 
 /// Implementation of [TokenCoder] using JWT.

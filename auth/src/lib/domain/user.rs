@@ -2,6 +2,7 @@ use super::error::Error;
 use std::str::FromStr;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use serde::{Serialize, Deserialize};
 
 /// User permission level.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -27,6 +28,12 @@ impl AsRef<str> for Role {
     }
 }
 
+impl From<Role> for String {
+    fn from(role: Role) -> Self {
+        role.as_ref().to_string()
+    }
+}
+
 impl FromStr for Role {
     type Err = Error;
 
@@ -38,6 +45,25 @@ impl FromStr for Role {
             "client" => Ok(Role::Client),
             _ => Err(Error::InvalidUserRole),
         }
+    }
+}
+
+impl Serialize for Role {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_ref())
+    }
+}
+
+impl<'de> Deserialize<'de> for Role {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Self::from_str(&s).map_err(|_| serde::de::Error::custom("invalid role"))
     }
 }
 

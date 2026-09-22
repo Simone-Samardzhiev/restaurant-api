@@ -22,7 +22,7 @@ where
 
 impl DatabaseConfig {
     pub fn new() -> Result<Self, anyhow::Error> {
-        match envy::prefixed("DB_").from_env::<Self>() {
+        match envy::prefixed("DATABASE_").from_env::<Self>() {
             Ok(config) => {
                 config
                     .validate()
