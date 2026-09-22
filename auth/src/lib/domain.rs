@@ -22,10 +22,16 @@ pub trait KeyGenerator: Send + Sync {
     fn generate(&self) -> Result<keys::KeyPair, Error>;
 }
 
-#[async_trait::async_trait]
+/// TokenCoder describes methods for encoding and decoding tokens.
 #[automock]
+#[async_trait::async_trait]
 pub trait TokenCoder: Send + Sync {
+    /// Encodes the given token into a string.
     async fn encode(&self, token: &token::AccessToken) -> Result<String, Error>;
+
+    /// Decodes the given token string into a token.
     async fn decode(&self, token: &str) -> Result<token::AccessToken, Error>;
+
+    /// Parses and stores the given key to reduce keys parsing.
     async fn store_keys(&self, pair: keys::KeyPair) -> Result<(), Error>;
 }
