@@ -1,7 +1,7 @@
 use crate::domain::services::UserService;
 use anyhow::Context;
 use axum::routing::post;
-use handlers::register;
+use handlers::{login, register};
 use std::sync::Arc;
 use tokio::signal;
 use tokio::signal::ctrl_c;
@@ -63,7 +63,9 @@ impl Server {
         axum::Router::new()
             .nest(
                 "/api/v1",
-                axum::Router::new().route("/register", post(register)),
+                axum::Router::new()
+                    .route("/register", post(register))
+                    .route("/login", post(login)),
             )
             .with_state(state)
     }

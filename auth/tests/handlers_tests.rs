@@ -114,3 +114,70 @@ async fn test_register_conflict(pool: sqlx::PgPool) {
 
     assert_eq!(response.status(), StatusCode::CONFLICT);
 }
+
+#[sqlx::test]
+#[ignore]
+async fn test_login(pool: sqlx::PgPool) {
+    let user_repo = auth::repositories::postgres::PostgresUserRepository::new(pool);
+    let token_repo = connect_to_valkey().await;
+    let hasher = auth::hashers::ArgonPasswordHasher::new(argon2::Argon2::default());
+
+    let pair = auth::keys_generators::RSAKeyGenerator::new(2048)
+        .generate()
+        .expect("Error generationg keys");
+
+    let coder = auth::token_coders::JWTCoder::new(&[pair], "test-aud".into(), "test-iss".into())
+        .expect("Error creating jwt token coder");
+
+    let service = auth::domain::services::DefaultUserService::new(
+        Arc::new(user_repo),
+        Arc::new(token_repo),
+        Arc::new(coder),
+        Arc::new(hasher),
+    );
+    let server = auth::rest::Server::new(Arc::new(service), "0.0.0.0:8000".into());
+    let response = server
+        .as_router()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/register")
+                .header("content-type", "application/json")
+                .body(axum::body::Body::from(
+                    serde_json::json!({
+                        "email":"example@email.com",
+                        "username":"Username123",
+                        "password":"Password_123"
+                    }
+                    )
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+    let response = server
+        .as_router()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/login")
+                .header("content-type", "application/json")
+                .body(axum::body::Body::from(
+                    serde_json::json!({
+                        "email":"example@email.com",
+                        "password":"Password_123"
+                    }
+                    )
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK)
+}

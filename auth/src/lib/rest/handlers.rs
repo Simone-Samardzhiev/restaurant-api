@@ -1,10 +1,13 @@
 use super::{AppState, errors::APIError};
-use crate::domain::user::RegisterRequest as DomainRegisterRequest;
+use crate::domain::user::{
+    LoginRequest as DomainLoginRequest, LoginResponse as DomainLoginResponse,
+    RegisterRequest as DomainRegisterRequest,
+};
 use axum::{
     extract::{Json, State},
     http::StatusCode,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
 /// Trims leading and trailing whitespaces in place.
@@ -93,4 +96,37 @@ pub async fn register(
         .await?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    email: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LoginResponse {
+    access_token: String,
+    refresh_token: String,
+}
+
+impl From<DomainLoginResponse> for LoginResponse {
+    fn from(value: DomainLoginResponse) -> Self {
+        Self {
+            access_token: value.access_token,
+            refresh_token: value.refresh_token,
+        }
+    }
+}
+
+pub async fn login(
+    State(state): State<AppState>,
+    Json(req): Json<LoginRequest>,
+) -> Result<(StatusCode, Json<LoginResponse>), APIError> {
+    let response = state
+        .user_service
+        .login(DomainLoginRequest::new(req.email, req.password))
+        .await?;
+
+    Ok((StatusCode::OK, Json(response.into())))
 }
