@@ -138,7 +138,9 @@ impl KeyRepository for PostgresKeyRepository {
 
     async fn get(&self) -> Result<Vec<KeyPair>, Error> {
         let rows = sqlx::query(
-            "SELECT id, private_key, public_key, created_at FROM keys",
+            "SELECT id, private_key, public_key, created_at
+            FROM keys 
+            ORDER BY created_at",
         )
         .fetch_all(&self.pool)
         .await
