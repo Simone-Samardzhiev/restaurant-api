@@ -69,6 +69,11 @@ impl From<Error> for AppErrorResponse {
                 "Invalid token.".into(),
                 StatusCode::BAD_REQUEST.into(),
             ),
+            Error::WrongCredentials => Self::new(
+                err.code(),
+                "Wrong credentials.".into(),
+                StatusCode::UNAUTHORIZED.into(),
+            ),
             Error::Internal { .. } => Self::new(
                 err.code(),
                 "Internal error".into(),

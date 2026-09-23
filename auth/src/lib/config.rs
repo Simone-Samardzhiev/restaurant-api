@@ -34,10 +34,11 @@ impl DatabaseConfig {
     }
 }
 
+/// Configuration for the valkey connection.
 #[derive(Debug, Deserialize)]
 pub struct ValkeyConfig {
     pub url: String,
-    pub pool_size: usize
+    pub pool_size: usize,
 }
 
 impl ValkeyConfig {
@@ -45,6 +46,22 @@ impl ValkeyConfig {
         match envy::prefixed("VALKEY_").from_env::<Self>() {
             Ok(config) => Ok(config),
             Err(e) => Err(anyhow::anyhow!("Error parsing valkey config: {}", e)),
+        }
+    }
+}
+
+/// Configuration for the JWT.
+#[derive(Debug, Deserialize)]
+pub struct JWTConfig {
+    pub audience: String,
+    pub issuer: String,
+}
+
+impl JWTConfig {
+    pub fn new() -> Result<Self, anyhow::Error> {
+        match envy::prefixed("JWT_").from_env::<Self>() {
+            Ok(config) => Ok(config),
+            Err(e) => Err(anyhow::anyhow!("Error parsing JWT config: {}", e)),
         }
     }
 }

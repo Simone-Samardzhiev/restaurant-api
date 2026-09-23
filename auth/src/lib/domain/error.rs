@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Invalid token.")]
     InvalidToken,
 
+    #[error("Wrong credentials.")]
+    WrongCredentials,
+
     #[error("An internal error has occurred: {source}.")]
     Internal {
         #[from]
@@ -24,6 +27,7 @@ impl Error {
             Self::EmailAlreadyExists => "EMAIL_CONFLICT".into(),
             Self::InvalidUserRole => "INVALID_USER_ROLE".into(),
             Self::InvalidToken => "INVALID_TOKEN".into(),
+            Self::WrongCredentials => "WRONG_CREDENTIALS".into(),
             Self::Internal { source: _ } => "INTERNAL_ERROR".into(),
         }
     }

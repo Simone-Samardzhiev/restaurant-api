@@ -134,6 +134,30 @@ impl RegisterRequest {
     }
 }
 
+/// Request for a user to login in the system.
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+impl LoginRequest {
+    pub fn new(email: String, password: String) -> Self {
+        Self { email, password }
+    }
+}
+
+/// Response for a user login request.
+pub struct LoginResponse {
+    pub access_token: String,
+    pub refresh_token: String,
+}
+
+impl LoginResponse {
+    pub fn new(access_token: String, refresh_token: String) -> Self {
+        Self { access_token, refresh_token }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
