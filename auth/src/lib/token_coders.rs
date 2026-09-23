@@ -10,7 +10,6 @@ use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-
 /// Encoding key for JWT with id.
 #[derive(Debug, Clone)]
 struct JWTEncodingKey {
@@ -136,16 +135,29 @@ pub struct JWTCoder {
 }
 
 impl JWTCoder {
-    pub fn new(keys: KeyPair, audience: String, issuer: String) -> Result<Self, Error> {
-        let encoding_key = EncodingKey::from_rsa_pem(keys.private_key.as_bytes())
-            .context("Failed to parse private key")?;
-        let decoding_key = DecodingKey::from_rsa_pem(keys.public_key.as_bytes())
-            .context("Failed to parse public key")?;
+    pub fn new(keys: &[KeyPair], audience: String, issuer: String) -> Result<Self, Error> {
+        if keys.is_empty() {
+            return Err(Error::Internal {
+                source: anyhow::anyhow!("No keys provided"),
+            });
+        }
 
-        let store = JWTStore::new(
-            JWTEncodingKey::new(keys.id, encoding_key),
-            [JWTDecodingKey::new(keys.id, decoding_key)].into(),
+        let encoding_key = JWTEncodingKey::new(
+            keys[keys.len() - 1].id,
+            EncodingKey::from_rsa_pem(keys[keys.len() - 1].private_key.as_bytes())
+                .context("Error decoding private key")?,
         );
+
+        let mut decoding_keys: VecDeque<JWTDecodingKey> = VecDeque::new();
+        decoding_keys.reserve(keys.len());
+
+        for pair in keys {
+            let decoding_key = DecodingKey::from_rsa_pem(pair.public_key.as_bytes())
+                .context("Error decoding public key")?;
+            decoding_keys.push_back(JWTDecodingKey::new(pair.id, decoding_key));
+        }
+
+        let store = JWTStore::new(encoding_key, decoding_keys);
 
         Ok(Self {
             store,
@@ -232,7 +244,7 @@ mod tests {
         let key_generator = RSAKeyGenerator::new(2048);
         let key_pair = key_generator.generate().expect("Error generating key");
 
-        let coder = JWTCoder::new(key_pair, "test-aud".into(), "test-iss".into())
+        let coder = JWTCoder::new(&[key_pair], "test-aud".into(), "test-iss".into())
             .expect("Error creating JWT coder");
         let token = AccessToken::new(
             Uuid::new_v4(),
