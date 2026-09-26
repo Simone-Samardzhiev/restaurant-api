@@ -80,3 +80,22 @@ impl AppConfig {
         }
     }
 }
+
+/// Wraps all configurations into one struct.
+pub struct Config {
+    pub database_config: DatabaseConfig,
+    pub valkey_config: ValkeyConfig,
+    pub jwt_config: JWTConfig,
+    pub app_config: AppConfig,
+}
+
+impl Config {
+    pub fn new() -> Result<Self, anyhow::Error> {
+        Ok(Self {
+            database_config: DatabaseConfig::new()?,
+            valkey_config: ValkeyConfig::new()?,
+            jwt_config: JWTConfig::new()?,
+            app_config: AppConfig::new()?,
+        })
+    }
+}
