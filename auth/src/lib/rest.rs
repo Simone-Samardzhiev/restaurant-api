@@ -27,13 +27,13 @@ pub struct Server {
 
 async fn shutdown_signal() {
     let ctrl_c = async {
-        ctrl_c().await.expect("Failed to install ctrl-c handler");
+        ctrl_c().await.expect("Error installing ctrl-c handler");
     };
 
     #[cfg(unix)]
     let terminate = async {
         signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("Failed to install SIGTERM signal handler")
+            .expect("Error installing SIGTERM signal handler")
             .recv()
             .await
     };

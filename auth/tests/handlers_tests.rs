@@ -26,10 +26,10 @@ async fn test_register(pool: sqlx::PgPool) {
 
     let pair = auth::keys_generators::RSAKeyGenerator::new(2048)
         .generate()
-        .expect("Error generationg keys");
+        .unwrap();
 
     let coder = auth::token_coders::JWTCoder::new(&[pair], "test-aud".into(), "test-iss".into())
-        .expect("Error creating jwt token coder");
+        .unwrap();
 
     let service = auth::domain::services::DefaultUserService::new(
         Arc::new(user_repo),
@@ -70,10 +70,10 @@ async fn test_register_conflict(pool: sqlx::PgPool) {
 
     let pair = auth::keys_generators::RSAKeyGenerator::new(2048)
         .generate()
-        .expect("Error generationg keys");
+        .unwrap();
 
     let coder = auth::token_coders::JWTCoder::new(&[pair], "test-aud".into(), "test-iss".into())
-        .expect("Error creating jwt token coder");
+        .unwrap();
 
     user_repo
         .save(&auth::domain::user::User::create(
@@ -124,10 +124,10 @@ async fn test_login(pool: sqlx::PgPool) {
 
     let pair = auth::keys_generators::RSAKeyGenerator::new(2048)
         .generate()
-        .expect("Error generationg keys");
+        .unwrap();
 
     let coder = auth::token_coders::JWTCoder::new(&[pair], "test-aud".into(), "test-iss".into())
-        .expect("Error creating jwt token coder");
+        .unwrap();
 
     let service = auth::domain::services::DefaultUserService::new(
         Arc::new(user_repo),

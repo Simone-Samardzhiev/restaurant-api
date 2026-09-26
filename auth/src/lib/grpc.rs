@@ -57,13 +57,13 @@ mod tests {
         let repository = PostgresKeyRepository::new(pool.clone());
         let pair = KeyPair::new(Uuid::now_v7(), "Private key".into(), "Public ket".into());
 
-        repository.save(&pair).await.expect("Failed to save key");
+        repository.save(&pair).await.unwrap();
 
         let service = AuthService::new(Arc::new(repository));
         let response = service
             .get_keys(Request::new(()))
             .await
-            .expect("Failed to call get_keys")
+            .unwrap()
             .into_inner();
 
         assert_eq!(response.keys.len(), 1);

@@ -19,7 +19,7 @@ async fn test_user_repository_save(pool: sqlx::PgPool) {
         Role::Admin,
     );
 
-    repository.save(&user).await.expect("Failed to save user");
+    repository.save(&user).await.unwrap();
 }
 
 #[sqlx::test]
@@ -34,7 +34,7 @@ async fn test_user_repository_save_duplicate(pool: sqlx::PgPool) {
         Role::Admin,
     );
 
-    repository.save(&user).await.expect("Failed to save user");
+    repository.save(&user).await.unwrap();
     user.id = Uuid::now_v7();
 
     match repository.save(&user).await {
@@ -56,19 +56,19 @@ async fn test_user_repository_get_by_email(pool: sqlx::PgPool) {
         Role::Admin,
     );
 
-    repository.save(&user).await.expect("Failed to save user");
+    repository.save(&user).await.unwrap();
 
     let found_user = repository
         .get_by_email("Test email".into())
         .await
-        .expect("Failed to get user by email")
-        .expect("Saved user not found");
+        .unwrap()
+        .unwrap();
     assert_eq!(found_user.id, user.id);
 
     let not_found_user = repository
         .get_by_email("Random email".into())
         .await
-        .expect("Failed to get user by email");
+        .unwrap();
     assert!(not_found_user.is_none());
 }
 
@@ -81,7 +81,7 @@ async fn test_key_repository_save(pool: sqlx::PgPool) {
     repository
         .save(&key_pair)
         .await
-        .expect("Failed to save key pair");
+        .unwrap()
 }
 
 #[sqlx::test]
@@ -93,12 +93,12 @@ async fn test_key_repository_get(pool: sqlx::PgPool) {
     repository
         .save(&key_pair)
         .await
-        .expect("Failed to save key pair");
+        .unwrap();
 
     let fethed_key = &repository
         .get()
         .await
-        .expect("Failed to get key pair by id")[0];
+        .unwrap()[0];
 
     assert_eq!(fethed_key.id, key_pair.id);
 }

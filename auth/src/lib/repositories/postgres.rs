@@ -131,7 +131,7 @@ impl KeyRepository for PostgresKeyRepository {
         .bind(pair.created_at)
         .execute(&self.pool)
         .await
-        .context("Failed to save key pair")?;
+        .context("Error saving key pair")?;
 
         Ok(())
     }
@@ -144,7 +144,7 @@ impl KeyRepository for PostgresKeyRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .context("Failed to fetch key pairs")?;
+        .context("Error fetching keys")?;
 
         let mut pairs = Vec::new();
         for row in rows {

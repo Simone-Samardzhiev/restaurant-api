@@ -176,8 +176,7 @@ impl TokenCoder for JWTCoder {
         header.kid = Some(encoding_key.id.to_string());
 
         let claims = JWTEncodingClaims::new(token, &self.audience, &self.issuer);
-        let token =
-            encode(&header, &claims, &encoding_key.key).context("Failed to encode token")?;
+        let token = encode(&header, &claims, &encoding_key.key).context("Error encoding token")?;
 
         Ok(token)
     }
@@ -215,9 +214,9 @@ impl TokenCoder for JWTCoder {
 
     async fn store_keys(&self, pair: KeyPair) -> Result<(), Error> {
         let encoding_key = EncodingKey::from_rsa_pem(pair.private_key.as_bytes())
-            .context("Failed to parse private key")?;
+            .context("Error parsing private key")?;
         let decoding_key = DecodingKey::from_rsa_pem(pair.public_key.as_bytes())
-            .context("Failed to parse public key")?;
+            .context("Error parsing public key")?;
 
         self.store
             .store_keys(
@@ -244,8 +243,7 @@ mod tests {
         let key_generator = RSAKeyGenerator::new(2048);
         let key_pair = key_generator.generate().expect("Error generating key");
 
-        let coder = JWTCoder::new(&[key_pair], "test-aud".into(), "test-iss".into())
-            .expect("Error creating JWT coder");
+        let coder = JWTCoder::new(&[key_pair], "test-aud".into(), "test-iss".into()).unwrap();
         let token = AccessToken::new(
             Uuid::new_v4(),
             Uuid::new_v4(),
@@ -253,9 +251,9 @@ mod tests {
             OffsetDateTime::now_utc() + Duration::days(2),
         );
 
-        let encoded = coder.encode(&token).await.expect("Error encoding token");
+        let encoded = coder.encode(&token).await.unwrap();
 
-        let decoded = coder.decode(&encoded).await.expect("Error decoding token");
+        let decoded = coder.decode(&encoded).await.unwrap();
         assert_eq!(token.id, decoded.id);
         assert_eq!(token.user_id, decoded.user_id);
         assert_eq!(token.user_role, decoded.user_role);
@@ -265,13 +263,13 @@ mod tests {
         );
 
         // Test that tokens using old encoding key are valid
-        let key_pair = key_generator.generate().expect("Error generating key");
+        let key_pair = key_generator.generate().unwrap();
         coder
             .store_keys(key_pair)
             .await
             .expect("Error storing keys");
 
-        let decoded = coder.decode(&encoded).await.expect("Error decoding token");
+        let decoded = coder.decode(&encoded).await.unwrap();
         assert_eq!(token.id, decoded.id);
         assert_eq!(token.user_id, decoded.user_id);
         assert_eq!(token.user_role, decoded.user_role);

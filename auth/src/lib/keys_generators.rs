@@ -25,18 +25,18 @@ impl KeyGenerator for RSAKeyGenerator {
     fn generate(&self) -> Result<KeyPair, Error> {
         let mut rng = rand::thread_rng();
         let private_key = RsaPrivateKey::new(&mut rng, self.key_size)
-            .context("Failed to generate RSA private key")?;
+            .context("Error generating RSA private key")?;
         let public_key = private_key.to_public_key();
 
         Ok(KeyPair::new(
             Uuid::now_v7(),
             private_key
                 .to_pkcs8_pem(LineEnding::LF)
-                .context("Failed to map private ket to pem")?
+                .context("Error mapping private key to PEM")?
                 .to_string(),
             public_key
                 .to_public_key_pem(LineEnding::LF)
-                .context("Failed to map public key to pem")?,
+                .context("Error mapping public key to PEM")?,
         ))
     }
 }

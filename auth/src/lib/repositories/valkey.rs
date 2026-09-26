@@ -48,7 +48,7 @@ impl TokenRepository for ValkeyTokenRepository {
                 false,
             )
             .await
-            .context("Failed to save token")?;
+            .context("Error saving token")?;
         Ok(())
     }
 }
