@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/empty.proto";
+
+message Key{
+  string id = 1;
+  string pem = 2;
+}
+
+message GetKeysResponse {
+  repeated Key keys = 1;
+}
+
+service AuthService {
+  rpc GetKeys (google.protobuf.Empty) returns (GetKeysResponse);
+}
