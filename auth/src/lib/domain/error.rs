@@ -1,4 +1,4 @@
-/// Enum describeinf possible domain errors.
+/// Enum describing possible domain errors.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Email is already in use.")]

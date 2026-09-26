@@ -9,7 +9,7 @@ use std::sync::Arc;
 use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
-// UserService describes how user business logic is accessed.
+/// UserService describes how user business logic is accessed.
 #[async_trait::async_trait]
 pub trait UserService: Send + Sync {
     /// Registers a new user.

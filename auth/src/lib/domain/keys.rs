@@ -1,6 +1,8 @@
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+
+/// Pair of public and private key.
 pub struct KeyPair {
     pub id: Uuid,
     pub private_key: String,

@@ -12,7 +12,7 @@ use sqlx::{PgPool, Row};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-// Connects to a postgres database returning a pool of connections.
+/// Connects to a postgres database returning a pool of connections.
 pub async fn connect(c: &DatabaseConfig) -> Result<PgPool, anyhow::Error> {
     sqlx::postgres::PgPoolOptions::new()
         .max_connections(c.max_connections)
@@ -22,7 +22,7 @@ pub async fn connect(c: &DatabaseConfig) -> Result<PgPool, anyhow::Error> {
         .context("Failed to connect to postgres")
 }
 
-// Applies pending migrations to the database schema.
+/// Applies pending migrations to the database schema.
 pub async fn apply_migrations(pool: PgPool) -> Result<(), anyhow::Error> {
     sqlx::migrate!()
         .run(&pool)

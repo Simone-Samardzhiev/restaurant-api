@@ -24,9 +24,9 @@ pub trait UserRepository: Send + Sync {
     async fn get_by_email(&self, email: &str) -> Result<Option<User>, Error>;
 }
 
+/// KeyRepository describes how key pairs data is accessed.
 #[mockall::automock]
 #[async_trait::async_trait]
-/// KeyRepository describes how key pairs data is accessed.
 pub trait KeyRepository: Send + Sync {
     /// Saves a key pair.
     ///
