@@ -1,6 +1,8 @@
 use auth::config;
 use auth::domain::KeyGenerator;
 use auth::domain::repositories::KeyRepository;
+use auth::hashers::ArgonPasswordHasher;
+use auth::keys_generators::RSAKeyGenerator;
 use auth::repositories::{
     postgres::{
         PostgresKeyRepository, PostgresUserRepository, apply_migrations,
@@ -9,7 +11,6 @@ use auth::repositories::{
     valkey::{ValkeyTokenRepository, connect as connect_to_valkey},
 };
 use auth::token_coders::JWTCoder;
-
 use std::sync::Arc;
 
 #[tokio::main]
@@ -26,9 +27,9 @@ async fn main() {
     let token_repository = ValkeyTokenRepository::new(valkey_pool.clone());
     let key_repository = PostgresKeyRepository::new(pg_pool.clone());
 
-    let password_hasher = auth::hashers::ArgonPasswordHasher::new(argon2::Argon2::default());
+    let password_hasher = ArgonPasswordHasher::new(argon2::Argon2::default());
 
-    let key_generator = auth::keys_generators::RSAKeyGenerator::new(2048);
+    let key_generator = RSAKeyGenerator::new(2048);
     let mut keys = key_repository.get().await.unwrap();
     if keys.is_empty() {
         keys.push(key_generator.generate().unwrap());
