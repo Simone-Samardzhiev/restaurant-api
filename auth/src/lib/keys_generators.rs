@@ -1,8 +1,4 @@
-use crate::domain::{
-    KeyGenerator,
-    error::Error,
-    keys::KeyPair,
-};
+use crate::domain::{KeyGenerator, error::Error, keys::KeyPair};
 use anyhow::Context;
 use rsa::{
     RsaPrivateKey,

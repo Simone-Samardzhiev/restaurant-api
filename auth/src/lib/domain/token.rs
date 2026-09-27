@@ -1,10 +1,9 @@
 use super::user::Role;
+use base64::Engine;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
-use rand::Rng;
-use base64::Engine;
-use serde::{Serialize, Deserialize};
-
 
 /// Token for authorization.
 #[derive(Debug)]
@@ -26,7 +25,6 @@ impl AccessToken {
     }
 }
 
-
 /// Token for refreshing session.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshToken {
@@ -37,12 +35,12 @@ pub struct RefreshToken {
 }
 
 impl RefreshToken {
-    pub fn new(user_id: Uuid, user_role: Role, expires_at: OffsetDateTime) -> Self{
+    pub fn new(user_id: Uuid, user_role: Role, expires_at: OffsetDateTime) -> Self {
         let mut bytes = [0u8; 32];
         let mut rng = rand::thread_rng();
         rng.fill(&mut bytes);
         let key = base64::engine::general_purpose::STANDARD.encode(bytes);
-        
+
         Self {
             key,
             user_id,
@@ -50,5 +48,4 @@ impl RefreshToken {
             expires_at,
         }
     }
-    
 }
