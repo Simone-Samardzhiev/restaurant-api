@@ -4,12 +4,42 @@ mod v1 {
 
 use crate::domain::keys::KeyPair;
 use crate::domain::repositories::KeyRepository;
+use anyhow::Context;
+use std::net::SocketAddr;
 use std::sync::Arc;
+use tonic::transport::Server as TonicServer;
 use tonic::{Request, Response, Status};
-use v1::{GetKeysResponse, Key};
+use v1::{
+    GetKeysResponse, Key,
+    auth_service_server::{AuthService as TonicAuthService, AuthServiceServer},
+};
+
+pub struct Server {
+    repository: Arc<dyn KeyRepository>,
+    addr: SocketAddr,
+}
+
+impl Server {
+    pub fn new(repository: Arc<dyn KeyRepository>, addr: SocketAddr) -> Self {
+        Self { repository, addr }
+    }
+
+    pub async fn listen<S>(&self, shutdown_signal: S) -> Result<(), anyhow::Error>
+    where
+        S: Future<Output = ()> + Send + 'static,
+    {
+        TonicServer::builder()
+            .add_service(AuthServiceServer::new(AuthService::new(
+                self.repository.clone(),
+            )))
+            .serve_with_shutdown(self.addr.clone(), shutdown_signal)
+            .await
+            .context("Error starting gRPC server")
+    }
+}
 
 /// Implementation of gRPC auth service.
-pub struct AuthService {
+struct AuthService {
     repository: Arc<dyn KeyRepository>,
 }
 
@@ -29,7 +59,7 @@ impl From<KeyPair> for Key {
 }
 
 #[tonic::async_trait]
-impl v1::auth_service_server::AuthService for AuthService {
+impl TonicAuthService for AuthService {
     async fn get_keys(&self, _request: Request<()>) -> Result<Response<GetKeysResponse>, Status> {
         let keys: Vec<Key> = self
             .repository

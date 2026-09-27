@@ -69,7 +69,8 @@ impl JWTConfig {
 /// Configuration for the rest api.
 #[derive(Debug, Deserialize, Validate)]
 pub struct AppConfig {
-    pub addr: String,
+    pub http_addr: String,
+    pub grpc_addr: String,
 }
 
 impl AppConfig {
