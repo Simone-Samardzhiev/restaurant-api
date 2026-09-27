@@ -76,7 +76,6 @@ impl TonicAuthService for AuthService {
 
 #[cfg(test)]
 mod tests {
-    use super::v1::auth_service_server::AuthService as _;
     use super::*;
     use crate::repositories::postgres::PostgresKeyRepository;
     use uuid::Uuid;

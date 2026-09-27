@@ -1,9 +1,6 @@
 use crate::domain::{PasswordHasher, error::Error};
 use anyhow::Context;
-use argon2::{
-    Argon2, PasswordHash, PasswordHasher as Argon2PasswordHasher, PasswordVerifier,
-    password_hash::{SaltString, rand_core::OsRng},
-};
+use argon2::{Argon2, PasswordHash, PasswordHasher as Argon2PasswordHasher, PasswordVerifier};
 
 /// Implementation of [PasswordHasher] using argon.
 pub struct ArgonPasswordHasher {
@@ -17,11 +14,9 @@ impl ArgonPasswordHasher {
 
 impl<'a> PasswordHasher for ArgonPasswordHasher {
     fn hash(&self, password: &str) -> Result<String, Error> {
-        let salt = SaltString::generate(&mut OsRng);
-
         Ok(self
             .argon2
-            .hash_password(password.as_bytes(), &salt)
+            .hash_password(password.as_bytes())
             .context("Error hashing password")?
             .to_string())
     }
