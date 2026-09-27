@@ -4,6 +4,21 @@ volumes:
   menu-bucket-storage:
 
 services:
+  valkey-cache:
+    build: "./valkey"
+    restart: on-failure
+    environment:
+      VALKEY_PASSWORD: password
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    develop:
+      watch:
+        - path: "./valkey"
+          action: rebuild
+
   auth-db:
     image: postgres:16
     environment:
@@ -19,13 +34,24 @@ services:
       - auth-db-storage:/var/lib/postgresql/data/
 
   auth-api:
-    build: "./auth"
+    build:
+      context: .
+      dockerfile: auth/Dockerfile
     restart: on-failure
     environment:
-      DB_URL: postgres://postgres:password@auth-db:5432/auth?sslmode=disable
-      DB_MAX_CONNECTIONS: 10
-      DB_MAX_LIFETIME: 20
-      ADDR: 0.0.0.0:8080
+      DATABASE_URL: postgres://postgres:password@auth-db:5432/auth?sslmode=disable
+      DATABASE_MAX_CONNECTIONS: 10
+      DATABASE_MAX_LIFETIME: 20
+
+      VALKEY_URL: valkey://:password@valkey-cache:6379
+      VALKEY_POOL_SIZE: 16
+
+      JWT_AUDIENCE: aud-test
+      JWT_ISSUER: iss-test
+
+      HTTP_ADDR: 0.0.0.0:8080
+      GRPC_ADDR: 0.0.0.0:50051
+
     develop:
       watch:
         - path: "./auth"
@@ -33,21 +59,8 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-
-  valkey-cache:
-    build: "./valkey"
-    restart: on-failure
-    environment:
-      VALKEY_PASSWORD: password
-    healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    develop:
-      watch:
-        - path: "./valkey"
-          action: rebuild
+      valkey-cache:
+        condition: service_healthy
 
   menu-bucket:
     image: adobe/s3mock:latest
