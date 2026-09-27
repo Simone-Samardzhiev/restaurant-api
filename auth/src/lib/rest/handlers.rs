@@ -106,7 +106,9 @@ pub struct LoginRequest {
 
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
+    #[serde(rename="accessToken")]
     access_token: String,
+    #[serde(rename="refreshToken")]
     refresh_token: String,
 }
 
